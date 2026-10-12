@@ -1,32 +1,51 @@
-# Issue tracker: Markdown local
+# Issue tracker: GitHub
 
-Los issues y specs de este repositorio se guardan como archivos Markdown en `.scratch/`.
-
-Todas las rutas de este documento son relativas a la raíz del repositorio, `app-foundry/`.
+Los issues y specs de este repositorio se guardan en GitHub Issues de [`rubenbp/app-foundry`](https://github.com/rubenbp/app-foundry/issues). Usa la CLI `gh` para consultarlos y actualizarlos.
 
 ## Convenciones
 
-- Usa un directorio por feature: `.scratch/<feature-slug>/`.
-- Guarda el spec en `.scratch/<feature-slug>/spec.md`.
-- Guarda cada issue de implementación en su propio archivo: `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, con numeración desde `01`.
-- Registra el estado de triage mediante una línea `Status:` cerca del inicio de cada issue. Usa los valores de `triage-labels.md`.
-- Añade los comentarios y el historial de conversación al final del archivo, bajo el encabezado `## Comments`.
+Usa `--repo rubenbp/app-foundry` en los comandos `gh issue` para seleccionar el repositorio explícitamente.
+
+- **Crear un issue o spec**: `gh issue create --repo rubenbp/app-foundry --title "..." --body-file <file>`.
+- **Leer un issue**: `gh issue view <number> --repo rubenbp/app-foundry --json number,title,body,labels,comments`.
+- **Listar issues**: `gh issue list --repo rubenbp/app-foundry --state open --limit 100 --json number,title,body,labels,comments`. Usa filtros `--label` y `--state` según la consulta, y paginación con `gh api --paginate` cuando necesites la lista completa.
+- **Actualizar el cuerpo**: `gh issue edit <number> --repo rubenbp/app-foundry --body-file <file>`.
+- **Comentar**: `gh issue comment <number> --repo rubenbp/app-foundry --body-file <file>`.
+- **Aplicar o retirar etiquetas**: `gh issue edit <number> --repo rubenbp/app-foundry --add-label "..." --remove-label "..."`. Usa los roles de `docs/agents/triage-labels.md` para triage.
+- **Cerrar**: `gh issue close <number> --repo rubenbp/app-foundry --comment "..."`.
+
+Para cuerpos y comentarios multilínea, prepara el contenido en un archivo temporal y usa `--body-file`.
+
+## Relación entre specs e implementación
+
+Guarda el spec como un issue padre y cada ticket de implementación como un issue independiente.
+
+- **Crear un sub-issue**: `gh issue create --repo rubenbp/app-foundry --parent <parent> --title "..." --body-file <file>`.
+- **Vincular un issue existente**: `gh issue edit <parent> --repo rubenbp/app-foundry --add-sub-issue <child>`.
+
+Estos flags requieren `gh` 2.94 o posterior. Con versiones anteriores, usa `gh api --method POST repos/rubenbp/app-foundry/issues/<parent>/sub_issues -F sub_issue_id=<child-db-id>`. Obtén el ID de base de datos con `gh api repos/rubenbp/app-foundry/issues/<child> --jq .id`; es distinto del número del issue.
+
+Si los sub-issues no están disponibles, añade `Part of #<parent>` al inicio del cuerpo del hijo y enlázalo en una lista de tareas del padre.
+
+## Pull requests como superficie de triage
+
+**PRs as a request surface: no.**
 
 ## Cuando una skill indique «publicar en el issue tracker»
 
-Crea el spec o los archivos individuales de los issues en las rutas anteriores. Crea los directorios que hagan falta.
+Crea un GitHub Issue en `rubenbp/app-foundry` con el spec o ticket correspondiente.
 
 ## Cuando una skill indique «consultar el ticket relevante»
 
-Lee el archivo de la ruta indicada. Si recibes un número de ticket, búscalo en el directorio `issues/` de la feature correspondiente. Pregunta por la feature si el número es ambiguo.
+Lee el GitHub Issue indicado por número o URL, incluidos su cuerpo, etiquetas y comentarios.
 
 ## Operaciones de wayfinding
 
-`/wayfinder` usa un map y un archivo child por ticket. Estos tickets usan los status de workflow definidos aquí. Los issues de implementación usan los roles de triage anteriores.
+`/wayfinder` usa un issue map y sub-issues como tickets.
 
-- **Map**: `.scratch/<effort>/map.md`, con las secciones Notes / Decisions-so-far / Fog.
-- **Child ticket**: `.scratch/<effort>/issues/NN-<slug>.md`, con numeración desde `01` y la pregunta en el cuerpo. Una línea `Type:` indica `research`, `prototype`, `grilling` o `task`. Una línea `Status:` indica `open`, `claimed` o `resolved`.
-- **Blocking**: una línea `Blocked by: NN, NN` cerca del inicio. Un ticket queda desbloqueado cuando todos los tickets que enumera tienen `Status: resolved`.
-- **Frontier**: busca tickets con `Status: open` y sin blockers pendientes en `.scratch/<effort>/issues/`. Elige el primero por número.
-- **Claim**: establece `Status: claimed` y guarda el archivo antes de empezar el trabajo.
-- **Resolve**: añade la respuesta bajo `## Answer`, establece `Status: resolved` y añade un context pointer (resumen y enlace) a Decisions-so-far en `map.md`.
+- **Map**: un issue con la etiqueta `wayfinder:map` y las secciones Notes / Decisions-so-far / Fog.
+- **Child ticket**: un sub-issue del map, con la pregunta en el cuerpo y una etiqueta `wayfinder:<type>`, donde `<type>` es `research`, `prototype`, `grilling` o `task`. Si los sub-issues no están disponibles, usa la lista de tareas del map y `Part of #<map>` en cada hijo. Crea las etiquetas `wayfinder:*` que falten cuando se usen.
+- **Blocking**: usa las dependencias nativas de GitHub. Añade una dependencia con `gh api --method POST repos/rubenbp/app-foundry/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`. Obtén el ID con `gh api repos/rubenbp/app-foundry/issues/<blocker> --jq .id`. Si las dependencias no están disponibles, usa una línea `Blocked by: #<n>, #<n>` al inicio del cuerpo. Un ticket queda desbloqueado cuando todos sus blockers están cerrados.
+- **Frontier**: consulta todos los hijos del map con `gh api --paginate repos/rubenbp/app-foundry/issues/<map>/sub_issues`, o lee su lista de tareas. Conserva los hijos abiertos, sin assignee ni blockers abiertos. Consulta `issue_dependencies_summary.blocked_by` para dependencias nativas o el estado de los issues de la línea `Blocked by` para el fallback. Elige el primero según el orden del map.
+- **Claim**: asigna el ticket con `gh issue edit <number> --repo rubenbp/app-foundry --add-assignee @me` antes de empezar el trabajo.
+- **Resolve**: publica la respuesta como comentario, cierra el ticket y añade un context pointer (resumen y enlace) a Decisions-so-far en el map.

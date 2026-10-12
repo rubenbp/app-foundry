@@ -6,11 +6,11 @@ Usa siempre Caveman lite: frases completas, sin relleno y en español. Escribe c
 
 ### Issue tracker
 
-Los issues y specs se guardan como Markdown local en `.scratch/<feature>/`. Antes de crear, leer o actualizar tickets, lee `docs/agents/issue-tracker.md`.
+Los issues y specs se guardan en GitHub Issues de `rubenbp/app-foundry`. Antes de crear, leer o actualizar tickets, lee `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Usa los cinco roles de triage predeterminados como status de los issues locales. Antes de hacer triage, lee `docs/agents/triage-labels.md`.
+Usa los cinco roles de triage predeterminados como etiquetas de GitHub Issues. Antes de hacer triage, lee `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
