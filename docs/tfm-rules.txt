@@ -1,0 +1,105 @@
+El TFM consiste en desarrollar un caso de uso que aplique de forma integrada los conocimientos del track. Elige una necesidad concreta, construye una solución y demuestra cómo funciona, qué valor aporta y qué límites tiene.
+
+Puedes partir de tu proyecto actual, de una necesidad transversal de JAKALA o de una iniciativa nueva. El buscador de hoteles utilizado en clase es un ejemplo didáctico: no tienes que utilizarlo como base.
+
+1. QUÉ TIPO DE PROYECTO PUEDES HACER
+
+Puedes elegir una de estas vías o combinarlas:
+
+Crear un proyecto nuevo con ayuda de IA.
+Una aplicación, herramienta o utilidad que resuelva una necesidad concreta. Explica cómo has utilizado la IA durante el desarrollo, qué contexto y herramientas has preparado, qué decisiones has tomado y cómo has comprobado el resultado. La solución no necesita incorporar IA como funcionalidad: puede utilizarla en su proceso de construcción.
+
+Mejorar el arnés de un proyecto existente.
+Prepara o amplía las instrucciones, el contexto, las skills, las herramientas y las comprobaciones que permiten trabajar con IA en ese proyecto. Por ejemplo, un arnés de verificación que ayude al agente a detectar y corregir errores, o una serie de skills que permitan resolver tareas recurrentes con mayor consistencia.
+
+Crear o mejorar un flujo de trabajo con IA.
+Diseña un proceso que automatice o facilite parte del trabajo: investigación, implementación, revisión, migraciones o una factoría para construir un tipo concreto de proyectos. Define qué hace la IA, cómo se comprueba el resultado y dónde interviene una persona —human in the loop— para decidir, revisar o resolver excepciones.
+
+Estos ejemplos son orientativos. Puedes proponer otros casos alineados con el desarrollo de software y con las necesidades de tu equipo o de JAKALA. Una mejora pequeña, útil y bien evaluada puede constituir un buen TFM.
+
+2. ALCANCE, REUTILIZACIÓN Y LÍMITES
+
+Escoge un alcance que puedas desarrollar, explicar y comprobar en el tiempo disponible.
+
+Si partes de un proyecto de cliente o de un proyecto interno, el entregable debe ser una versión lo más genérica y reutilizable posible en proyectos similares. Puede seguir siendo específico de un stack o de un tipo de trabajo: explica qué partes se reutilizan y cuáles necesitan adaptación.
+
+Debes verificar la funcionalidad hasta donde sea razonablemente posible, teniendo en cuenta las restricciones del proyecto, los permisos y el presupuesto. No se exige implantar la solución en producción, conseguir decisiones organizativas fuera de tu alcance ni asumir gastos elevados.
+
+Puedes utilizar un entorno aislado, datos ficticios, un proyecto de demostración o probar las partes accesibles del proceso. Distingue siempre:
+
+• Qué has implementado y probado.
+• Qué evidencias respaldan el resultado.
+• Qué está simulado o pendiente de verificar.
+• Qué ha limitado las pruebas y qué haría falta para completarlas.
+
+3. QUÉ DEBES ENTREGAR
+
+La entrega incluye el documento técnico, el código y los archivos de la solución, y una forma adecuada de demostrar el trabajo realizado.
+
+Documento técnico
+
+Un documento de unas 15 páginas como máximo que incluya:
+
+1. Problema y contexto: qué necesidad has identificado, a quién afecta y cómo se resuelve actualmente.
+2. Objetivo y alcance: qué mejora buscas, qué incluye el trabajo y qué queda fuera.
+3. Solución paso a paso: cómo la has construido, qué herramientas has utilizado y por qué. Explica el papel de la IA, el contexto que recibe, los controles y las decisiones humanas.
+4. Verificación y resultados: pruebas realizadas, resultados, dificultades y limitaciones.
+5. Justificación de negocio cuantitativa: comparación de horas y costes sin IA y con IA, incluyendo herramientas y modelos.
+6. Reutilización y conclusiones: cómo podría aplicarse en otros proyectos, qué habría que adaptar y qué has aprendido.
+
+Las evidencias visuales dentro del documento son obligatorias. Incluye capturas legibles de configuraciones, prompts, herramientas, flujos, outputs o etapas del desarrollo. Explica qué muestra cada evidencia y qué permite comprobar.
+
+Código y archivos de la solución
+
+Debes compartir el repositorio con el código y los elementos necesarios para evaluar tu aportación: skills, configuraciones, scripts, flujos e instrucciones de uso.
+
+• Si el repositorio es público, entrega su enlace, siempre que el contenido pueda publicarse.
+• Si es privado, concede al profesor acceso de lectura mediante una invitación o el mecanismo autorizado correspondiente. El trabajo interno de JAKALA debe compartirse por esta vía, sin hacerlo público.
+
+No es necesario conceder permisos de escritura. Identifica la versión entregada mediante una etiqueta o un commit e incluye instrucciones para localizar tu aportación, preparar el entorno y probarla.
+
+Si no puedes compartir el repositorio de origen, entrega en otro repositorio una versión genérica y evaluable de tu trabajo, con ejemplos y datos ficticios. Comparte únicamente material autorizado y excluye credenciales, datos personales e información confidencial.
+
+Demostración del funcionamiento
+
+Facilita la forma más adecuada de comprobar tu solución:
+
+• Una aplicación o demostración desplegada y accesible, con indicaciones para probarla.
+• Un proyecto, herramienta o flujo que pueda ejecutarse siguiendo las instrucciones del repositorio.
+• Un vídeo que muestre el funcionamiento cuando las restricciones del entorno impidan acceder a la solución o reproducirla.
+
+El vídeo es recomendable, pero no obligatorio si el funcionamiento puede comprobarse directamente. Su ausencia no impide aspirar a la máxima nota. Incluso con una solución accesible, un vídeo breve puede ayudar a explicar el recorrido y los resultados.
+
+No es obligatorio desplegar ni contratar servicios para el TFM. La demostración debe ser proporcionada al caso. El acceso a una aplicación o un vídeo complementa la entrega del código; no la sustituye.
+
+4. CÓMO JUSTIFICAR EL VALOR
+
+Compara las horas y el coste de resolver el caso con un perfil profesional sin IA frente al escenario con IA. Considera preparación, ejecución, revisión y corrección, además del coste de herramientas y modelos.
+
+Si has creado una mejora reutilizable, distingue el esfuerzo inicial de construcción del coste de utilizarla después. Si mejoras un arnés o flujo que ya utilizaba IA, añade una comparación antes y después de tu aportación.
+
+Separa los datos medidos de las estimaciones y explica los supuestos: tarea, perfil profesional, coste por hora y condiciones de la comparación. No es necesario ejecutar todo el proyecto dos veces si no resulta viable, pero sí justificar las estimaciones.
+
+Si los resultados son parciales o no muestran el ahorro esperado, explícalo y analiza las causas. Las conclusiones deben corresponderse con la evidencia disponible.
+
+5. HERRAMIENTAS Y EVALUACIÓN
+
+Puedes utilizar las herramientas del track u otras adecuadas al caso. Justifica la elección y respeta las restricciones de tu entorno. No es necesario contratar herramientas de pago ni utilizar un número determinado de modelos, agentes o skills.
+
+Se valorarán:
+
+• Originalidad y relevancia: utilidad del problema y alineación con el ámbito de trabajo de la service line.
+• Efectividad: capacidad de la solución para resolver el problema y aportar una mejora respaldada por evidencias y análisis de negocio.
+• Integración de conocimientos: aplicación coherente de los conceptos del track.
+• Calidad de la entrega: claridad del documento, acceso al código, instrucciones, evidencias y rigor de las conclusiones.
+• Demostración: facilidad para comprobar el funcionamiento. El vídeo puede complementar y enriquecer esta demostración.
+
+Se tendrán en cuenta los límites justificados del proyecto. Disponer de más presupuesto, permisos o infraestructura no es un mérito por sí mismo.
+
+El workshop final servirá como referencia para integrar lo aprendido y orientar el nivel de trabajo esperado.
+
+6. PLAZO Y PRESENTACIÓN DE LOS MEJORES TRABAJOS
+
+Dispones de 30 días desde la última sesión del track, sin posibilidad de ampliación. Consulta la fecha exacta configurada en el campus y asegúrate de que los enlaces y permisos de acceso funcionan al entregar.
+
+Los tres mejores TFMs del máster tendrán la oportunidad de presentarse ante toda la empresa durante la ceremonia de cierre.
