@@ -1,12 +1,12 @@
 # Configuración inicial de GitHub y Vercel
 
-Guía para el Managed project de App Foundry. Revisada contra documentación oficial el 12 de octubre de 2026. La configuración y las pruebas descritas todavía no se han ejecutado.
+Guía para el Managed project de App Foundry. Actualizada el 14 de octubre de 2026. El recorrido GitHub → preview → aceptación humana → merge → producción de Rebobina está comprobado. Véase el [registro de evidencias](../evidence/github-vercel/README.md).
 
 ## Objetivo
 
 La infraestructura inicial debe permitir publicar la plantilla, desplegar cambios de ramas como previews y actualizar producción después de integrar una pull request aprobada por una persona. La aprobación del merge es también la autorización de publicación en este recorrido.
 
-La conexión se realiza sobre el repositorio del **Managed project**. El repositorio `rubenbp/app-foundry` contiene la **Factory** y su planificación. Quedan por elegir el repositorio del Managed project, la plantilla y el equipo/proyecto de Vercel.
+La conexión se realiza sobre el repositorio del **Managed project**. El repositorio `rubenbp/app-foundry` contiene la **Factory** y su planificación. El Managed project seleccionado es [Rebobina](https://github.com/rubenbp/appfoundry-site-demo), conectado al proyecto Vercel `appfoundry-site-demo` del equipo `rubenbpvs-projects` (Hobby).
 
 ## Paso 1. Preparar el repositorio del Managed project
 
@@ -35,7 +35,7 @@ En el proyecto de Vercel, abrir **Settings → Build and Deployment**:
 - **Install Command**, **Build Command** y **Output Directory**: comprobar los valores detectados con los comandos y salida reales de la plantilla.
 - Comprobar una versión de Node compatible con la aplicación.
 
-Mantener los valores detectados cuando sean correctos. La configuración exacta depende del framework todavía pendiente de elegir. Si se necesitan variables, configurar las de Preview y Production en sus respectivos entornos.
+Mantener los valores detectados cuando sean correctos. Rebobina usa Astro estático: raíz del repositorio, instalación y build automáticos con pnpm, salida `dist` y Node `24.x` en Vercel. Si se necesitan variables, configurar las de Preview y Production en sus respectivos entornos.
 
 [Fuente: configuración de builds](https://vercel.com/docs/builds/configure-a-build).
 
