@@ -2,14 +2,14 @@
 
 Fecha: 16 de octubre de 2026, Europe/Madrid. Issue: [#13](https://github.com/rubenbp/app-foundry/issues/13). Preparación asistida, separada de los casos AFK y del coste por caso de evaluación.
 
-**Estado: contrato local acreditado y primera Preview comprobada; pendientes la revisión/aceptación humanas, el merge humano y comprobar producción. El issue no está completado.** No se ha modificado ni cerrado la especificación padre #12.
+**Estado: contrato local y Preview final acreditados; pendientes la revisión/aceptación humanas, el merge humano y comprobar producción. El issue no está completado.** No se ha modificado ni cerrado la especificación padre #12.
 
 ## Identidad
 
 - Factory inicial: `2a188b1ee0eceb7dc0c0e6ac35e601ce27bd5181`.
 - Managed project: [rubenbp/appfoundry-site-demo](https://github.com/rubenbp/appfoundry-site-demo), base `8f35d44e1a6992330598cb2878c0e6765330ecd5`.
 - Primer candidato verificado: `2c72e7b12b68ab2716dd6330f11d341256d2e218`.
-- Corrección posterior de indentación: `46c40730d5ed70c755642438f9c4394587cc5d0b`; necesita nueva verificación y Preview antes de aceptación.
+- Candidato final tras corregir indentación: `46c40730d5ed70c755642438f9c4394587cc5d0b`; contrato completo y Preview comprobados de nuevo.
 - PR de preparación: [#2](https://github.com/rubenbp/appfoundry-site-demo/pull/2), rama `codex/prepare-rebobina-base`, destino `main`.
 - Configuración de confianza: [`rebobina.json`](../../../config/managed-projects/rebobina.json). [Guía de reproducción y publicación](../../guides/rebobina-preparation.md).
 
@@ -21,7 +21,7 @@ Al activar `astro check` con `allowJs`/`checkJs`, aparecen 21 errores de tipos y
 
 ## Contrato local observado
 
-[`local-verification.json`](local-verification.json) conserva SHA, árbol limpio antes/después, SHA-256 del lockfile, versiones, intervalos UTC, comandos, códigos y marcador del primer candidato. Todas las salidas son saneadas; las rutas personales se sustituyen por `<home>`/`<managed-project>`.
+[`local-verification.json`](local-verification.json) conserva SHA, árbol limpio antes/después, SHA-256 del lockfile, versiones, intervalos UTC, comandos, códigos y marcador del candidato final. Todas las salidas son saneadas; las rutas personales y secuencias ANSI se sustituyen o eliminan y se normalizan espacios finales. El registro del primer candidato permanece en el commit Factory `5e8c089b896631b9ce53e874776382a94c637216`.
 
 | Comando | Código | Alcance y salida |
 | --- | --- | --- |
@@ -58,10 +58,22 @@ Esta sesión comprueba acceso de preparación desde navegador y GitHub. No demue
 - GitHub deployment `7127724923`, entorno `Preview`, estado `success`, `2026-10-16T19:30:02Z`.
 - Check `Vercel` y `Vercel Preview Comments`: `SUCCESS`. No había divergencia con `main` (`mergeStateStatus: CLEAN`).
 - [Marcador de Preview](https://appfoundry-site-demo-6otbacfr0-rubenbpvs-projects.vercel.app/version.json), abierto mediante sesión autorizada existente de Vercel: `{"sha":"2c72e7b12b68ab2716dd6330f11d341256d2e218","dirty":false}`.
-- La versión de parche de Node remota todavía no se ha observado; Node `24.x` es solo la configuración. pnpm `10.28.0` pertenece al recorrido anterior de #9, no a esta nueva Preview.
+- El [extracto observado del log](logs/preview-build-excerpt.log) confirma Node `24.21.0`, pnpm `12.4.1` y Vercel CLI `64.0.2` en ese deployment. Local y remoto coinciden en Node/pnpm en esta observación. pnpm `10.28.0` pertenece al recorrido anterior de #9. No se infiere el parche de otros deployments a partir de este resultado.
+- El log contiene dos avisos npm de `Unknown env config "cache-dir"`, procedentes del entorno del build. No impiden este build; el extracto los conserva. El contrato local no presenta errores de lint/tipos.
+- [Captura del primer marcador](preview-first.jpg).
+
+## Candidato final revisado y Preview
+
+- SHA final: `46c40730d5ed70c755642438f9c4394587cc5d0b`. [Revisión técnica](review.md): Standards 0, Spec 0.
+- Verificación final: 16/10/2026, 21:33:34–21:34:00 CEST; los cinco comandos terminan con código 0 sobre árbol limpio. Tres unitarias y siete E2E correctas, sin modo offline ni omitidas. [Registro completo](local-verification.json).
+- Deployment: `dpl_9fUHUUQk5NgrMnTQWCFvBmTzsBSz`, [dashboard](https://vercel.com/rubenbpvs-projects/appfoundry-site-demo/9fUHUUQk5NgrMnTQWCFvBmTzsBSz).
+- GitHub deployment `7127801099`, `Preview`, `success` a `2026-10-16T19:33:58Z`. Check `Vercel` y `Vercel Preview Comments`: `SUCCESS`; rama actualizada (`CLEAN`).
+- [Preview inmutable](https://appfoundry-site-demo-6y7laptul-rubenbpvs-projects.vercel.app/) y [marcador](https://appfoundry-site-demo-6y7laptul-rubenbpvs-projects.vercel.app/version.json). Apertura en sesión autorizada existente: `{"sha":"46c40730d5ed70c755642438f9c4394587cc5d0b","dirty":false}`. [Captura del marcador](preview-final.jpg).
+- Se abre la portada y se navega mediante el enlace Catálogo: aparecen buscador, consola, época, géneros y 33 juegos. [Captura de portada](preview-page.jpg). Es una comprobación acotada del deployment; las siete E2E se ejecutaron localmente.
+- La prueba de Preview usa la sesión de Vercel existente, sin crear credenciales, enlaces públicos de acceso ni modificar protección.
 
 ## Pendiente de intervención humana y producción
 
-Tras la revisión técnica, actualizar y comprobar la Preview del head definitivo. La persona debe revisar el diff de herramientas/pruebas, aceptar ese SHA en GitHub y realizar el merge allí. Ninguna ejecución local o check autoriza automáticamente el merge.
+La persona debe revisar el diff de herramientas/pruebas, aceptar el SHA final `46c40730d5ed70c755642438f9c4394587cc5d0b` en GitHub y realizar el merge allí. Ninguna ejecución local, revisión automática o check autoriza automáticamente el merge. Un nuevo head invalidaría esta preparación para la aceptación.
 
 Después se registrarán actor/timestamp de aceptación y merge, SHA integrado, deployment Production, versiones remotas observadas y respuesta sin caché de `https://rebobina-appfoundry.vercel.app/version.json`, además de navegación y contenido esperado. Hoy no existe evidencia de producción del nuevo marcador. No se cerrará #13 antes de completarla.

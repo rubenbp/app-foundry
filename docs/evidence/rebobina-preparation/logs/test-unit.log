@@ -1,6 +1,6 @@
-✔ busca términos sin depender de tildes ni mayúsculas (0.87125ms)
-✔ combina género, consola y generación en el mismo resultado (0.118959ms)
-✔ devuelve el catálogo completo cuando no hay filtros (0.079792ms)
+✔ busca términos sin depender de tildes ni mayúsculas (0.788417ms)
+✔ combina género, consola y generación en el mismo resultado (0.120417ms)
+✔ devuelve el catálogo completo cuando no hay filtros (0.089833ms)
 ℹ tests 3
 ℹ suites 0
 ℹ pass 3
@@ -8,5 +8,5 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 51.5335
+ℹ duration_ms 53.594167
 $ node --test tests/unit/*.test.mjs

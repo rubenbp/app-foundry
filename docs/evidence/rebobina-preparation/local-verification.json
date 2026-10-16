@@ -1,8 +1,8 @@
 {
-  "startedAt": "2026-10-16T19:28:15.594Z",
+  "startedAt": "2026-10-16T19:33:34.832810Z",
   "repository": "rubenbp/appfoundry-site-demo",
   "base": "8f35d44e1a6992330598cb2878c0e6765330ecd5",
-  "candidate": "2c72e7b12b68ab2716dd6330f11d341256d2e218",
+  "candidate": "46c40730d5ed70c755642438f9c4394587cc5d0b",
   "statusBefore": "",
   "node": "v24.21.0",
   "pnpm": "12.4.1",
@@ -28,44 +28,44 @@
   "commands": [
     {
       "command": "pnpm build",
-      "startedAt": "2026-10-16T19:28:15.875Z",
-      "finishedAt": "2026-10-16T19:28:17.782Z",
+      "startedAt": "2026-10-16T19:33:34.874393Z",
+      "finishedAt": "2026-10-16T19:33:37.103739Z",
       "exitCode": 0,
       "log": "logs/build.log"
     },
     {
       "command": "pnpm lint",
-      "startedAt": "2026-10-16T19:28:17.783Z",
-      "finishedAt": "2026-10-16T19:28:18.919Z",
+      "startedAt": "2026-10-16T19:33:37.103807Z",
+      "finishedAt": "2026-10-16T19:33:38.395684Z",
       "exitCode": 0,
       "log": "logs/lint.log"
     },
     {
       "command": "pnpm typecheck",
-      "startedAt": "2026-10-16T19:28:18.920Z",
-      "finishedAt": "2026-10-16T19:28:22.580Z",
+      "startedAt": "2026-10-16T19:33:38.395745Z",
+      "finishedAt": "2026-10-16T19:33:42.253435Z",
       "exitCode": 0,
       "log": "logs/typecheck.log"
     },
     {
       "command": "pnpm test:unit",
-      "startedAt": "2026-10-16T19:28:22.580Z",
-      "finishedAt": "2026-10-16T19:28:22.773Z",
+      "startedAt": "2026-10-16T19:33:42.253496Z",
+      "finishedAt": "2026-10-16T19:33:42.451989Z",
       "exitCode": 0,
       "log": "logs/test-unit.log"
     },
     {
       "command": "pnpm test:e2e",
-      "startedAt": "2026-10-16T19:28:22.773Z",
-      "finishedAt": "2026-10-16T19:28:41.345Z",
+      "startedAt": "2026-10-16T19:33:42.452043Z",
+      "finishedAt": "2026-10-16T19:34:00.305309Z",
       "exitCode": 0,
       "log": "logs/test-e2e.log"
     }
   ],
-  "finishedAt": "2026-10-16T19:28:41.345Z",
+  "finishedAt": "2026-10-16T19:34:00.305402Z",
   "statusAfter": "",
   "marker": {
-    "sha": "2c72e7b12b68ab2716dd6330f11d341256d2e218",
+    "sha": "46c40730d5ed70c755642438f9c4394587cc5d0b",
     "dirty": false
   }
 }

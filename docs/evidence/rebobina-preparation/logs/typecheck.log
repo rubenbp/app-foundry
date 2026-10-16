@@ -1,7 +1,7 @@
-21:28:20 [content] Syncing content
-21:28:20 [content] Synced content
-21:28:20 [types] Generated 349ms
-21:28:20 [check] Getting diagnostics for Astro files in <managed-project>...
+21:33:39 [content] Syncing content
+21:33:39 [content] Synced content
+21:33:39 [types] Generated 435ms
+21:33:39 [check] Getting diagnostics for Astro files in <managed-project>...
 Result (25 files):
 - 0 errors
 - 0 warnings
