@@ -2,7 +2,7 @@
 
 Fecha: 16 de octubre de 2026, Europe/Madrid. Issue: [#13](https://github.com/rubenbp/app-foundry/issues/13). Preparación asistida, separada de los casos AFK y del coste por caso de evaluación.
 
-**Estado: contrato local y Preview final acreditados; pendientes la revisión/aceptación humanas, el merge humano y comprobar producción. El issue no está completado.** No se ha modificado ni cerrado la especificación padre #12.
+**Estado: preparación completada, con contrato local, Preview final, merge humano y producción comprobados.** No se ha modificado ni cerrado la especificación padre #12.
 
 ## Identidad
 
@@ -72,8 +72,15 @@ Esta sesión comprueba acceso de preparación desde navegador y GitHub. No demue
 - Se abre la portada y se navega mediante el enlace Catálogo: aparecen buscador, consola, época, géneros y 33 juegos. [Captura de portada](preview-page.jpg). Es una comprobación acotada del deployment; las siete E2E se ejecutaron localmente.
 - La prueba de Preview usa la sesión de Vercel existente, sin crear credenciales, enlaces públicos de acceso ni modificar protección.
 
-## Pendiente de intervención humana y producción
+## Integración humana y producción comprobadas
 
-La persona debe revisar el diff de herramientas/pruebas, aceptar el SHA final `46c40730d5ed70c755642438f9c4394587cc5d0b` en GitHub y realizar el merge allí. Ninguna ejecución local, revisión automática o check autoriza automáticamente el merge. Un nuevo head invalidaría esta preparación para la aceptación.
+- La PR se entregó para revisión humana con el head `46c40730d5ed70c755642438f9c4394587cc5d0b`, pruebas y Preview. GitHub confirma merge por `rubenbp` el 16/10/2026 a las **21:44:51 CEST** (`2026-10-16T19:44:51Z`). El usuario lo confirmó en esta conversación: «merge finalizado».
+- GitHub no contiene una review formal ni un comentario independiente de aceptación. La evidencia conservada es la integración humana y su confirmación; no se inventa una aprobación separada ni se presenta como validación del futuro protocolo de aceptación de la Factory.
+- Commit integrado mediante squash: `9133647c7e99964802dd2485d0ef8221f97c9b73`. Su árbol y el del candidato probado son idénticos: `867f162258ff56fa6fd7387237e57d4da35a599b`; `git diff --exit-code <candidato> <integrado>` devuelve 0. Las comprobaciones locales siguen identificadas con el candidato; no se atribuyen ejecuciones nuevas al commit de squash.
+- Deployment Production: `dpl_CaXEtZrAf8w6Ka7Ffz2TMeWXtkvo`, [dashboard](https://vercel.com/rubenbpvs-projects/appfoundry-site-demo/CaXEtZrAf8w6Ka7Ffz2TMeWXtkvo). GitHub deployment `7128016397`, estado `success` a las **21:45:19 CEST**, sobre el SHA integrado. Dashboard `Ready`, entorno `Production`, rama `main`, dominio principal asignado. Check `Vercel`: `success`.
+- [Dominio público](https://rebobina-appfoundry.vercel.app/) y [marcador](https://rebobina-appfoundry.vercel.app/version.json): comprobación HTTP el 16/10/2026 a las **21:55:01 CEST**, sin cookies ni autenticación y con `Cache-Control: no-cache`/`Pragma: no-cache`. Respuesta 200, `Age: 0`, `X-Vercel-Cache: MISS`, cuerpo `{"sha":"9133647c7e99964802dd2485d0ef8221f97c9b73","dirty":false}`. El navegador confirma el mismo marcador. [Captura](production-marker.jpg).
+- El [extracto de build de producción](logs/production-build-excerpt.log) confirma Node `24.21.0` y pnpm `12.4.1`; coinciden con las versiones locales observadas. Se conserva el aviso npm de configuración `cache-dir`; no impidió el build.
+- Comprobación acotada en navegador del dominio de producción: [portada](production-page.jpg), navegación a catálogo con 33 juegos, filtros Plataformas + Mega Drive con **un resultado**, contador «1 juego en el archivo», URL coherente y ficha Sonic the Hedgehog 2. [Captura de filtros](production-filter.jpg).
+- La página editorial conserva su introducción original: «Rebobina es una guía para elegir tu siguiente partida. Un sitio donde el recuerdo se encuentra con la curiosidad.» No se ha implementado el texto exacto ni el filtro de dificultad de evaluación.
 
-Después se registrarán actor/timestamp de aceptación y merge, SHA integrado, deployment Production, versiones remotas observadas y respuesta sin caché de `https://rebobina-appfoundry.vercel.app/version.json`, además de navegación y contenido esperado. Hoy no existe evidencia de producción del nuevo marcador. No se cerrará #13 antes de completarla.
+[`production-verification.json`](production-verification.json) conserva identidad, actor, tiempos, HTTP, equivalencia de árboles y alcance de estas observaciones. Son pruebas acotadas de publicación real; las siete E2E y el contrato completo se ejecutaron localmente sobre el candidato limpio. Este recorrido es preparación asistida, no un caso AFK ni una prueba del futuro Workflow.
