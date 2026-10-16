@@ -1,0 +1,255 @@
+$ pnpm build && ./node_modules/.bin/playwright test
+$ astro build
+21:22:44 [content] Syncing content
+21:22:44 [content] Synced content
+21:22:44 [types] Generated 395ms
+21:22:44 [build] output: "static"
+21:22:44 [build] mode: "static"
+21:22:44 [build] directory: <managed-project>/dist/
+21:22:44 [build] Collecting build info...
+21:22:44 [build] ✓ Completed in 424ms.
+21:22:44 [build] Building static entrypoints...
+21:22:44 [vite] ✓ built in 174ms
+21:22:44 [vite] ✓ built in 23ms
+21:22:44 [build] Rearranging server assets...
+
+ generating static routes
+21:22:44   ├─ /404.html (+6ms)
+21:22:44   ├─ /catalogo/index.html (+3ms)
+21:22:44   ├─ /juegos/castlevania-symphony-of-the-night/index.html (+2ms)
+21:22:44   ├─ /juegos/chrono-trigger/index.html (+1ms)
+21:22:44   ├─ /juegos/crash-bandicoot/index.html (+8ms)
+21:22:44   ├─ /juegos/donkey-kong-country/index.html (+1ms)
+21:22:44   ├─ /juegos/dr-mario/index.html (+1ms)
+21:22:44   ├─ /juegos/f-zero/index.html (+1ms)
+21:22:44   ├─ /juegos/final-fantasy/index.html (+1ms)
+21:22:44   ├─ /juegos/final-fantasy-vi/index.html (+1ms)
+21:22:44   ├─ /juegos/final-fantasy-vii/index.html (+1ms)
+21:22:44   ├─ /juegos/intelligent-qube/index.html (+1ms)
+21:22:44   ├─ /juegos/kirbys-adventure/index.html (+1ms)
+21:22:44   ├─ /juegos/mega-man-x/index.html (+1ms)
+21:22:44   ├─ /juegos/metroid/index.html (+1ms)
+21:22:44   ├─ /juegos/mortal-kombat-ii/index.html (+0ms)
+21:22:44   ├─ /juegos/outrun/index.html (+1ms)
+21:22:44   ├─ /juegos/phantasy-star-iv/index.html (+1ms)
+21:22:44   ├─ /juegos/punch-out/index.html (+0ms)
+21:22:44   ├─ /juegos/puyo-puyo/index.html (+0ms)
+21:22:44   ├─ /juegos/puzzle-bobble/index.html (+0ms)
+21:22:44   ├─ /juegos/rc-pro-am/index.html (+0ms)
+21:22:44   ├─ /juegos/ridge-racer/index.html (+0ms)
+21:22:44   ├─ /juegos/samurai-shodown/index.html (+0ms)
+21:22:44   ├─ /juegos/secret-of-mana/index.html (+1ms)
+21:22:44   ├─ /juegos/sonic-the-hedgehog-2/index.html (+0ms)
+21:22:44   ├─ /juegos/street-fighter-ii-turbo/index.html (+0ms)
+21:22:44   ├─ /juegos/super-mario-kart/index.html (+0ms)
+21:22:44   ├─ /juegos/super-mario-world/index.html (+1ms)
+21:22:44   ├─ /juegos/super-metroid/index.html (+1ms)
+21:22:44   ├─ /juegos/tekken-3/index.html (+1ms)
+21:22:44   ├─ /juegos/tetris/index.html (+0ms)
+21:22:44   ├─ /juegos/the-legend-of-zelda/index.html (+1ms)
+21:22:44   ├─ /juegos/the-legend-of-zelda-a-link-to-the-past/index.html (+1ms)
+21:22:44   ├─ /juegos/tomb-raider/index.html (+1ms)
+21:22:44   ├─ /sobre-rebobina/index.html (+1ms)
+21:22:44   ├─ /index.html (+1ms)
+21:22:44 ✓ Completed in 59ms.
+
+21:22:44 [build] ✓ Completed in 276ms.
+21:22:44 [build] 37 page(s) built in 708ms
+21:22:44 [build] Complete!
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:45] "GET / HTTP/1.1" 200 -
+
+Running 6 tests using 5 workers
+
+(node:33655) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33654) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33653) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33651) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:54] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:54] "GET /art/mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:54] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:54] "GET /catalogo/?generacion=8%20bits HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /catalogo/ HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /juegos/crash-bandicoot/ HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/crash.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/dr-mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/final-fantasy.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/kirby.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/punch-out.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/rc-pro-am.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/tetris.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:55] "GET /art/zelda-nes.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/castlevania.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/chrono-trigger.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/crash.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/donkey-kong.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/dr-mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/f-zero.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/final-fantasy.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/final-fantasy-vi.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/final-fantasy-vii.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/intelligent-qube.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/mega-man-x.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/kirby.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/outrun.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/mortal-kombat.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/phantasy-star.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/punch-out.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/puyo-puyo.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/puzzle-bobble.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/rc-pro-am.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/ridge-racer.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/samurai-shodown.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/secret-of-mana.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:56] "GET /art/sonic.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /art/crash.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /art/final-fantasy-vi.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /art/puzzle-bobble.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /art/super-metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /favicon.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /favicon.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /favicon.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:57] "GET /art/donkey-kong.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:58] "GET /art/kirby.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/crash.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/final-fantasy-vi.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/puzzle-bobble.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/super-metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /favicon.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /favicon.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/super-metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /catalogo/?genero=rol%20japon%C3%A9s HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /juegos/castlevania-symphony-of-the-night/ HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/crash.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/final-fantasy-vi.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/puzzle-bobble.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/mario.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:22:59] "GET /art/super-metroid.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/castlevania.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/chrono-trigger.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/crash.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/donkey-kong.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/f-zero.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/final-fantasy-vi.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/intelligent-qube.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/final-fantasy-vii.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mega-man-x.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mortal-kombat.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/phantasy-star.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/puyo-puyo.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/outrun.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/puzzle-bobble.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/ridge-racer.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/samurai-shodown.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/secret-of-mana.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/sonic.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/street-fighter.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mario-kart.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/super-metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/tekken.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/zelda.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/chrono-trigger.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/final-fantasy.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/phantasy-star.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/final-fantasy-vii.svg HTTP/1.1" 200 -
+  ✓  1 [chromium] › tests/e2e/catalog.spec.mjs:62:1 › la ficha ampliada se lee en móvil con movimiento reducido (7.8s)
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/castlevania.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mega-man-x.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/metroid.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/castlevania.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/f-zero.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/dr-mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/donkey-kong.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/intelligent-qube.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/kirby.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mega-man-x.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/mortal-kombat.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/punch-out.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/outrun.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/puyo-puyo.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/rc-pro-am.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/ridge-racer.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/samurai-shodown.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/secret-of-mana.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/sonic.svg HTTP/1.1" 200 -
+  ✓  2 [chromium] › tests/e2e/catalog.spec.mjs:49:1 › muestra la época de la URL y limpia todos los filtros (8.0s)
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/tetris.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /art/zelda-nes.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /catalogo/ HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:00] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 200 -
+  ✓  4 [chromium] › tests/e2e/catalog.spec.mjs:13:1 › busca sin tildes y abre la ficha de Castlevania (8.1s)
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /catalogo/?genero=plataformas HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/crash.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/final-fantasy-vi.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/puzzle-bobble.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/mario.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/super-metroid.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/donkey-kong.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/sonic.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/kirby.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/castlevania.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/chrono-trigger.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/donkey-kong.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/crash.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/dr-mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/f-zero.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/final-fantasy.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/final-fantasy-vi.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/final-fantasy-vii.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/intelligent-qube.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/mega-man-x.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/kirby.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/metroid.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/phantasy-star.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/mortal-kombat.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/outrun.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/punch-out.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/puyo-puyo.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/puzzle-bobble.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/ridge-racer.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/rc-pro-am.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/samurai-shodown.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/secret-of-mana.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /favicon.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /art/sonic.svg HTTP/1.1" 200 -
+  ✓  5 [chromium] › tests/e2e/catalog.spec.mjs:83:1 › las secciones aparecen al desplazarse y las tarjetas responden al cursor (8.9s)
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:01] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:02] "GET /art/mario.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:02] "GET /juegos/sonic-the-hedgehog-2/ HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:02] "GET /_astro/SiteLayout.CH2F9bOC.css HTTP/1.1" 304 -
+  ✓  6 [chromium] › tests/e2e/catalog.spec.mjs:104:1 › combina género y consola para abrir la ficha de Sonic (2.5s)
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:03] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:04] "GET /art/street-fighter.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:04] "GET /art/mario-kart.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:04] "GET /art/zelda.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:05] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:07] "GET /favicon.svg HTTP/1.1" 304 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:07] "GET /art/tekken.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:07] "GET /art/tomb-raider.svg HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [16/Oct/2026 21:23:09] "GET /favicon.svg HTTP/1.1" 304 -
+  ✓  3 [chromium] › tests/e2e/catalog.spec.mjs:26:1 › todos los géneros tienen juegos en las tres épocas (18.5s)
+
+  6 passed (26.2s)

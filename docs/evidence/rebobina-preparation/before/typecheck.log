@@ -1,0 +1,3 @@
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × Command "typecheck" not found
