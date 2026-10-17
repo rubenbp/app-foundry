@@ -15,6 +15,29 @@ import type {
   PullCandidate,
 } from "../domain/publication.ts";
 
+import {
+  publicChecks,
+  type PublicCheck,
+  type PublicEvidence,
+} from "../domain/production.ts";
+
+export interface ProductionPort {
+  inspect(
+    context: PublicationContext,
+    integratedSha: string,
+  ): Promise<Preview | null>;
+  verify(
+    context: PublicationContext,
+    integratedSha: string,
+    checks: PublicCheck[],
+  ): Promise<PublicEvidence>;
+  comment(
+    context: PublicationContext,
+    body: string,
+  ): Promise<ConversationComment>;
+  closeIssue(context: PublicationContext): Promise<void>;
+}
+
 export interface PublicationContext {
   repository: string;
   issue: number;
@@ -58,11 +81,17 @@ export interface PublicationPort {
 export class CandidatePublication {
   private factory: Factory;
   private port: PublicationPort;
+  private production?: ProductionPort;
   private busy?: Promise<void>;
   private stopping = false;
-  constructor(factory: Factory, port: PublicationPort) {
+  constructor(
+    factory: Factory,
+    port: PublicationPort,
+    production?: ProductionPort,
+  ) {
     this.factory = factory;
     this.port = port;
+    this.production = production;
   }
   async poll() {
     if (this.busy) return this.busy;
@@ -345,6 +374,230 @@ export class CandidatePublication {
     publication.reports.push(publication.report);
     this.save(run);
   }
+  private async observeMerge(run: Run, facts: PublicationFacts) {
+    const publication = run.publication!;
+    const pull = facts.pull!;
+    // Keep the observed integration even when it violates the contract.
+    if (publication.mergeSha && publication.mergeSha !== pull.mergeSha) {
+      publication.blocked =
+        "Incidencia: el commit integrado observado cambió; revisión manual requerida.";
+      this.save(run);
+      throw new Error(publication.blocked);
+    }
+    publication.mergeSha = pull.mergeSha;
+    this.save(run);
+    if (publication.blocked) throw new Error(publication.blocked);
+    const accepted = publication.integratedAcceptance ?? publication.acceptance;
+    if (!publication.integratedAcceptance) {
+      const comment = facts.comments.find(
+        (comment) => comment.id === accepted?.commentId,
+      );
+      const intent = comment ? interpretComment(comment.body) : null;
+      const conflicting = facts.comments.some(
+        (comment) =>
+          !this.isOwn(run, comment) &&
+          comment.createdAt <= (pull.mergedAt ?? 0) &&
+          interpretComment(comment.body).kind === "invalidate",
+      );
+      if (
+        !accepted ||
+        !pull.mergeSha ||
+        !pull.mergedAt ||
+        !pull.mergedBy ||
+        pull.base !== run.request!.configuration.baseBranch ||
+        pull.head !== accepted.head ||
+        accepted.head !== publication.head ||
+        accepted.at >= pull.mergedAt ||
+        facts.request.title !== run.request!.title ||
+        facts.request.body !== run.request!.body ||
+        !this.reportIntact(run, facts) ||
+        !comment ||
+        this.isOwn(run, comment) ||
+        comment.author !== accepted.author ||
+        comment.createdAt !== accepted.at ||
+        comment.updatedAt !== comment.createdAt ||
+        intent?.kind !== "accept" ||
+        intent.head !== accepted.head ||
+        intent.preview !== accepted.preview ||
+        conflicting ||
+        facts.status?.head !== accepted.head ||
+        facts.status.state !== "success" ||
+        !(await this.port.canWrite(run.request!.repository, accepted.author)) ||
+        !(await this.port.canWrite(run.request!.repository, pull.mergedBy))
+      ) {
+        publication.blocked =
+          "Incidencia: merge externo fuera del contrato de aceptación humana vigente.";
+        this.save(run);
+        throw new Error(publication.blocked);
+      }
+      this.evidence(run);
+      publication.integratedAcceptance = accepted;
+      delete publication.acceptance;
+      this.factory.record(
+        run,
+        "merge-observed",
+        `Base ${run.workspace!.baseSha}; accepted candidate ${accepted.head}; integrated ${pull.mergeSha}; merged by ${pull.mergedBy}`,
+      );
+      publication.production = { status: "pending", observations: [] };
+      run.status = "checking_production";
+      this.save(run);
+    }
+    const production = publication.production!;
+    if (production.status === "intervention")
+      throw new Error(production.error ?? "Production requires intervention");
+    if (
+      facts.request.title !== run.request!.title ||
+      facts.request.body !== run.request!.body ||
+      pull.head !== publication.integratedAcceptance!.head ||
+      !pull.mergeSha
+    )
+      throw new Error(
+        "Request or integrated candidate changed; production closure blocked",
+      );
+    if (!this.production)
+      throw new Error("Production adapter required after observed merge");
+    run.status = "checking_production";
+    run.endedAt = null;
+    this.save(run);
+    const deployment = await this.production.inspect(
+      this.context(run),
+      pull.mergeSha,
+    );
+    production.observations.push({ at: this.factory.now(), deployment });
+    production.deployment = deployment ?? undefined;
+    this.save(run);
+    if (
+      !deployment ||
+      deployment.state === "pending" ||
+      deployment.state === "inactive"
+    )
+      return;
+    if (deployment.state !== "success")
+      throw new Error(
+        `Production deployment ${deployment.state}; intervention required`,
+      );
+    if (
+      deployment.head !== pull.mergeSha ||
+      deployment.repository !== run.request!.repository ||
+      deployment.projectId !==
+        run.request!.configuration.publication.projectId ||
+      deployment.environment !==
+        (run.request!.configuration.publication.productionEnvironment ??
+          "Production")
+    )
+      throw new Error("Production deployment identity mismatch");
+    const checks = publicChecks(
+      run.request!.body,
+      run.verification!.criteria.length,
+    );
+    const evidence = await this.production.verify(
+      this.context(run),
+      pull.mergeSha,
+      checks,
+    );
+    const complete =
+      evidence.origin ===
+        run.request!.configuration.publication.productionOrigin &&
+      !evidence.error &&
+      evidence.servedHead === pull.mergeSha &&
+      Boolean(evidence.browser) &&
+      evidence.checks.length === checks.length &&
+      evidence.checks.every(
+        (result, index) =>
+          result.passed &&
+          JSON.stringify(result.check) === JSON.stringify(checks[index]),
+      );
+    // Write failed observations too. No successful terminal state before durable evidence.
+    const partId = `production-${pull.mergeSha}`;
+    this.factory.ingest(
+      run.id,
+      {
+        type: "part",
+        id: partId,
+        messageId: "production",
+        kind: "evidence",
+        label: "Producción: dominio público, versión y criterios",
+        text: JSON.stringify(evidence, null, 2),
+      },
+      1_100_000,
+    );
+    Object.assign(run, this.factory.view(run.id), { publication });
+    production.evidencePartId = partId;
+    this.save(run);
+    if (
+      !complete ||
+      this.factory.view(run.id)!.parts.find((part) => part.id === partId)
+        ?.truncated
+    )
+      throw new Error(
+        "Public version or complete requested behavior unverified; inspect production evidence",
+      );
+    production.servedHead = pull.mergeSha;
+    production.status = "verified";
+    production.verifiedAt = this.factory.now();
+    this.save(run);
+    const origin = `<!-- app-foundry:${run.id}:production:${pull.mergeSha} -->`;
+    const body = this.factory.clean(
+      `${origin}\n## Producción comprobada\n\nEjecución: ${run.id}\nBase: ${run.workspace!.baseSha}\nCandidato aceptado: ${publication.integratedAcceptance!.head}\nCommit integrado: ${pull.mergeSha}\nPR: ${pull.url}\nDeployment: ${deployment.id} · ${deployment.environment} · ${deployment.projectId}\nDominio público: ${evidence.origin}\nSHA servido: ${evidence.servedHead}\nNavegador: ${evidence.browser}\n\n${evidence.checks.map((result) => `- [x] Criterio ${result.check.criterion}: ${result.check.path} ${result.check.selector} — ${result.observed}`).join("\n")}\n\nEvidencia persistida: ${partId}. La comprobación cubre las aserciones declaradas en la petición y revisadas con el candidato; no acredita comportamientos no expresados en ellas.`,
+      55_000,
+    );
+    if (body.truncated)
+      throw new Error("Production report exceeds evidence limit");
+    const report = await this.effect(
+      run,
+      `production-report:${pull.mergeSha}`,
+      async () => {
+        const current = await this.facts(run, false);
+        if (
+          current.request.title !== run.request!.title ||
+          current.request.body !== run.request!.body
+        )
+          throw new Error("Request changed before production report");
+        return current.comments.find(
+          (comment) => comment.source === "issue" && comment.body === body.text,
+        );
+      },
+      () => this.production!.comment(this.context(run), body.text),
+    );
+    production.report = { id: report.id, url: report.url };
+    if (!publication.ownComments.includes(report.id))
+      publication.ownComments.push(report.id);
+    this.save(run);
+    await this.effect(
+      run,
+      `close-issue:${pull.mergeSha}`,
+      async () => {
+        const current = await this.facts(run, false);
+        if (
+          current.request.title !== run.request!.title ||
+          current.request.body !== run.request!.body ||
+          !current.comments.some(
+            (comment) => comment.id === report.id && comment.body === body.text,
+          )
+        )
+          throw new Error(
+            "Production evidence or request changed before closure",
+          );
+        return current.request.open ? undefined : true;
+      },
+      async () => {
+        await this.production!.closeIssue(this.context(run));
+        return true;
+      },
+    );
+    production.closedAt = this.factory.now();
+    run.status = "completed";
+    run.endedAt = this.factory.now();
+    run.error = null;
+    this.factory.record(
+      run,
+      "completed",
+      `Production ${pull.mergeSha} verified and evidence published: ${report.url}`,
+    );
+    this.save(run);
+    this.factory.active = null;
+  }
+
   private async advance() {
     const id = this.factory.active;
     const run = id ? this.factory.view(id) : null;
@@ -353,6 +606,7 @@ export class CandidatePublication {
       !run.workspace ||
       !run.verification?.headSha ||
       run.status === "stopped" ||
+      run.status === "completed" ||
       (!run.publication && run.status !== "awaiting_preview")
     )
       return;
@@ -361,7 +615,10 @@ export class CandidatePublication {
     const publication = run.publication;
     try {
       this.save(run);
-      let facts = await this.facts(run, !publication.recoveryRequired);
+      let facts = await this.facts(
+        run,
+        !publication.recoveryRequired && !publication.mergeSha,
+      );
       this.factory.assertRunning(run.id);
       publication.observedAt = this.factory.now();
       publication.observationError = null;
@@ -405,27 +662,17 @@ export class CandidatePublication {
           await this.setStatus(run, "pending");
         return;
       }
+      if (facts.pull?.merged) {
+        await this.observeMerge(run, facts);
+        return;
+      }
       const intact =
-        facts.request.open &&
         facts.request.title === run.request.title &&
         facts.request.body === run.request.body;
       if (!intact)
         publication.blocked =
           "Petición alterada o cerrada; se requiere intervención y una nueva autorización.";
-      if (facts.pull?.merged) {
-        publication.mergeSha = facts.pull.mergeSha;
-        if (
-          publication.acceptance &&
-          facts.pull.head === publication.acceptance.head &&
-          !publication.integratedAcceptance
-        )
-          publication.integratedAcceptance = publication.acceptance;
-        publication.blocked =
-          publication.integratedAcceptance &&
-          facts.pull.head === publication.integratedAcceptance.head
-            ? "Merge humano observado; comprobación de producción pendiente del siguiente incremento."
-            : "Incidencia: merge externo sin aceptación vigente acreditada.";
-      } else if (facts.pull && !facts.pull.open)
+      if (facts.pull && !facts.pull.open)
         publication.blocked =
           "PR cerrada sin integrar; se requiere intervención.";
       const changedHead = facts.pull?.head ?? facts.remoteHead;
@@ -614,6 +861,10 @@ export class CandidatePublication {
       const accepted = Boolean(publication.acceptance);
       delete publication.acceptance;
       publication.observationError = this.factory.clean(String(error)).text;
+      if (publication.production) {
+        publication.production.status = "intervention";
+        publication.production.error = publication.observationError;
+      }
       run.error = publication.observationError;
       run.status = "intervention";
       this.factory.record(run, "publication-error", run.error);

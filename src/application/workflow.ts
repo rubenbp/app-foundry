@@ -15,7 +15,11 @@ import type { AgentPort, FactoryConfig } from "../types.ts";
 import { verificationPlan } from "../domain/verification.ts";
 import { CandidateVerifier } from "../infrastructure/verification.ts";
 import type { ProcessPort } from "../infrastructure/workspace.ts";
-import { CandidatePublication, type PublicationPort } from "./publication.ts";
+import {
+  CandidatePublication,
+  type PublicationPort,
+  type ProductionPort,
+} from "./publication.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -24,6 +28,7 @@ export interface WorkflowOptions {
   secrets?: string[];
   verificationProcess?: ProcessPort;
   publication?: PublicationPort;
+  production?: ProductionPort;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
 }
 
@@ -63,6 +68,7 @@ export class Workflow {
         this.publication = new CandidatePublication(
           this.factory,
           options.publication,
+          options.production,
         );
       const reserved = this.ownership.reservation();
       if (!reserved && this.factory.active)
@@ -73,7 +79,8 @@ export class Workflow {
           throw new Error(
             "Reserved Ejecución missing from this data root; inspect ownership manually",
           );
-        if (run.status === "stopped") this.ownership.releaseRun(reserved);
+        if (run.status === "stopped" || run.status === "completed")
+          this.ownership.releaseRun(reserved);
         else if (run.status === "queued") {
           run.status = "intervention";
           run.phase = "preparation";
@@ -100,7 +107,10 @@ export class Workflow {
     this.polling = true;
     try {
       await this.verifyCandidate();
+      const publishing = this.factory.active;
       await this.publication?.poll();
+      if (publishing && this.view(publishing)?.status === "completed")
+        this.ownership.releaseRun(publishing);
       const issues = await this.github.ready(
         this.factory.config.managedProject!.repository,
       );
@@ -356,7 +366,10 @@ export class Workflow {
     if (this.closed) return;
     this.halt();
     const reserved = this.ownership.reservation();
-    if (reserved && this.view(reserved)?.status === "stopped")
+    if (
+      reserved &&
+      ["stopped", "completed"].includes(this.view(reserved)?.status ?? "")
+    )
       this.ownership.releaseRun(reserved);
     this.factory.close();
     this.ownership.close();

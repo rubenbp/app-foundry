@@ -92,13 +92,11 @@ test("an accepted merge preserves its accepted head and integration SHA across r
     await s.workflow.poll();
     s.comment();
     await s.workflow.poll();
-    s.facts.pull!.merged = true;
-    s.facts.pull!.open = false;
-    s.facts.pull!.mergeSha = "a".repeat(40);
+    s.merge();
     await s.workflow.poll();
-    assert.match(s.workflow.view(run.id)!.error!, /Merge humano observado/);
+    assert.equal(s.workflow.view(run.id)!.status, "checking_production");
     await s.workflow.poll();
-    assert.match(s.workflow.view(run.id)!.error!, /Merge humano observado/);
+    assert.equal(s.workflow.view(run.id)!.status, "checking_production");
     assert.equal(
       s.workflow.view(run.id)?.publication?.mergeSha,
       "a".repeat(40),
@@ -434,6 +432,108 @@ test("the Workflow publishes a verified candidate and only enables human merge a
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
     assert.equal(facts.status?.state, "pending");
     assert.equal(writes.filter((write) => write === "success").length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("an accepted squash merge waits for production, persists public evidence before issue closure and survives restart as completed", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    const candidate = s.facts.pull!.head;
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "checking_production");
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.mergeSha,
+      "a".repeat(40),
+    );
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.integratedAcceptance?.head,
+      candidate,
+    );
+    assert.equal(
+      s.writes.some((write) => write.kind === "close-issue"),
+      false,
+    );
+    s.productionReady();
+    await s.workflow.poll();
+    const completed = s.workflow.view(run.id)!;
+    assert.equal(completed.status, "completed");
+    assert.equal(completed.publication?.production?.servedHead, "a".repeat(40));
+    assert.ok(completed.publication?.production?.report?.url);
+    assert.ok(
+      s.workflow.output(
+        run.id,
+        completed.publication!.production!.evidencePartId!,
+      ),
+    );
+    assert.equal(s.workflow.factory.active, null);
+    assert.equal(
+      s.writes.filter((write) => write.kind === "close-issue").length,
+      1,
+    );
+    s.reopen();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+    assert.equal(s.workflow.factory.active, null);
+  } finally {
+    s.close();
+  }
+});
+
+test("production failure keeps public evidence and the issue open; later polling cannot silently resume", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.merge();
+    s.productionReady();
+    s.publicFailure(true);
+    await s.workflow.poll();
+    const failed = s.workflow.view(run.id)!;
+    assert.equal(failed.status, "intervention");
+    assert.ok(failed.publication?.production?.evidencePartId);
+    assert.match(
+      s.workflow.output(
+        run.id,
+        failed.publication!.production!.evidencePartId!,
+      )!,
+      /Wrong page/,
+    );
+    assert.equal(s.facts.request.open, true);
+    s.publicFailure(false);
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(
+      s.writes.some((write) => write.kind === "close-issue"),
+      false,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("merge without current human acceptance is an incident even when the issue was manually closed", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.merge();
+    s.productionReady();
+    s.facts.request.open = false;
+    await s.workflow.poll();
+    const observed = s.workflow.view(run.id)!;
+    assert.equal(observed.status, "intervention");
+    assert.equal(observed.publication?.mergeSha, "a".repeat(40));
+    assert.match(observed.error!, /Incidencia/);
+    assert.equal(observed.publication?.integratedAcceptance, undefined);
+    assert.equal(observed.publication?.production, undefined);
   } finally {
     s.close();
   }

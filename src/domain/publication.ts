@@ -1,3 +1,4 @@
+import type { Production } from "./production.ts";
 export interface PullCandidate {
   number: number;
   url: string;
@@ -6,6 +7,8 @@ export interface PullCandidate {
   open: boolean;
   merged: boolean;
   mergeSha?: string;
+  mergedAt?: number;
+  mergedBy?: string;
 }
 export interface ConversationComment {
   id: string;
@@ -58,6 +61,7 @@ export interface Publication {
   observationError: string | null;
   blocked?: string;
   mergeSha?: string;
+  production?: Production;
   integratedAcceptance?: NonNullable<Publication["acceptance"]>;
   recoveryRequired?: boolean;
   limitations: string[];

@@ -27,6 +27,8 @@ export type RunStatus =
   | "awaiting_preview"
   | "awaiting_review"
   | "awaiting_merge"
+  | "checking_production"
+  | "completed"
   | "intervention"
   | "stopped";
 export interface History {

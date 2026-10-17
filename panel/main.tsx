@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RequestDetails } from "./request.tsx";
 import { VerificationDetails } from "./verification.tsx";
+import { ProductionDetails } from "./production.tsx";
 import { PublicationDetails } from "./publication.tsx";
 import { Button } from "./components/button.tsx";
 import { poll } from "./polling.ts";
@@ -34,6 +35,8 @@ const labels: Record<RunStatus, string> = {
   awaiting_preview: "Verificado · Preview pendiente",
   awaiting_review: "Esperando revisión humana",
   awaiting_merge: "Esperando merge humano",
+  checking_production: "Comprobando producción",
+  completed: "Completada",
   intervention: "Requiere intervención",
   stopped: "Detenida",
 };
@@ -348,6 +351,7 @@ function App() {
               <RequestDetails run={run} />
               <VerificationDetails run={run} />
               <PublicationDetails run={run} />
+              <ProductionDetails run={run} />
               <section
                 className="health-grid"
                 aria-label="Antigüedad y procedencia de observaciones"

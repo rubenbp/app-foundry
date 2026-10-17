@@ -97,6 +97,16 @@ test("SDK reconciliation reaches messages beyond page 200 and refreshes existing
     if (url.pathname === "/api/session/s1/message") {
       const cursor = url.searchParams.get("cursor");
       cursors.push(cursor);
+      if (cursor && url.searchParams.has("order")) {
+        res.statusCode = 400;
+        res.end(
+          JSON.stringify({
+            name: "InvalidCursorError",
+            data: { message: "Cursor cannot be combined with order" },
+          }),
+        );
+        return;
+      }
       const message = (id: string, text: string, finished = false) => ({
         id,
         type: "assistant",

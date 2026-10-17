@@ -4,15 +4,21 @@ export function RequestDetails({ run }: { run: Run }) {
   if (!run.request) return null;
   const request = run.request;
   const current =
-    run.status === "queued"
-      ? "Cola"
-      : run.phase === "preparation"
-        ? "Preparación de la base"
-        : run.phase === "verification"
-          ? "Verificación"
-          : run.phase === "publication"
-            ? "Preview y aceptación"
-            : "Implementación";
+    run.status === "completed"
+      ? "Completada"
+      : run.publication?.mergeSha
+        ? "Producción"
+        : run.status === "awaiting_merge"
+          ? "Merge humano"
+          : run.status === "queued"
+            ? "Cola"
+            : run.phase === "preparation"
+              ? "Preparación de la base"
+              : run.phase === "verification"
+                ? "Verificación"
+                : run.phase === "publication"
+                  ? "Preview y aceptación"
+                  : "Implementación";
 
   return (
     <>
@@ -25,6 +31,9 @@ export function RequestDetails({ run }: { run: Run }) {
             "Implementación",
             "Verificación",
             "Preview y aceptación",
+            "Merge humano",
+            "Producción",
+            "Completada",
           ].map((phase) => (
             <li
               key={phase}

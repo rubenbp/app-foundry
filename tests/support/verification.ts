@@ -8,7 +8,10 @@ import { GitWorkspace, execute } from "../../src/infrastructure/workspace.ts";
 import type { ProcessPort } from "../../src/infrastructure/workspace.ts";
 import type { Fact, AgentPort } from "../../src/types.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
-import type { PublicationPort } from "../../src/application/publication.ts";
+import type {
+  PublicationPort,
+  ProductionPort,
+} from "../../src/application/publication.ts";
 
 export function verificationFixture(
   options: {
@@ -18,6 +21,8 @@ export function verificationFixture(
     commands?: string[];
     e2e?: ManagedProject["verification"]["e2e"];
     publication?: PublicationPort;
+    production?: ProductionPort;
+    body?: string;
   } = {},
 ) {
   const root = mkdtempSync(join(tmpdir(), "foundry-verify-"));
@@ -132,6 +137,7 @@ export function verificationFixture(
       workspace: new GitWorkspace(config.dataDir, processPort),
       verificationProcess: processPort,
       publication: options.publication,
+      production: options.production,
       github: {
         async ready() {
           return [];
@@ -158,7 +164,9 @@ export function verificationFixture(
           repository: project.repository,
           number: 1,
           title: "Accessible catalogue",
-          body: "## Acceptance criteria\n- Keep keyboard navigation.\n- Show the catalogue.",
+          body:
+            options.body ??
+            "## Acceptance criteria\n- Keep keyboard navigation.\n- Show the catalogue.",
           author: "owner",
           url: `https://github.com/${project.repository}/issues/1`,
           updatedAt: "2026-10-17T10:00:00Z",

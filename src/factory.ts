@@ -26,7 +26,11 @@ export class Factory {
     this.clean = sanitizer(this.secrets);
     this.store = new Store(config.dataDir);
     for (const run of this.store.list()) {
-      if (run.status !== "stopped" && run.status !== "queued") {
+      if (
+        run.status !== "stopped" &&
+        run.status !== "completed" &&
+        run.status !== "queued"
+      ) {
         run.status = "intervention";
         run.error =
           "Factory restarted. Work/process state uncertain; no task was resent. Inspect owned PID before recovery.";
@@ -204,7 +208,7 @@ export class Factory {
   ingest(id: string, fact: Fact, outputLimit = 65_536) {
     this.assertWritable();
     const run = this.view(id);
-    if (!run || run.status === "stopped") return;
+    if (!run || run.status === "stopped" || run.status === "completed") return;
     // Late agent observations cannot move an independently verified candidate back into editing.
     if (
       (run.phase === "verification" || run.phase === "publication") &&

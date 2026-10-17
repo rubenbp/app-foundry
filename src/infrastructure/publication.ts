@@ -6,7 +6,9 @@ import type {
   PublicationContext,
   PublicationFacts,
   PublicationPort,
+  ProductionPort,
 } from "../application/publication.ts";
+import { verifyPublicProduction } from "./public-production.ts";
 import { mergeContext } from "../domain/publication.ts";
 import type {
   ConversationComment,
@@ -100,6 +102,7 @@ export interface PreviewAccess {
   inspect(
     origin: string,
     context: PublicationContext,
+    target?: "preview" | "production",
   ): Promise<{ projectId: string; repository: string; head: string }>;
   servedHead(
     origin: string,
@@ -122,7 +125,11 @@ export class VercelPreviewAccess implements PreviewAccess {
     this.executable = executable;
     this.directory = directory;
   }
-  async inspect(origin: string, context: PublicationContext) {
+  async inspect(
+    origin: string,
+    context: PublicationContext,
+    target: "preview" | "production" = "preview",
+  ) {
     const host = new URL(previewOrigin(origin)).hostname;
     const team = context.project.publication.teamId;
     const query =
@@ -140,7 +147,9 @@ export class VercelPreviewAccess implements PreviewAccess {
     const meta = record(deployment.meta);
     if (
       previewOrigin(`https://${text(deployment.url)}`) !== origin ||
-      (deployment.target !== null && deployment.target !== "preview") ||
+      (target === "production"
+        ? deployment.target !== "production"
+        : deployment.target !== null && deployment.target !== "preview") ||
       deployment.readyState !== "READY"
     )
       throw new Error("Vercel deployment URL or environment mismatch");
@@ -279,6 +288,10 @@ export class GitHubPublication implements PublicationPort {
       base: text(base.ref),
       open: pull.state === "open",
       merged: pull.merged === true || typeof pull.merged_at === "string",
+      ...(pull.merged_at ? { mergedAt: timestamp(pull.merged_at) } : {}),
+      ...(pull.merged_by && record(pull.merged_by).type === "User"
+        ? { mergedBy: text(record(pull.merged_by).login) }
+        : {}),
       ...(pull.merge_commit_sha
         ? { mergeSha: sha(pull.merge_commit_sha) }
         : {}),
@@ -308,9 +321,16 @@ export class GitHubPublication implements PublicationPort {
       source,
     };
   }
-  private async preview(context: PublicationContext): Promise<Preview | null> {
+  private async deployment(
+    context: PublicationContext,
+    target: "preview" | "production" = "preview",
+  ): Promise<Preview | null> {
     const environment =
-      context.project.publication.previewEnvironment ?? "Preview";
+      target === "production"
+        ? (context.project.publication.productionEnvironment ?? "Production")
+        : (context.project.publication.previewEnvironment ?? "Preview");
+    if (typeof environment !== "string" || !environment)
+      throw new Error("Configured deployment environment required");
     const deployments = await this.pages(
       `repos/${context.repository}/deployments?sha=${context.head}&environment=${encodeURIComponent(environment)}&per_page=100`,
     );
@@ -358,7 +378,7 @@ export class GitHubPublication implements PublicationPort {
       servedHead: null,
     };
     if (state !== "success" || !preview.url) return preview;
-    const identity = await this.access.inspect(preview.url, context);
+    const identity = await this.access.inspect(preview.url, context, target);
     preview.projectId = identity.projectId;
     if (
       identity.head !== context.head ||
@@ -368,6 +388,7 @@ export class GitHubPublication implements PublicationPort {
       throw new Error(
         "Vercel preview identity does not match repository, project and candidate",
       );
+    if (target === "production") return preview;
     const served = await this.access.servedHead(preview.url, context);
     preview.access = served.access;
     preview.servedHead = served.head;
@@ -379,25 +400,27 @@ export class GitHubPublication implements PublicationPort {
   ): Promise<PublicationFacts> {
     const path = `repos/${context.repository}`;
     const owner = context.repository.split("/")[0];
-    const [requestValue, pulls, refs, issueComments, preview] =
-      await Promise.all([
-        this.api(`${path}/issues/${context.issue}`),
-        this.pages(
-          `${path}/pulls?state=all&head=${encodeURIComponent(`${owner}:${context.workspace.branch}`)}&base=${encodeURIComponent(context.project.baseBranch)}&per_page=100`,
-        ),
-        this.pages(
-          `${path}/git/matching-refs/heads/${encodeURIComponent(context.workspace.branch)}`,
-        ),
-        this.pages(`${path}/issues/${context.issue}/comments?per_page=100`),
-        options.preview ? this.preview(context) : Promise.resolve(null),
-      ]);
+    const [requestValue, pulls, refs, issueComments] = await Promise.all([
+      this.api(`${path}/issues/${context.issue}`),
+      this.pages(
+        `${path}/pulls?state=all&head=${encodeURIComponent(`${owner}:${context.workspace.branch}`)}&base=${encodeURIComponent(context.project.baseBranch)}&per_page=100`,
+      ),
+      this.pages(
+        `${path}/git/matching-refs/heads/${encodeURIComponent(context.workspace.branch)}`,
+      ),
+      this.pages(`${path}/issues/${context.issue}/comments?per_page=100`),
+    ]);
     const request = record(requestValue);
     const candidates = pulls.map((value) => this.pull(value, context));
     if (candidates.length > 1)
       throw new Error(
         "Multiple PRs for the execution branch; inspect manually",
       );
-    const pull = candidates[0] ?? null;
+    let pull = candidates[0] ?? null;
+    if (pull?.merged)
+      pull = this.pull(await this.api(`${path}/pulls/${pull.number}`), context);
+    const preview =
+      options.preview && !pull?.merged ? await this.deployment(context) : null;
     const ref = refs
       .map(record)
       .find((value) => value.ref === `refs/heads/${context.workspace.branch}`);
@@ -448,6 +471,37 @@ export class GitHubPublication implements PublicationPort {
         : null,
     };
   }
+  readonly production: ProductionPort = {
+    inspect: (context, integratedSha) =>
+      this.deployment({ ...context, head: integratedSha }, "production"),
+    verify: (context, integratedSha, checks) =>
+      verifyPublicProduction(this.root, context, integratedSha, checks),
+    comment: async (context, body) =>
+      this.conversation(
+        await this.api(
+          `repos/${context.repository}/issues/${context.issue}/comments`,
+          { body },
+        ),
+        context,
+        "issue",
+        context.issue,
+      ),
+    closeIssue: async (context) => {
+      await this.command(
+        "gh",
+        [
+          "api",
+          `repos/${context.repository}/issues/${context.issue}`,
+          "--method",
+          "PATCH",
+          "--input",
+          "-",
+        ],
+        { state: "closed", state_reason: "completed" },
+      );
+    },
+  };
+
   private async git(
     context: PublicationContext,
     args: string[],

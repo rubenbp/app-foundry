@@ -85,11 +85,29 @@ export function PublicationDetails({ run }: { run: Run }) {
         </p>
       )}
       <h3>Aceptación del resultado</h3>
-      {publication.acceptance ? (
+      {(publication.acceptance ?? publication.integratedAcceptance) ? (
         <>
-          <p>Aceptación vigente de {publication.acceptance.author}.</p>
-          <p>SHA aceptado: {publication.acceptance.head}</p>
-          <p>Preview aceptada: {publication.acceptance.preview}</p>
+          <p>
+            {publication.integratedAcceptance
+              ? "Aceptación integrada de "
+              : "Aceptación vigente de "}
+            {
+              (publication.acceptance ?? publication.integratedAcceptance)!
+                .author
+            }
+            .
+          </p>
+          <p>
+            SHA aceptado:{" "}
+            {(publication.acceptance ?? publication.integratedAcceptance)!.head}
+          </p>
+          <p>
+            Preview aceptada:{" "}
+            {
+              (publication.acceptance ?? publication.integratedAcceptance)!
+                .preview
+            }
+          </p>
         </>
       ) : (
         <p>
@@ -103,7 +121,9 @@ export function PublicationDetails({ run }: { run: Run }) {
           ready-to-merge favorable.
         </p>
       ) : null}
-      {publication.report && !publication.acceptance ? (
+      {publication.report &&
+      !publication.acceptance &&
+      !publication.mergeSha ? (
         <p>
           Acción pendiente: revisa el informe y responde en GitHub con el
           ejemplo de aceptación mostrado allí.
@@ -117,12 +137,6 @@ export function PublicationDetails({ run }: { run: Run }) {
       ) : null}
       {publication.blocked ? (
         <p className="notice danger">{publication.blocked}</p>
-      ) : null}
-      {publication.mergeSha ? (
-        <p>
-          Commit integrado: {publication.mergeSha}. La publicación en producción
-          todavía requiere comprobación.
-        </p>
       ) : null}
       <details>
         <summary>Comentarios procesados y límites</summary>

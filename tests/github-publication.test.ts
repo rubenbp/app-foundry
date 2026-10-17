@@ -9,12 +9,16 @@ import { configureMergeProtection } from "../src/infrastructure/merge-protection
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/workspace.ts";
 
-test("the Workflow crosses the real GitHub/Vercel adapters without exposing credentials or sending merge and closes commands", async () => {
+test("the Workflow crosses the real GitHub/Vercel adapters without exposing credentials and only closes after public production proof", async () => {
   let remoteHead: string | null = null;
   let pull: Record<string, unknown> | null = null;
   let deployment = false;
+  let integrated = false;
+  let requestOpen = true;
+  const integrationSha = "a".repeat(40);
   let time = Date.now();
   const comments: Record<string, unknown>[] = [];
+  const issueComments: Record<string, unknown>[] = [];
   const statuses: Record<string, unknown>[] = [];
   const writes: string[] = [];
   const origin = "https://catalogue-random.vercel.app";
@@ -32,12 +36,12 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
       return JSON.stringify({
         projectId: access === "wrong project" ? "other" : "catalogue",
         url: new URL(origin).hostname,
-        target: null,
+        target: integrated ? "production" : null,
         readyState: "READY",
         meta: {
           githubCommitOrg: s.project.repository.split("/")[0],
           githubCommitRepo: s.project.repository.split("/")[1],
-          githubCommitSha: remoteHead,
+          githubCommitSha: integrated ? integrationSha : remoteHead,
         },
       });
     }
@@ -72,17 +76,24 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
         };
         return JSON.stringify(pull);
       }
+      if (path === `${prefix}/issues/1`) {
+        assert.ok(context.publication?.production?.report);
+        assert.equal(input.state, "closed");
+        requestOpen = false;
+        return JSON.stringify({ state: "closed" });
+      }
       if (path.endsWith("/comments")) {
-        const id = comments.length + 1;
+        const issue = path === `${prefix}/issues/1/comments`;
+        const id = comments.length + issueComments.length + 1;
         const comment = {
           id,
-          html_url: `https://github.com/${s.project.repository}/pull/2#issuecomment-${id}`,
+          html_url: `https://github.com/${s.project.repository}/${issue ? "issues/1" : "pull/2"}#issuecomment-${id}`,
           body: input.body,
           user: { login: "shared", type: "User" },
           created_at: new Date((time += 1000)).toISOString(),
           updated_at: new Date(time).toISOString(),
         };
-        comments.push(comment);
+        (issue ? issueComments : comments).push(comment);
         return JSON.stringify(comment);
       }
       if (path.includes("/statuses/")) {
@@ -96,8 +107,9 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
       return JSON.stringify({
         title: context.request!.title,
         body: context.request!.body,
-        state: "open",
+        state: requestOpen ? "open" : "closed",
       });
+    if (path === `${prefix}/pulls/2`) return JSON.stringify(pull);
     if (path.includes("/pulls?")) return paged(pull ? [pull] : []);
     if (path.includes("/git/matching-refs/"))
       return paged(
@@ -110,7 +122,7 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
             ]
           : [],
       );
-    if (path.includes("/issues/1/comments?")) return paged([]);
+    if (path.includes("/issues/1/comments?")) return paged(issueComments);
     if (path.includes("/issues/2/comments?")) return paged(comments);
     if (path.includes("/commits/")) {
       assert.ok(remoteHead, "unpublished commit must not be queried");
@@ -122,8 +134,9 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
           ? [
               {
                 id: 9,
-                sha: remoteHead,
-                environment: "Preview",
+                sha: integrated ? integrationSha : remoteHead,
+                environment: integrated ? "Production" : "Preview",
+                production_environment: false,
                 repository_url: `https://api.github.com/repos/${s.project.repository}`,
                 creator: { login: "vercel[bot]" },
               },
@@ -157,6 +170,23 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
   };
   // Construct the adapter after the fixture path is available through a lazy port.
   const s = verificationFixture({
+    production: {
+      inspect: (...args) => adapter.production.inspect(...args),
+      comment: (...args) => adapter.production.comment(...args),
+      closeIssue: (...args) => adapter.production.closeIssue(...args),
+      verify: async (context, head, checks) => ({
+        origin: context.project.publication.productionOrigin,
+        servedHead: head,
+        browser: "Chrome HTTP boundary double",
+        screenshots: [],
+        checks: checks.map((check) => ({
+          check,
+          observed: "Catalogue visible",
+          passed: true,
+        })),
+      }),
+    },
+    body: '## Acceptance criteria\n- Catalogue visible.\n\n## Production checks\n```factory-production\n[{"criterion":1,"path":"/","selector":"h1","text":"Catalogue"}]\n```',
     publication: {
       inspect: (...args) => adapter.inspect(...args),
       push: (...args) => adapter.push(...args),
@@ -210,6 +240,23 @@ test("the Workflow crosses the real GitHub/Vercel adapters without exposing cred
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
     assert.equal(statuses[0].state, "success");
     assert.equal(writes.filter((write) => write === "push").length, 1);
+    integrated = true;
+    Object.assign(pull!, {
+      state: "closed",
+      merged: true,
+      merged_at: new Date(time + 1000).toISOString(),
+      merged_by: { login: "maintainer", type: "User" },
+      merge_commit_sha: integrationSha,
+    });
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "completed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(requestOpen, false);
+    assert.match(String(issueComments[0].body), /Commit integrado: a{40}/);
+    assert.ok(writes.includes(`repos/${s.project.repository}/issues/1`));
   } finally {
     s.close();
   }

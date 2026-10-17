@@ -241,7 +241,7 @@ export class Observer {
           );
         cursors.add(next);
         page = await this.client.message.list(
-          { sessionID: this.sessionId, limit: 200, order: "asc", cursor: next },
+          { sessionID: this.sessionId, limit: 200, cursor: next },
           options,
         );
       }

@@ -650,3 +650,9 @@ summary {
   background: #edf2ff;
   color: #28428b;
 }
+
+.badge.checking_production,
+.badge.completed {
+  background: #e2f2eb;
+  color: #235d46;
+}

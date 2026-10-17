@@ -41,14 +41,16 @@ if (command === "serve") {
     .filter(([key]) => /KEY|TOKEN|SECRET|PASSWORD/.test(key))
     .map(([, value]) => value!)
     .filter(Boolean);
+  const publication = new GitHubPublication(config.dataDir, {
+    vercelCli: config.vercelCli,
+  });
   const workflow = config.managedProject
     ? createWorkflow(config, {
         createAgent: (config) => new OpenCode(config),
         workspace: new GitWorkspace(config.dataDir),
         github: new GitHub(),
-        publication: new GitHubPublication(config.dataDir, {
-          vercelCli: config.vercelCli,
-        }),
+        publication,
+        production: publication.production,
         secrets,
       })
     : null;
