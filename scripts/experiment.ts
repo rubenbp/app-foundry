@@ -13,18 +13,18 @@ import type { Run } from "../src/types.ts";
 // Explicit opt-in only. This script calls a real paid model; it is never part of npm test.
 if (!process.argv.includes("--real")) throw new Error("Pass --real to authorize the bounded model experiment");
 const source = process.env.FACTORY_EXPERIMENT_PROJECT;
-if (!source) throw new Error("Set FACTORY_EXPERIMENT_PROJECT to a prepared local Managed project repository");
+if (!source) throw new Error("Set FACTORY_EXPERIMENT_PROJECT to a prepared Managed project repository (local path or public HTTPS URL)");
 const root = mkdtempSync(join(tmpdir(), "foundry-experiment-"));
 const projectDir = join(root, "project");
-const clone = spawnSync("git", ["-c", "core.hooksPath=/dev/null", "clone", "--local", "--no-hardlinks", source, projectDir], { encoding: "utf8" });
+const clone = spawnSync("git", ["-c", "core.hooksPath=/dev/null", "clone", ...(source.startsWith("https://") ? ["--depth=1"] : ["--local", "--no-hardlinks"]), source, projectDir], { encoding: "utf8" });
 if (clone.status !== 0) throw new Error("Could not create disposable clone");
 const dataDir = join(root, "data"); mkdirSync(dataDir, { mode: 0o700 });
-const config = { dataDir, projectDir, provider: "google", model: "gemini-3.8-flash", auth: "environment" as const };
+const config = { dataDir, projectDir, provider: "openai", model: "gpt-6-luna", auth: "opencode" as const, opencodeCli: process.env.FACTORY_OPENCODE_CLI ?? "/opt/homebrew/bin/opencode" };
 const agent = new OpenCode(config);
 let factory = new Factory(config, agent, { secrets: [process.env.GEMINI_API_KEY ?? ""] });
 const server = panelServer(factory); server.listen(0, "127.0.0.1"); await once(server, "listening");
 const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-const evidence: Record<string, unknown> = { at: new Date().toISOString(), node: process.version, root, model: "google/gemini-3.8-flash", auth: "environment", panel: origin, cases: [] };
+const evidence: Record<string, unknown> = { at: new Date().toISOString(), node: process.version, root, model: "openai/gpt-6-luna", auth: "opencode-oauth", panel: origin, cases: [] };
 const cases = evidence.cases as unknown[];
 const summarize = (run: Run) => ({
   id: run.id, status: run.status, startedAt: run.startedAt, endedAt: run.endedAt, sessionId: run.sessionId,

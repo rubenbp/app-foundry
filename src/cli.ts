@@ -1,6 +1,6 @@
 import { createServer, request } from "node:http";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, unlinkSync, existsSync, chmodSync } from "node:fs";
+import { readFileSync, unlinkSync, existsSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { once } from "node:events";
 import { readConfig } from "./config.ts";

@@ -14,7 +14,7 @@ test("panel observes persisted API state, pending work, text outputs and history
     async start(sink) { emit = sink; return { pid: 123, version: "1.19.3", configuration: { model: "google/gemini-2.5-flash" } }; },
     async create() { return "s1"; }, async send() {}, async stop() { return { exited: true, detail: "Fake owned process absent; remote work unknown" }; },
   };
-  const config = { dataDir: root, projectDir: root + "/project", provider: "google", model: "gemini-2.5-flash", auth: "environment" as const };
+  const config = { dataDir: root, projectDir: root + "/project", provider: "google", model: "gemini-2.5-flash", auth: "opencode" as const };
   let factory = new Factory(config, agent, { secrets: ["fictional-secret-123"] });
   const run = await factory.run("Inspeccionar el paquete del Managed project");
   emit({ type: "status", status: "busy" });
@@ -59,7 +59,7 @@ test("local connection and automatic activity warnings use separate clocks and n
   const root = mkdtempSync(join(tmpdir(), "foundry-clock-"));
   let sends = 0;
   let emit: (fact: Fact) => void = () => {};
-  const factory = new Factory({ dataDir: root, projectDir: root + "/project", provider: "google", model: "gemini-2.5-flash", auth: "environment" }, {
+  const factory = new Factory({ dataDir: root, projectDir: root + "/project", provider: "google", model: "gemini-2.5-flash", auth: "opencode" }, {
     async start(sink) { emit = sink; return { pid: 123, version: "1.19.3", configuration: {} }; }, async create() { return "s1"; }, async send() { sends++; }, async stop() { return { exited: true, detail: "test" }; },
   });
   await factory.run("Observar sin reintentar");

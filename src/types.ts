@@ -3,7 +3,8 @@ export interface FactoryConfig {
   projectDir: string;
   provider: string;
   model: string;
-  auth: "environment";
+  auth: "opencode";
+  opencodeCli?: string;
 }
 
 export type RunStatus = "starting" | "running" | "waiting" | "awaiting_verification" | "intervention" | "stopped";
@@ -51,7 +52,7 @@ export type Fact =
   | { type: "process-exit"; detail: string };
 
 export interface AgentPort {
-  start(emit: (fact: Fact) => void): Promise<NonNullable<Run["process"]>>;
+  start(emit: (fact: Fact) => void, protect?: (secrets: string[]) => void): Promise<NonNullable<Run["process"]>>;
   create(): Promise<string>;
   send(sessionId: string, task: string): Promise<void>;
   stop(sessionId: string | null): Promise<{ exited: boolean; detail: string }>;
@@ -66,9 +67,9 @@ export function consumption(usage: Usage[]) {
     estimatedCost: priced.length ? priced.reduce((sum, u) => sum + u.sdkCost!, 0) : null,
     apiEquivalent: null,
     accreditedSpend: null,
-    source: "OpenCode SDK 1.19.3 / assistant message identity",
+    source: "OpenCode HTTP SDK 2.0.32 / assistant message identity",
     currency: "USD",
-    modality: "API / environment credential",
+    modality: "OpenCode OAuth / subscription; no invoice attribution",
     coverage: usage.length && withTokens.length === usage.length && usage.every(u => u.completed) ? "observed messages; provider completeness unverified" : "partial / unavailable",
     tariff: "OpenCode effective catalog; tariff version unavailable",
   };

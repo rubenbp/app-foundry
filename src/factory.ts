@@ -9,6 +9,7 @@ export class Factory {
   agent: AgentPort;
   now: () => number;
   clean: ReturnType<typeof sanitizer>;
+  secrets: string[];
   active: string | null = null;
   fault: string | null = null;
   stopping = new Set<string>();
@@ -16,7 +17,8 @@ export class Factory {
     this.config = config;
     this.agent = agent;
     this.now = options.now ?? Date.now;
-    this.clean = sanitizer(options.secrets);
+    this.secrets = options.secrets ?? [];
+    this.clean = sanitizer(this.secrets);
     this.store = new Store(config.dataDir);
     for (const run of this.store.list()) {
       if (run.status !== "stopped") {
@@ -54,7 +56,9 @@ export class Factory {
     this.persist(run);
     this.active = run.id;
     try {
-      const process = await this.agent.start(fact => this.ingest(run.id, fact));
+      const process = await this.agent.start(fact => this.ingest(run.id, fact), secrets => {
+        this.secrets.push(...secrets); this.clean = sanitizer(this.secrets);
+      });
       this.assertRunning(run.id);
       Object.assign(run, this.view(run.id));
       run.process = JSON.parse(this.clean(JSON.stringify(process)).text);
@@ -73,7 +77,7 @@ export class Factory {
   ingest(id: string, fact: Fact) {
     this.assertWritable();
     const run = this.view(id);
-    if (!run) return;
+    if (!run || run.status === "stopped") return;
     const at = this.now();
     const text = "text" in fact ? this.clean(fact.text) : null;
     if (fact.type === "status" && run.agentStatus !== fact.status) {
@@ -102,7 +106,7 @@ export class Factory {
         else if (run.status === "waiting") run.status = "running";
         this.record(run, "pending", pending.length ? pending.map(p => `${p.kind}: ${p.text}`).join("\n") : "No pending requests");
       }
-    } else if (fact.type === "finished" && run.status !== "intervention" && run.status !== "stopped") {
+    } else if (fact.type === "finished" && run.status !== "intervention") {
       run.result = text!.text; run.status = "awaiting_verification";
       if (!run.endedAt) { run.endedAt = at; this.record(run, "result", "Agent finished. Result unverified; no acceptance or publication accredited."); }
     } else if (fact.type === "error") {

@@ -19,7 +19,7 @@ function setup() {
     async send() { sends++; },
     async stop() { stops++; return { exited: true, detail: "Owned process exited; remote effects unknown" }; },
   };
-  const config = { dataDir: root, projectDir: root + "/project", provider: "google", model: "gemini-2.5-flash", auth: "environment" as const };
+  const config = { dataDir: root, projectDir: root + "/project", provider: "google", model: "gemini-2.5-flash", auth: "opencode" as const };
   const factory = new Factory(config, agent, { secrets: ["fictional-secret-123"], now: () => 1000 });
   return { root, config, agent, factory, emit: (fact: Fact) => sink(fact), sends: () => sends, stops: () => stops };
 }
@@ -67,6 +67,15 @@ test("stopping while session creation is in flight never sends the task", async 
   const run = await pending;
   assert.equal(run.status, "stopped");
   assert.equal(s.sends(), 0);
+  s.factory.close();
+});
+
+test("late observations cannot revive a stopped Ejecución", async () => {
+  const s = setup();
+  const run = await s.factory.run("A bounded task");
+  await s.factory.stop(run.id);
+  s.emit({ type: "pending", pending: [{ id: "late", kind: "permission", text: "late edit" }] });
+  assert.equal(s.factory.view(run.id)!.status, "stopped");
   s.factory.close();
 });
 

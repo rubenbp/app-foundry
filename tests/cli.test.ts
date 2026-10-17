@@ -10,7 +10,7 @@ test("CLI rejects a second instance, preserves uncertain work after restart, and
   const root = mkdtempSync(join(tmpdir(), "foundry-cli-"));
   const project = join(root, "project"); mkdirSync(project);
   const config = join(root, "config.json");
-  writeFileSync(config, JSON.stringify({ dataDir: join(root, "data"), projectDir: project, provider: "google", model: "gemini-3.8-flash", auth: "environment" }));
+  writeFileSync(config, JSON.stringify({ dataDir: join(root, "data"), projectDir: project, provider: "openai", model: "gpt-6-luna", auth: "opencode", opencodeCli: "/nonexistent/opencode-auth-test" }));
   const env = { PATH: process.env.PATH, HOME: root, TMPDIR: tmpdir() };
   const launch = (...args: string[]) => spawn(process.execPath, [resolve("src/cli.ts"), ...args, "--config", config], { env, stdio: ["ignore", "pipe", "pipe"] });
   const ready = (child: ChildProcess) => new Promise<string>((resolve, reject) => {
@@ -29,7 +29,7 @@ test("CLI rejects a second instance, preserves uncertain work after restart, and
     await once(admission, "exit");
     const snapshot = await fetch(`${origin}/api/view`).then(r => r.json());
     assert.equal(snapshot.run.status, "intervention");
-    assert.match(snapshot.run.error, /GEMINI_API_KEY/);
+    assert.match(snapshot.run.error, /OAuth export unavailable/);
     const id = snapshot.run.id;
     const exit = once(child, "exit"); child.kill("SIGTERM"); await exit;
     child = launch("serve", "--port", "0");

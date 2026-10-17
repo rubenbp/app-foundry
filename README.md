@@ -4,10 +4,11 @@ Factory local para ejecutar una tarea acotada con OpenCode y observarla desde un
 
 ## Preparación
 
-Requiere macOS, Node **24.21.0**, npm **11.19.0** y `GEMINI_API_KEY` disponible en el entorno. No pongas la credencial en un archivo del proyecto ni en la tarea. El adaptador entrega esa misma credencial a la variable `GOOGLE_GENERATIVE_AI_API_KEY` que requiere el proveedor. OpenCode y `@opencode-ai/sdk` están fijados en **1.19.3** mediante `package-lock.json`; se ejecuta el binario local, no el instalado globalmente.
+Requiere macOS, Node **24.21.0**, npm **11.19.0** y una cuenta OpenAI OAuth activa en OpenCode v2. No pongas credenciales en archivos del proyecto ni en la tarea. `@opencode/cli` y el SDK HTTP `@opencode/client` están fijados en **2.0.32** mediante `package-lock.json`. La Factory ejecuta el binario local y comprueba su versión y PID mediante `/api/info`. La ruta `opencodeCli` de configuración solo sirve para exportar en memoria la cuenta OAuth activa existente; no cambia la cuenta global. El método OAuth y sus metadatos se conservan al importarlos en el servidor propio.
 
 ```sh
 npm ci
+node node_modules/@opencode/cli/postinstall.mjs
 npm run typecheck
 npm run build
 cp config/factory.example.json factory.local.json
@@ -15,7 +16,7 @@ cp config/factory.example.json factory.local.json
 
 Edita las dos rutas absolutas de `factory.local.json`. `projectDir` apunta al clon preparado del Managed project. `dataDir` debe ser una carpeta dedicada, persistente durante la evaluación y separada tanto del código de Factory como del clon. Para la preparación usa un clon desechable de Rebobina, sin archivos de credenciales. La configuración de producto de Rebobina permanece en `config/managed-projects/rebobina.json`.
 
-El único proveedor preparado es Google mediante API. El modelo del experimento es `gemini-3.8-flash`; `gemini-2.5-flash` devolvió 404 en esta cuenta. Consulta el [modelo oficial](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash). Una llamada real puede generar gasto; ninguna prueba automatizada llama a modelos.
+El único proveedor preparado es OpenAI mediante la cuenta OAuth de OpenCode. El modelo elegido por el usuario es [`gpt-6-luna`](https://developers.openai.com/api/docs/models/gpt-6-luna), con variante `low`. No hay cambio automático de modelo ni proveedor. OAuth consume la modalidad y cuota de esa cuenta; un coste SDK cero no acredita gratuidad. Ninguna prueba automatizada llama a modelos.
 
 ## Uso
 
@@ -30,13 +31,13 @@ npm start -- run --config factory.local.json --task-file /tmp/factory-task.txt
 npm start -- stop --config factory.local.json --id ID_DE_EJECUCION
 ```
 
-`run` devuelve la identidad y estado persistidos. `stop` exige esa identidad, solicita abortar la sesión, envía SIGTERM al grupo propio y, si sigue presente, SIGKILL. Comprueba su ausencia mediante señal 0. Registra por separado la incertidumbre sobre trabajo del proveedor y efectos ya realizados. Ctrl-C intenta la misma parada y cierra la Factory.
+`run` devuelve la identidad y estado persistidos. `stop` exige esa identidad, solicita interrumpir la sesión, envía SIGTERM al grupo propio y, si sigue presente, SIGKILL. Comprueba su ausencia mediante señal 0. Registra por separado la incertidumbre sobre trabajo del proveedor y efectos ya realizados. Ctrl-C intenta la misma parada y cierra la Factory.
 
 Solo se admite una Ejecución activa. Dos procesos no pueden ocupar la misma raíz ni el mismo Managed project. Los comandos operativos usan un socket Unix con modo 0600. El servidor HTTP se enlaza a `127.0.0.1`, valida Host/origen y solo admite GET. El panel no concede permisos, responde preguntas ni acepta resultados. Las decisiones humanas permanecen en GitHub. Para este incremento, una solicitud pendiente se inspecciona y se detiene; la continuación guiada llegará con el workflow posterior.
 
 ## Observación y datos
 
-- El adaptador abre eventos antes de enviar la tarea. Conserva transiciones breves y reconcilia inmediatamente y cada 2 segundos, con timeout de 5 segundos y sin solapes. Una interrupción de eventos queda marcada porque OpenCode no ofrece replay. Cada consulta reconcilia hasta 200 mensajes; alcanzar ese límite marca cobertura parcial.
+- El adaptador usa exclusivamente la API v2, abre eventos antes de enviar la tarea y conserva los formularios/preguntas y permisos pendientes. Conserva transiciones breves y reconcilia inmediatamente y cada 2 segundos, con timeout de 5 segundos y sin solapes. Una interrupción de eventos queda marcada sin asumir replay del stream global. Cada consulta reconcilia hasta 200 mensajes; alcanzar ese límite marca cobertura parcial.
 - El panel consulta inmediatamente y programa la siguiente consulta 2 segundos después de terminar la anterior. Separa respuesta local, observación correcta de OpenCode y actividad del agente. Avisa a los 30 segundos sin conexión y a los 2 minutos sin actividad automática; los avisos no reenvían tareas. Una espera humana suprime el aviso de inactividad automática.
 - SQLite guarda instantáneas transaccionales con historial, Intento, sesión, PID, configuración efectiva seleccionada, mensajes identificados y consumo. Los textos extensos se guardan como artefactos atómicos y se consultan bajo demanda. El saneamiento elimina secretos conocidos del entorno y patrones de credenciales antes de escribir. No se archivan respuestas SDK crudas, logs nativos ni metadatos arbitrarios. Se marcan omisiones, truncamientos y lagunas; React presenta las salidas como texto.
 - El consumo reemplaza la medida de cada mensaje por identidad; no suma además agregados de sesión. Los tokens ausentes y ceros sin base permanecen no disponibles. La estimación positiva del SDK se expresa en USD, con fuente, modalidad y cobertura; no es factura. Equivalente API y gasto acreditado permanecen no disponibles. La Factory no mantiene otra calculadora de tarifas.
@@ -61,4 +62,4 @@ Experimento real opcional, separado de las pruebas:
 FACTORY_EXPERIMENT_PROJECT=/absolute/path/to/prepared-repository npm run experiment -- --real
 ```
 
-Crea un clon local desechable, lee `package.json`, observa una solicitud de edición sin concederla y detiene sus procesos. El guard de 90 segundos por caso solo acota este experimento; no implementa los límites del workflow. Conserva el historial saneado fuera del código y una [ficha breve de evidencia](docs/evidence/opencode-panel/README.md).
+Acepta una ruta local o URL HTTPS pública y crea un clon desechable, lee `package.json`, observa una solicitud de edición sin concederla y detiene sus procesos. El guard de 90 segundos por caso solo acota este experimento; no implementa los límites del workflow. Conserva el historial saneado fuera del código y una [ficha breve de evidencia](docs/evidence/opencode-panel/README.md).
