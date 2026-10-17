@@ -1,0 +1,7 @@
+{
+  "projectDir": "/absolute/path/to/managed-project-clone",
+  "dataDir": "/absolute/path/to/factory-data",
+  "provider": "google",
+  "model": "gemini-3.8-flash",
+  "auth": "environment"
+}

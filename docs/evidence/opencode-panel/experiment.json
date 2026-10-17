@@ -1,0 +1,137 @@
+{
+  "at": "2026-10-16T20:19:52.990Z",
+  "node": "v24.21.0",
+  "root": "/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-experiment-kjdH6R",
+  "model": "google/gemini-3.8-flash",
+  "auth": "environment",
+  "panel": "http://127.0.0.1:49344",
+  "cases": [
+    {
+      "kind": "read",
+      "run": {
+        "id": "f9550cb3-69d9-42e9-848c-75c2c62782c7",
+        "status": "running",
+        "startedAt": 1792181992992,
+        "endedAt": null,
+        "sessionId": "ses_eb9a0fd45ffeR72mMfYhV6B978",
+        "process": {
+          "pid": 97359,
+          "version": "1.19.3",
+          "configuration": {
+            "node": "v24.21.0",
+            "sdk": "1.19.3",
+            "model": "google/gemini-3.8-flash",
+            "auth": "GEMINI_API_KEY environment (omitted)",
+            "permission": {
+              "*": "deny",
+              "read": {
+                "*": "allow",
+                "*.env": "deny",
+                "*.env.*": "deny",
+                "*auth.json": "deny",
+                "*.pem": "deny"
+              },
+              "glob": "allow",
+              "grep": "ask",
+              "edit": "ask",
+              "bash": "deny",
+              "question": "allow",
+              "external_directory": "deny",
+              "task": "deny",
+              "skill": "deny"
+            },
+            "agent": "factory",
+            "projectDir": "/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-experiment-kjdH6R/project",
+            "server": "http://127.0.0.1:4096",
+            "inheritedEnvironment": "reduced",
+            "omissions": "credentials, provider configuration, native logs, arbitrary metadata"
+          }
+        },
+        "lastObservation": 1792182082775,
+        "lastActivity": 1792181994229,
+        "result": null,
+        "error": null,
+        "pending": [],
+        "parts": [
+          {
+            "id": "prt_1465f02e0001sbEqMdbX3fijVy",
+            "kind": "text",
+            "label": "text",
+            "truncated": false
+          }
+        ],
+        "usage": {
+          "observedTokens": null,
+          "estimatedCost": null,
+          "apiEquivalent": null,
+          "accreditedSpend": null,
+          "source": "OpenCode SDK 1.19.3 / assistant message identity",
+          "currency": "USD",
+          "modality": "API / environment credential",
+          "coverage": "partial / unavailable",
+          "tariff": "OpenCode effective catalog; tariff version unavailable"
+        },
+        "transitions": [
+          {
+            "at": 1792181994229,
+            "kind": "opencode-status",
+            "text": "busy"
+          }
+        ],
+        "gaps": [
+          "Only selected SDK fields retained; authentication, reasoning and arbitrary metadata omitted"
+        ]
+      },
+      "apiObservedRun": true
+    },
+    {
+      "kind": "stop-after-read",
+      "id": "f9550cb3-69d9-42e9-848c-75c2c62782c7",
+      "status": "stopped",
+      "processAbsent": true,
+      "detail": "Abort acknowledged. Owned process group 97359 absent. Provider-side work/effects cannot be proven stopped or reverted."
+    }
+  ],
+  "error": "Error: Read task did not complete; inspect sanitized evidence",
+  "previousExperiments": [
+    {
+      "at": "2026-10-16T20:17:20.180Z",
+      "error": "Effective configuration comparison rejected key ordering before any model call; corrected with structural comparison",
+      "runId": "ac9db4a4-2f7e-4214-b684-31eadb280b6d",
+      "processAbsent": true
+    },
+    {
+      "at": "2026-10-16T20:17:46.854Z",
+      "error": "Error: Read task did not complete; inspect sanitized evidence",
+      "cases": [
+        {
+          "kind": "read",
+          "id": "74ab1eb2-2a09-4d0b-890b-747980e34231",
+          "status": "intervention",
+          "error": "ProviderAuthError: required GOOGLE_GENERATIVE_AI_API_KEY was missing (mapping corrected)"
+        },
+        {
+          "kind": "stop-after-read",
+          "id": "74ab1eb2-2a09-4d0b-890b-747980e34231",
+          "status": "stopped",
+          "error": "ProviderAuthError: required GOOGLE_GENERATIVE_AI_API_KEY was missing (mapping corrected)"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-16T20:18:24.427Z",
+      "error": "Error: Read task did not complete; inspect sanitized evidence",
+      "cases": [
+        {
+          "kind": "read",
+          "id": "710a6bab-b91a-4162-97f1-9d6901c35f86",
+          "status": "intervention",
+          "error": "Google API 404: gemini-2.5-flash no longer available to new users; provider recommends gemini-3.8-flash"
+        },
+        {
+          "kind": "stop-after-read"
+        }
+      ]
+    }
+  ]
+}
