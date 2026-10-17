@@ -8,10 +8,14 @@ export interface ProcessOptions {
   cwd: string;
   env: NodeJS.ProcessEnv;
   signal?: AbortSignal;
+  onStart?: (pid: number) => void;
+  interruptSignal?: "SIGINT" | "SIGTERM";
 }
 export interface CommandResult {
   code: number | null;
   output: string;
+  truncated?: boolean;
+  forcedStop?: boolean;
 }
 export type ProcessPort = (
   command: string,
@@ -21,7 +25,12 @@ export type ProcessPort = (
 
 export const execute: ProcessPort = (command, args, options) =>
   new Promise((resolve, reject) => {
-    const { signal, ...settings } = options;
+    const {
+      signal,
+      onStart,
+      interruptSignal = "SIGTERM",
+      ...settings
+    } = options;
     if (signal?.aborted) {
       reject(signal.reason);
       return;
@@ -31,12 +40,21 @@ export const execute: ProcessPort = (command, args, options) =>
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    const abort = () => {
+    let escalation: ReturnType<typeof setTimeout> | undefined;
+    let forcedStop = false;
+    const kill = (signal: NodeJS.Signals) => {
       try {
-        if (child.pid) process.kill(-child.pid, "SIGKILL");
+        if (child.pid) process.kill(-child.pid, signal);
       } catch {
         /* Exit is observed below. */
       }
+    };
+    const abort = () => {
+      kill(interruptSignal);
+      escalation = setTimeout(() => {
+        forcedStop = true;
+        kill("SIGKILL");
+      }, 3000);
     };
     signal?.addEventListener("abort", abort, { once: true });
     let output = "";
@@ -48,16 +66,26 @@ export const execute: ProcessPort = (command, args, options) =>
     child.stdout.on("data", collect);
     child.stderr.on("data", collect);
     child.once("error", (error) => {
+      clearTimeout(escalation);
       signal?.removeEventListener("abort", abort);
       reject(error);
     });
     child.once("close", (code) => {
+      clearTimeout(escalation);
       signal?.removeEventListener("abort", abort);
       resolve({
         code,
         output: output + (truncated ? "\n[TRUNCATED]" : ""),
+        truncated,
+        forcedStop,
       });
     });
+    try {
+      if (child.pid) onStart?.(child.pid);
+    } catch (error) {
+      kill("SIGKILL");
+      reject(error);
+    }
   });
 
 // This reduces accidental access. Processes under the same macOS user are not an OS sandbox.

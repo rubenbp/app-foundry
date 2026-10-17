@@ -7,6 +7,12 @@ const checkLabels = {
   failed: "Fallida",
   uncertain: "Ejecución sin confirmar",
 };
+const cleanupLabels = {
+  not_started: "Sin proceso iniciado",
+  pending: "Limpieza pendiente de confirmar",
+  confirmed: "Limpieza confirmada",
+  uncertain: "Limpieza incierta",
+};
 
 export function VerificationDetails({ run }: { run: Run }) {
   const report = run.verification;
@@ -54,6 +60,12 @@ export function VerificationDetails({ run }: { run: Run }) {
             <p>
               {checkLabels[check.status]} · Código de salida:{" "}
               {check.code ?? "No observado"}
+            </p>
+            <p className="small muted">
+              Grupo del comando: {check.pid ?? "No observado"}
+            </p>
+            <p className="small muted">
+              {cleanupLabels[check.cleanup ?? "not_started"]}
             </p>
             {check.executedCommand &&
             check.executedCommand !== check.command ? (
@@ -153,6 +165,13 @@ export function VerificationDetails({ run }: { run: Run }) {
       {report.error ? (
         <p className="notice danger" role="alert">
           {report.error}
+        </p>
+      ) : null}
+      {report.effectsUncertain ? (
+        <p className="notice danger">
+          Hay procesos o efectos sin aclarar. El puesto permanece reservado;
+          comprueba los grupos registrados y el servidor antes de recuperar la
+          Ejecución.
         </p>
       ) : null}
       <p className="small muted">

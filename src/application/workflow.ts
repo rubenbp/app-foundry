@@ -257,12 +257,24 @@ export class Workflow {
         (report, output) => {
           this.factory.assertRunning(run.id);
           if (output)
-            this.factory.ingest(run.id, {
-              type: "part",
-              messageId: "verification",
-              kind: "evidence",
-              ...output,
-            });
+            this.factory.ingest(
+              run.id,
+              {
+                type: "part",
+                messageId: "verification",
+                kind: "evidence",
+                ...output,
+              },
+              1_100_000,
+            );
+          if (
+            output &&
+            this.view(run.id)!.parts.find((part) => part.id === output.id)
+              ?.truncated
+          )
+            throw new Error(
+              "Verification evidence truncated; complete evidence required before approval",
+            );
           const current = this.view(run.id)!;
           current.verification = sanitizedRecord(report, this.factory.clean);
           this.factory.persist(current);
@@ -313,11 +325,19 @@ export class Workflow {
   }
   async stop(id: string) {
     if (this.verifying && this.factory.active === id) {
+      const run = this.view(id)!;
+      this.factory.record(
+        run,
+        "intent",
+        "Cancel verification and stop its owned command group",
+      );
+      this.factory.persist(run);
       this.verificationAbort?.abort(
         new Error("Verification cancelled; command completion is not approved"),
       );
       await this.verificationDone;
     }
+    if (this.view(id)?.verification?.effectsUncertain) return this.view(id)!;
     const result = await this.factory.stop(id);
     if (result.status === "stopped") this.ownership.releaseRun(id);
     return result;

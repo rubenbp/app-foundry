@@ -6,6 +6,8 @@ export interface VerificationCheck {
   partId: string;
   startedAt: number | null;
   endedAt: number | null;
+  pid: number | null;
+  cleanup: "not_started" | "pending" | "confirmed" | "uncertain";
 }
 
 export interface CriterionEvidence {
@@ -24,6 +26,7 @@ export interface Verification {
   checks: VerificationCheck[];
   criteria: CriterionEvidence[];
   controls: string[];
+  effectsUncertain?: boolean;
   e2e?: {
     origin: string;
     serves: string;
@@ -70,6 +73,8 @@ export function verificationPlan(
       partId: `verification-check-${index + 1}`,
       startedAt: null,
       endedAt: null,
+      pid: null,
+      cleanup: "not_started",
     })),
     criteria: criteria.map((text) => ({
       text,
@@ -83,6 +88,7 @@ export function verificationPlan(
     limitations: [
       "Control comparison is conservative and cannot detect every semantic weakening.",
       "Local verification does not accredit preview, acceptance, merge or production.",
+      "Native Playwright traces, media and attachments are omitted and temporary test output is removed; only sanitized text and selected browser metadata are retained.",
     ],
     error: null,
   };

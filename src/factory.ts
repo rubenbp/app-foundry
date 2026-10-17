@@ -31,10 +31,21 @@ export class Factory {
         run.error =
           "Factory restarted. Work/process state uncertain; no task was resent. Inspect owned PID before recovery.";
         if (run.verification?.status === "running") {
+          run.verification.effectsUncertain = run.verification.checks.some(
+            (check) =>
+              check.status === "running" ||
+              check.cleanup === "pending" ||
+              check.cleanup === "uncertain",
+          );
           run.verification.status = "intervention";
           run.verification.error = run.error;
           for (const check of run.verification.checks)
-            if (check.status === "running") check.status = "uncertain";
+            if (check.status === "running" || check.cleanup === "pending") {
+              check.status = "uncertain";
+              check.cleanup = "uncertain";
+              run.error += ` Verification command process group ${check.pid ?? "unavailable"} requires manual inspection.`;
+            }
+          run.verification.error = run.error;
         }
         run.gaps.push("Observation interrupted by Factory restart");
         this.record(run, "recovery", run.error);
@@ -186,7 +197,7 @@ export class Factory {
     }
     return this.view(run.id)!;
   }
-  ingest(id: string, fact: Fact) {
+  ingest(id: string, fact: Fact, outputLimit = 65_536) {
     this.assertWritable();
     const run = this.view(id);
     if (!run || run.status === "stopped") return;
@@ -199,7 +210,7 @@ export class Factory {
     )
       return;
     const at = this.now();
-    const text = "text" in fact ? this.clean(fact.text) : null;
+    const text = "text" in fact ? this.clean(fact.text, outputLimit) : null;
     if (fact.type === "status" && run.agentStatus !== fact.status) {
       run.agentStatus = this.clean(fact.status, 100).text;
       run.lastActivity = at;

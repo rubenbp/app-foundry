@@ -1,4 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { connect } from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Workspace, ManagedProject } from "../domain/request.ts";
@@ -141,12 +144,28 @@ export class CandidateVerifier {
         project.verification.e2e?.command === check.command
           ? project.verification.e2e
           : null;
+      const existingServer = e2e ? await serverListening(e2e.origin) : false;
+      if (existingServer) {
+        check.status = "failed";
+        check.endedAt = Date.now();
+        report.status = "failed";
+        report.error = `E2E origin already used or unavailable for exclusive ownership: ${e2e!.origin}; command not executed`;
+        progress(report, {
+          id: check.partId,
+          label: `${check.command} · not executed`,
+          text: report.error,
+        });
+        return;
+      }
       check.executedCommand = check.command;
+      check.cleanup = "pending";
+      let runtime: string | undefined;
       if (e2e) {
-        const wrapper = join(home, "candidate-playwright.mjs");
+        runtime = mkdtempSync(join(tmpdir(), "foundry-e2e-"));
+        const wrapper = join(runtime, "candidate-playwright.mjs");
         writeFileSync(
           wrapper,
-          playwrightConfiguration(workspace.directory, e2e),
+          playwrightConfiguration(workspace.directory, e2e, runtime),
           { mode: 0o600 },
         );
         check.executedCommand += ` --config '${wrapper.replaceAll("'", "'\\''")}'`;
@@ -154,13 +173,18 @@ export class CandidateVerifier {
       progress(report);
       let result;
       try {
-        result = await this.process(
-          "/bin/sh",
-          ["-c", check.executedCommand],
-          options,
-        );
+        result = await this.process("/bin/sh", ["-c", check.executedCommand], {
+          ...options,
+          interruptSignal: e2e ? "SIGINT" : "SIGTERM",
+          onStart: (pid) => {
+            check.pid = pid;
+            progress(report);
+          },
+        });
       } catch (error) {
         check.status = "failed";
+        check.cleanup = check.pid ? "uncertain" : "confirmed";
+        if (check.pid) report.effectsUncertain = true;
         check.endedAt = Date.now();
         progress(report, {
           id: check.partId,
@@ -168,17 +192,41 @@ export class CandidateVerifier {
           text: `Base ${report.baseSha}\nHead ${report.headSha}\nCommand: ${check.executedCommand}\nNo exit code observed: ${String(error)}`,
         });
         throw error;
+      } finally {
+        if (runtime) rmSync(runtime, { recursive: true, force: true });
       }
       check.code = result.code;
       check.endedAt = Date.now();
-      check.status = result.code === 0 ? "passed" : "failed";
       for (const criterion of report.criteria)
         criterion.evidence.push(check.partId);
       progress(report, {
         id: check.partId,
         label: `${check.command} · exit ${result.code}`,
-        text: `Base ${report.baseSha}\nHead ${report.headSha}\nCommand: ${check.executedCommand}\nExit: ${result.code}\n${result.output}`,
+        text: `Base ${report.baseSha}\nHead ${report.headSha}\nCommand: ${check.executedCommand}\nExit: ${result.code}\n${e2e ? withoutNativeAttachments(result.output) : result.output}`,
       });
+      if (
+        result.forcedStop ||
+        (result.code === null && !signal.aborted) ||
+        (e2e && !(await serverStopped(e2e.origin)))
+      ) {
+        report.effectsUncertain = true;
+        check.cleanup = "uncertain";
+        check.status = "uncertain";
+        progress(report);
+        throw new Error(
+          `Verification cleanup unconfirmed; inspect command group ${check.pid ?? "unavailable"} and its E2E server/browser processes before releasing the execution`,
+        );
+      }
+      check.cleanup = "confirmed";
+      check.status = result.code === 0 ? "passed" : "failed";
+      progress(report);
+      if (result.truncated || result.output.endsWith("\n[TRUNCATED]")) {
+        check.status = "failed";
+        progress(report);
+        throw new Error(
+          "Verification command output truncated; complete evidence unavailable",
+        );
+      }
       await unchanged();
       if (result.code !== 0) {
         report.status = "failed";
@@ -209,13 +257,26 @@ export class CandidateVerifier {
 function playwrightConfiguration(
   directory: string,
   e2e: NonNullable<ManagedProject["verification"]["e2e"]>,
+  runtime: string,
 ) {
   // The Factory controls the server, scope and reporter. Candidate tests remain untrusted same-user code.
   return `
 import configuration from ${JSON.stringify(pathToFileURL(resolve(directory, e2e.configFile)).href)};
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
+import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 const directory = ${JSON.stringify(directory)};
 const contract = ${JSON.stringify(e2e)};
+const configDirectory = dirname(resolve(directory, contract.configFile));
+const require = createRequire(${JSON.stringify(pathToFileURL(resolve(directory, e2e.configFile)).href)});
+const resolvePaths = value => value ? [value].flat().map(path => resolve(configDirectory, path)) : undefined;
+const setupPaths = value => value ? [value].flat().map(path => existsSync(resolve(configDirectory, path)) ? resolve(configDirectory, path) : require.resolve(path)) : undefined;
+const templatePath = value => value && !['{testDir}', '{/testDir}', '{snapshotDir}', '{/snapshotDir}'].some(prefix => value.startsWith(prefix)) ? resolve(configDirectory, value) : value;
+const snapshotExpect = value => value ? {
+  ...value,
+  ...(value.toHaveScreenshot ? { toHaveScreenshot: { ...value.toHaveScreenshot, stylePath: resolvePaths(value.toHaveScreenshot.stylePath), pathTemplate: templatePath(value.toHaveScreenshot.pathTemplate) } } : {}),
+  ...(value.toMatchAriaSnapshot ? { toMatchAriaSnapshot: { ...value.toMatchAriaSnapshot, pathTemplate: templatePath(value.toMatchAriaSnapshot.pathTemplate) } } : {}),
+} : value;
 const projects = configuration.projects ?? [{}];
 console.log('FACTORY_E2E_METADATA=' + JSON.stringify(projects.map(project => {
   const use = { ...configuration.use, ...project.use };
@@ -223,18 +284,52 @@ console.log('FACTORY_E2E_METADATA=' + JSON.stringify(projects.map(project => {
 })));
 export default {
   ...configuration,
-  testDir: resolve(directory, configuration.testDir ?? '.'),
-  outputDir: resolve(${JSON.stringify(join(directory, ".."))}, 'verification-playwright-output'),
+  testDir: resolve(configDirectory, configuration.testDir ?? '.'),
+  outputDir: ${JSON.stringify(join(runtime, "output"))},
+  globalSetup: setupPaths(configuration.globalSetup),
+  globalTeardown: setupPaths(configuration.globalTeardown),
+  expect: snapshotExpect(configuration.expect),
+  snapshotDir: configuration.snapshotDir ? resolve(configDirectory, configuration.snapshotDir) : undefined,
+  snapshotPathTemplate: templatePath(configuration.snapshotPathTemplate),
   forbidOnly: true,
-  use: { ...configuration.use, baseURL: contract.origin, offline: contract.offline },
+  use: { ...configuration.use, baseURL: contract.origin, offline: contract.offline, trace: 'off', video: 'off', screenshot: 'off' },
   projects: configuration.projects?.map(project => ({ ...project,
-    testDir: resolve(directory, project.testDir ?? configuration.testDir ?? '.'),
-    use: { ...project.use, baseURL: contract.origin, offline: contract.offline },
+    testDir: resolve(configDirectory, project.testDir ?? configuration.testDir ?? '.'),
+    expect: snapshotExpect(project.expect),
+    snapshotDir: project.snapshotDir ? resolve(configDirectory, project.snapshotDir) : undefined,
+    snapshotPathTemplate: templatePath(project.snapshotPathTemplate),
+    use: { ...project.use, baseURL: contract.origin, offline: contract.offline, trace: 'off', video: 'off', screenshot: 'off' },
   })),
   reporter: [['json']],
   webServer: { command: contract.serverCommand, cwd: directory, url: contract.origin, reuseExistingServer: false, timeout: 30000 },
 };
 `;
+}
+
+async function serverStopped(origin: string) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const listening = await serverListening(origin);
+    if (!listening) return true;
+    await delay(100);
+  }
+  return false;
+}
+
+function serverListening(origin: string) {
+  const url = new URL(origin);
+
+  return new Promise<boolean>((resolve) => {
+    const socket = connect({ host: url.hostname, port: Number(url.port) });
+    const finish = (value: boolean) => {
+      socket.destroy();
+      resolve(value);
+    };
+    socket.setTimeout(200, () => finish(true));
+    socket.once("connect", () => finish(true));
+    socket.once("error", (error) =>
+      finish((error as NodeJS.ErrnoException).code !== "ECONNREFUSED"),
+    );
+  });
 }
 
 function e2eEvidence(
@@ -284,4 +379,29 @@ function e2eEvidence(
     executedTests: result.stats.expected,
     skippedTests: result.stats.skipped,
   };
+}
+
+function withoutNativeAttachments(output: string) {
+  const start = output.indexOf('{\n  "config":');
+  if (start < 0) return output;
+  try {
+    const report = JSON.parse(output.slice(start), (key, value) => {
+      if (key === "attachments" && Array.isArray(value))
+        return value.map((attachment) => ({
+          name: attachment.name,
+          contentType: attachment.contentType,
+          omitted:
+            "Native attachment removed; only sanitized textual evidence retained",
+        }));
+      if (key === "buffer" || key === "metadata") return "[OMITTED]";
+      return value;
+    });
+
+    return output.slice(0, start) + JSON.stringify(report, null, 2);
+  } catch {
+    return (
+      output.slice(0, start) +
+      "\n[OMITTED INVALID PLAYWRIGHT REPORT: textual evidence unavailable; E2E cannot be approved]"
+    );
+  }
 }

@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { DatabaseSync } from "node:sqlite";
+import { createServer } from "node:net";
+import { once } from "node:events";
 import { join } from "node:path";
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/workspace.ts";
@@ -62,6 +64,87 @@ test("verification catches a defect from an earlier commit even when the last co
     assert.match(s.workflow.output(run.id, "verification-diff")!, /\+defect/);
     assert.equal(result.verification?.criteria[0].status, "missing_evidence");
     assert.equal(s.workflow.factory.active, run.id);
+  } finally {
+    s.close();
+  }
+});
+
+test("a large accumulated diff and command output are retained completely after sanitation", async () => {
+  let checks = 0;
+  const s = verificationFixture({
+    process: async (command, args, options) => {
+      if (
+        command === "/bin/sh" &&
+        args[1] === "node check.mjs" &&
+        ++checks === 2
+      )
+        return {
+          code: 0,
+          output:
+            "Long command output\n" +
+            "x".repeat(70_000) +
+            "\nFINAL EVIDENCE password=private-pretend-value",
+        };
+      return execute(command, args, options);
+    },
+  });
+  try {
+    await s.start();
+    s.commit(
+      "long.txt",
+      "Full candidate diff\n" + "x".repeat(70_000) + "\nFINAL DIFF EVIDENCE",
+      "Large change",
+    );
+    s.finish();
+    const result = (await s.workflow.verifyCandidate())!;
+    assert.equal(result.status, "awaiting_preview");
+    assert.match(
+      s.workflow.output(result.id, "verification-diff")!,
+      /FINAL DIFF EVIDENCE/,
+    );
+    assert.match(
+      s.workflow.output(result.id, "verification-check-1")!,
+      /FINAL EVIDENCE password=\[REDACTED\]/,
+    );
+    assert.equal(
+      result.parts.find((part) => part.id === "verification-diff")?.truncated,
+      false,
+    );
+    s.reopen();
+    assert.match(
+      s.workflow.output(result.id, "verification-diff")!,
+      /FINAL DIFF EVIDENCE/,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("truncated command evidence cannot approve a candidate even with exit zero", async () => {
+  let checks = 0;
+  const s = verificationFixture({
+    process: async (command, args, options) => {
+      if (
+        command === "/bin/sh" &&
+        args[1] === "node check.mjs" &&
+        ++checks === 2
+      )
+        return {
+          code: 0,
+          output: "Partial evidence\n[TRUNCATED]",
+          truncated: true,
+        };
+      return execute(command, args, options);
+    },
+  });
+  try {
+    await s.start();
+    s.finish();
+    const result = (await s.workflow.verifyCandidate())!;
+    assert.equal(result.status, "intervention");
+    assert.equal(result.verification?.checks[0].code, 0);
+    assert.equal(result.verification?.checks[0].status, "failed");
+    assert.match(result.error!, /truncated/);
   } finally {
     s.close();
   }
@@ -361,6 +444,117 @@ test("verification records intent before stopping the agent and blocks effects w
   } finally {
     blocker?.exec("ROLLBACK");
     blocker?.close();
+    s.close();
+  }
+});
+
+test("restart retains the verifier process identity and cannot release uncertain command effects", async () => {
+  const s = verificationFixture({
+    commands: ["node wait.mjs"],
+    files: {
+      "wait.mjs":
+        "import {existsSync} from 'node:fs'; if(existsSync('wait.flag')) setInterval(()=>{},1000);",
+    },
+  });
+  let pid: number | null = null;
+  let verification: ReturnType<typeof s.workflow.verifyCandidate> | undefined;
+  try {
+    const run = await s.start();
+    s.commit("wait.flag", "wait", "Observe restart during verification");
+    s.finish();
+    verification = s.workflow.verifyCandidate();
+    void verification.catch(() => {});
+    for (let count = 0; count < 200 && !pid; count++) {
+      pid = s.workflow.view(run.id)?.verification?.checks[0].pid ?? null;
+      if (!pid) await delay(10);
+    }
+    assert.ok(pid);
+    s.reopen();
+    const recovered = s.workflow.view(run.id)!;
+    assert.equal(recovered.verification?.checks[0].pid, pid);
+    assert.equal(recovered.verification?.checks[0].status, "uncertain");
+    assert.equal((await s.workflow.stop(run.id)).status, "intervention");
+    assert.equal(s.workflow.factory.active, run.id);
+    process.kill(-pid, "SIGTERM");
+    await verification.catch(() => {});
+    pid = null;
+  } finally {
+    if (pid) {
+      try {
+        process.kill(-pid, "SIGKILL");
+      } catch {
+        /* Already absent. */
+      }
+    }
+    await verification?.catch(() => {});
+    s.close();
+  }
+});
+
+test("restart while E2E cleanup is pending retains the slot after the command has exited", async () => {
+  const server = createServer();
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const port = (server.address() as { port: number }).port;
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  const s = verificationFixture({
+    commands: ["node e2e.mjs"],
+    e2e: {
+      command: "node e2e.mjs",
+      configFile: "playwright.config.mjs",
+      serverCommand: "configured-static-server",
+      origin: `http://127.0.0.1:${port}`,
+      serves: "dist",
+      reuseExistingServer: false,
+      offline: false,
+    },
+    files: { "e2e.mjs": "console.log('base')" },
+    process: async (command, args, options) => {
+      if (command === "/bin/sh" && args[1]?.includes("--config")) {
+        options.onStart?.(424242);
+        server.listen(port, "127.0.0.1");
+        await once(server, "listening");
+        return {
+          code: 0,
+          output:
+            'FACTORY_E2E_METADATA=[{"name":"chromium","channel":"chrome","executablePath":null}]\n' +
+            JSON.stringify(
+              {
+                config: {},
+                stats: { expected: 1, unexpected: 0, flaky: 0, skipped: 0 },
+                errors: [],
+              },
+              null,
+              2,
+            ),
+        };
+      }
+      return execute(command, args, options);
+    },
+  });
+  let verification: ReturnType<typeof s.workflow.verifyCandidate> | undefined;
+  try {
+    const run = await s.start();
+    s.finish();
+    verification = s.workflow.verifyCandidate();
+    void verification.catch(() => {});
+    for (
+      let count = 0;
+      count < 200 &&
+      s.workflow.view(run.id)?.verification?.checks[0].code !== 0;
+      count++
+    )
+      await delay(10);
+    assert.equal(s.workflow.view(run.id)?.verification?.checks[0].code, 0);
+    s.reopen();
+    const recovered = await s.workflow.stop(run.id);
+    assert.equal(recovered.status, "intervention");
+    assert.equal(recovered.verification?.effectsUncertain, true);
+    assert.equal(s.workflow.factory.active, run.id);
+  } finally {
+    if (server.listening)
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    await verification?.catch(() => {});
     s.close();
   }
 });
