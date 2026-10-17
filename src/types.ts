@@ -4,6 +4,7 @@ import type {
   Workspace,
 } from "./domain/request.ts";
 import type { Verification } from "./domain/verification.ts";
+import type { Publication } from "./domain/publication.ts";
 export interface FactoryConfig {
   dataDir: string;
   projectDir: string;
@@ -11,6 +12,7 @@ export interface FactoryConfig {
   model: string;
   auth: "opencode";
   opencodeCli?: string;
+  vercelCli?: string;
   managedProject?: ManagedProject;
 }
 
@@ -23,6 +25,8 @@ export type RunStatus =
   | "awaiting_verification"
   | "verifying"
   | "awaiting_preview"
+  | "awaiting_review"
+  | "awaiting_merge"
   | "intervention"
   | "stopped";
 export interface History {
@@ -64,7 +68,8 @@ export interface Run {
   request?: AuthorizedRequest;
   workspace?: Workspace;
   verification?: Verification;
-  phase?: "preparation" | "implementation" | "verification";
+  publication?: Publication;
+  phase?: "preparation" | "implementation" | "verification" | "publication";
   status: RunStatus;
   startedAt: number;
   endedAt: number | null;

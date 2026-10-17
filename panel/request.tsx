@@ -10,7 +10,9 @@ export function RequestDetails({ run }: { run: Run }) {
         ? "Preparación de la base"
         : run.phase === "verification"
           ? "Verificación"
-          : "Implementación";
+          : run.phase === "publication"
+            ? "Preview y aceptación"
+            : "Implementación";
 
   return (
     <>
@@ -22,6 +24,7 @@ export function RequestDetails({ run }: { run: Run }) {
             "Preparación de la base",
             "Implementación",
             "Verificación",
+            "Preview y aceptación",
           ].map((phase) => (
             <li
               key={phase}

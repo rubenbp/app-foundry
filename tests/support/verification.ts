@@ -8,6 +8,7 @@ import { GitWorkspace, execute } from "../../src/infrastructure/workspace.ts";
 import type { ProcessPort } from "../../src/infrastructure/workspace.ts";
 import type { Fact, AgentPort } from "../../src/types.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
+import type { PublicationPort } from "../../src/application/publication.ts";
 
 export function verificationFixture(
   options: {
@@ -16,6 +17,7 @@ export function verificationFixture(
     files?: Record<string, string>;
     commands?: string[];
     e2e?: ManagedProject["verification"]["e2e"];
+    publication?: PublicationPort;
   } = {},
 ) {
   const root = mkdtempSync(join(tmpdir(), "foundry-verify-"));
@@ -129,6 +131,7 @@ export function verificationFixture(
       createAgent: () => agent,
       workspace: new GitWorkspace(config.dataDir, processPort),
       verificationProcess: processPort,
+      publication: options.publication,
       github: {
         async ready() {
           return [];

@@ -24,6 +24,7 @@ export interface ManagedProject {
     projectId: string;
     productionOrigin: string;
     humanMergeRequired: true;
+    previewEnvironment?: string;
     [key: string]: unknown;
   };
 }

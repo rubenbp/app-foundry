@@ -15,6 +15,7 @@ import type { AgentPort, FactoryConfig } from "../types.ts";
 import { verificationPlan } from "../domain/verification.ts";
 import { CandidateVerifier } from "../infrastructure/verification.ts";
 import type { ProcessPort } from "../infrastructure/workspace.ts";
+import { CandidatePublication, type PublicationPort } from "./publication.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -22,6 +23,7 @@ export interface WorkflowOptions {
   github?: GitHubPort;
   secrets?: string[];
   verificationProcess?: ProcessPort;
+  publication?: PublicationPort;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
 }
 
@@ -37,6 +39,7 @@ export class Workflow {
   private verificationAbort?: AbortController;
   private verificationDone?: Promise<void>;
   private verifier: CandidateVerifier;
+  private publication?: CandidatePublication;
   get observation() {
     return this.factory.store.observation();
   }
@@ -56,6 +59,11 @@ export class Workflow {
       this.factory = new Factory(config, options.createAgent(config), {
         secrets: options.secrets,
       });
+      if (options.publication)
+        this.publication = new CandidatePublication(
+          this.factory,
+          options.publication,
+        );
       const reserved = this.ownership.reservation();
       if (!reserved && this.factory.active)
         this.ownership.reserve(this.factory.active);
@@ -92,6 +100,7 @@ export class Workflow {
     this.polling = true;
     try {
       await this.verifyCandidate();
+      await this.publication?.poll();
       const issues = await this.github.ready(
         this.factory.config.managedProject!.repository,
       );
@@ -324,6 +333,7 @@ export class Workflow {
     return this.factory.output(runId, partId);
   }
   async stop(id: string) {
+    await this.publication?.stop(id);
     if (this.verifying && this.factory.active === id) {
       const run = this.view(id)!;
       this.factory.record(

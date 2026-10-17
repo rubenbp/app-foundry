@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RequestDetails } from "./request.tsx";
 import { VerificationDetails } from "./verification.tsx";
+import { PublicationDetails } from "./publication.tsx";
 import { Button } from "./components/button.tsx";
 import { poll } from "./polling.ts";
 import {
@@ -31,6 +32,8 @@ const labels: Record<RunStatus, string> = {
   awaiting_verification: "Resultado sin verificar",
   verifying: "Verificando candidato",
   awaiting_preview: "Verificado · Preview pendiente",
+  awaiting_review: "Esperando revisión humana",
+  awaiting_merge: "Esperando merge humano",
   intervention: "Requiere intervención",
   stopped: "Detenida",
 };
@@ -135,6 +138,7 @@ function App() {
   const opencodeDisconnected =
     run &&
     run.phase !== "verification" &&
+    run.phase !== "publication" &&
     !["queued", "preparing", "stopped"].includes(run.status) &&
     now - (run.lastObservation ?? run.startedAt) >= 30_000;
   const duration = run
@@ -337,12 +341,13 @@ function App() {
                 </dl>
                 <p className="verification-note">
                   {run.verification?.status === "passed"
-                    ? "Contrato técnico comprobado. Los criterios requieren revisión humana; preview y aceptación siguen pendientes."
+                    ? "Contrato técnico comprobado. Consulta la evidencia y el estado de revisión humana del candidato."
                     : "El resultado requiere verificación independiente. El estado idle y el texto del agente no acreditan éxito."}
                 </p>
               </section>
               <RequestDetails run={run} />
               <VerificationDetails run={run} />
+              <PublicationDetails run={run} />
               <section
                 className="health-grid"
                 aria-label="Antigüedad y procedencia de observaciones"

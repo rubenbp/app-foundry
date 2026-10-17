@@ -25,6 +25,11 @@ export function readConfig(path: string): FactoryConfig {
       "opencodeCli must identify the absolute OpenCode CLI path supporting auth export",
     );
   const hasExplicitProjectDir = config.projectDir !== undefined;
+  if (
+    config.vercelCli !== undefined &&
+    (typeof config.vercelCli !== "string" || !isAbsolute(config.vercelCli))
+  )
+    throw new Error("vercelCli must be an absolute trusted CLI path");
   if (config.managedProjectFile && !hasExplicitProjectDir)
     config.projectDir = realpathSync(dirname(path));
   if (
@@ -79,5 +84,8 @@ export function readConfig(path: string): FactoryConfig {
     model: String(config.model),
     auth: "opencode",
     opencodeCli: config.opencodeCli,
+    ...(typeof config.vercelCli === "string"
+      ? { vercelCli: config.vercelCli }
+      : {}),
   };
 }

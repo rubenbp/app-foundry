@@ -176,8 +176,9 @@ export function VerificationDetails({ run }: { run: Run }) {
       ) : null}
       <p className="small muted">
         La comparación de controles es conservadora; no detecta todo
-        debilitamiento semántico. Preview, aceptación, merge y producción siguen
-        pendientes.
+        debilitamiento semántico. El estado de preview y aceptación se muestra
+        por separado. La producción requiere una comprobación posterior al
+        merge.
       </p>
     </section>
   );

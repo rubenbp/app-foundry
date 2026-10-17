@@ -203,7 +203,7 @@ export class Factory {
     if (!run || run.status === "stopped") return;
     // Late agent observations cannot move an independently verified candidate back into editing.
     if (
-      run.phase === "verification" &&
+      (run.phase === "verification" || run.phase === "publication") &&
       fact.type !== "part" &&
       fact.type !== "usage" &&
       fact.type !== "gap"

@@ -10,6 +10,7 @@ import { panelServer } from "./server.ts";
 import { createWorkflow } from "./workflow.ts";
 import { GitHub } from "./infrastructure/github.ts";
 import { GitWorkspace } from "./infrastructure/workspace.ts";
+import { GitHubPublication } from "./infrastructure/publication.ts";
 import { acquireLock } from "./lock.ts";
 
 const args = process.argv.slice(2);
@@ -45,6 +46,9 @@ if (command === "serve") {
         createAgent: (config) => new OpenCode(config),
         workspace: new GitWorkspace(config.dataDir),
         github: new GitHub(),
+        publication: new GitHubPublication(config.dataDir, {
+          vercelCli: config.vercelCli,
+        }),
         secrets,
       })
     : null;
