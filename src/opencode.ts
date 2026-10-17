@@ -8,6 +8,7 @@ import {
 } from "@opencode/client";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { installLocalGitGuard } from "./infrastructure/agent-git.ts";
 import { reducedEnvironment } from "./infrastructure/workspace.ts";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -389,6 +390,7 @@ export class OpenCode implements AgentPort {
           ),
           ...[
             ...project.verification.commands,
+            "git rev-parse HEAD",
             "git status",
             "git status *",
             "git diff",
@@ -404,35 +406,12 @@ export class OpenCode implements AgentPort {
           })),
         ]
       : policy;
-    if (project) {
-      writeFileSync(
-        join(this.runtime, "package.json"),
-        JSON.stringify({ type: "commonjs" }),
-        { mode: 0o600 },
+    if (project)
+      installLocalGitGuard(
+        this.runtime,
+        this.config.projectDir,
+        project.repository,
       );
-      const guards = join(this.runtime, "bin");
-      mkdirSync(guards, { mode: 0o700 });
-      const script = `#!${process.execPath}
-const { spawnSync } = require("node:child_process");
-const { realpathSync } = require("node:fs");
-const args = process.argv.slice(2);
-const inspect = (params) => {
-  const r = spawnSync("/usr/bin/git", ["-c", "core.hooksPath=/dev/null", ...params], { encoding: "utf8" });
-  if (r.status !== 0) process.exit(1);
-  return r.stdout.trim();
-};
-if (!["status", "diff", "add", "commit", "log", "show"].includes(args[0]) ||
-    realpathSync(process.cwd()) !== ${JSON.stringify(this.config.projectDir)} ||
-    inspect(["rev-parse", "--show-toplevel"]) !== ${JSON.stringify(this.config.projectDir)} ||
-    inspect(["remote", "get-url", "origin"]) !== ${JSON.stringify(`https://github.com/${project.repository}.git`)} ||
-    inspect(["branch", "--show-current"]) !== ${JSON.stringify("codex/execution-")} + require("node:path").basename(${JSON.stringify(this.config.projectDir)})) {
-  console.error("Factory local Git policy rejected this command or workspace"); process.exit(1);
-}
-const r = spawnSync("/usr/bin/git", ["-c", "core.hooksPath=/dev/null", ...args], { stdio: "inherit" });
-process.exit(r.status ?? 1);
-`;
-      writeFileSync(join(guards, "git"), script, { mode: 0o700 });
-    }
     const effective = {
       model: "openai/gpt-6-luna",
       default_agent: "factory",
