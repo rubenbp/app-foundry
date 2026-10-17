@@ -24,7 +24,8 @@ export function readConfig(path: string): FactoryConfig {
     throw new Error(
       "opencodeCli must identify the absolute OpenCode CLI path supporting auth export",
     );
-  if (config.managedProjectFile && config.projectDir === undefined)
+  const hasExplicitProjectDir = config.projectDir !== undefined;
+  if (config.managedProjectFile && !hasExplicitProjectDir)
     config.projectDir = realpathSync(dirname(path));
   if (
     !isAbsolute(String(config.dataDir)) ||
@@ -36,7 +37,7 @@ export function readConfig(path: string): FactoryConfig {
   const dataDir = realpathSync(String(config.dataDir));
   for (const codeDir of [
     realpathSync(resolve(import.meta.dirname, "..")),
-    projectDir,
+    ...(hasExplicitProjectDir ? [projectDir] : []),
   ]) {
     const child = relative(codeDir, dataDir);
     const parent = relative(dataDir, codeDir);
@@ -58,8 +59,9 @@ export function readConfig(path: string): FactoryConfig {
     );
     for (const candidate of [realpathSync(path), trustedPath]) {
       if (
-        candidate === projectDir ||
-        candidate.startsWith(projectDir + sep) ||
+        (hasExplicitProjectDir &&
+          (candidate === projectDir ||
+            candidate.startsWith(projectDir + sep))) ||
         candidate.startsWith(resolve(dataDir, "workspaces") + sep)
       )
         throw new Error(
