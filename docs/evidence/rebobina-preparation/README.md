@@ -23,13 +23,13 @@ Al activar `astro check` con `allowJs`/`checkJs`, aparecen 21 errores de tipos y
 
 [`local-verification.json`](local-verification.json) conserva SHA, árbol limpio antes/después, SHA-256 del lockfile, versiones, intervalos UTC, comandos, códigos y marcador del candidato final. Todas las salidas son saneadas; las rutas personales y secuencias ANSI se sustituyen o eliminan y se normalizan espacios finales. El registro del primer candidato permanece en el commit Factory `5e8c089b896631b9ce53e874776382a94c637216`.
 
-| Comando | Código | Alcance y salida |
-| --- | --- | --- |
-| `pnpm build` | 0 | 37 páginas y marcador JSON; [log](logs/build.log) |
-| `pnpm lint` | 0 | Astro/TS/JS, sin incidencias; [log](logs/lint.log) |
-| `pnpm typecheck` | 0 | 25 archivos, cero errores/avisos/hints; [log](logs/typecheck.log) |
-| `pnpm test:unit` | 0 | Tres pruebas, sin omitidas; [log](logs/test-unit.log) |
-| `pnpm test:e2e` | 0 | Siete pruebas, sin omitidas; [log](logs/test-e2e.log) |
+| Comando          | Código | Alcance y salida                                                  |
+| ---------------- | ------ | ----------------------------------------------------------------- |
+| `pnpm build`     | 0      | 37 páginas y marcador JSON; [log](logs/build.log)                 |
+| `pnpm lint`      | 0      | Astro/TS/JS, sin incidencias; [log](logs/lint.log)                |
+| `pnpm typecheck` | 0      | 25 archivos, cero errores/avisos/hints; [log](logs/typecheck.log) |
+| `pnpm test:unit` | 0      | Tres pruebas, sin omitidas; [log](logs/test-unit.log)             |
+| `pnpm test:e2e`  | 0      | Siete pruebas, sin omitidas; [log](logs/test-e2e.log)             |
 
 Entorno observado: macOS arm64, Node `24.21.0`, pnpm `12.4.1`, Astro `7.3.8`, TypeScript `6.0.3`, Playwright `1.64.0`. Navegador: Google Chrome `155.0.8059.80`, ejecutable `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`, proyecto Playwright `chromium`, headless. Python `3.14.6` sirve `dist/` en `127.0.0.1:4173`; servidor iniciado y detenido por Playwright, sin reutilización. `PLAYWRIGHT_OFFLINE`, `CAPTURE_DEMO` y `CHROME_PATH` sin definir. No se presentan estas pruebas como prueba de Vercel.
 

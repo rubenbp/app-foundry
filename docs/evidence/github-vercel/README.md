@@ -18,25 +18,25 @@ Esta prueba prepara infraestructura. No es uno de los casos de evaluación de la
 
 Comprobada en el dashboard autenticado de Vercel:
 
-| Parámetro | Valor |
-| --- | --- |
-| Framework | Astro |
-| Root Directory | Vacío: raíz del repositorio |
-| Install Command | Detección automática; el build ejecutado usa pnpm 10.28.0 |
-| Build Command | Automático; el log confirma `pnpm run build` → `astro build` |
-| Output Directory | `dist` (Astro estático); Vercel empaqueta en `/vercel/output` |
-| Node.js Version | `24.x` en Settings → Build and Deployment |
-| Rama de producción | `main` |
-| Auto-assign Custom Production Domains | Activado |
-| Preview | Todas las ramas Git no asignadas a otro entorno |
-| Pull Request Comments | Activado |
-| Commit Status | Activado |
-| deployment_status Events | Activado |
-| repository_dispatch Events | Activado |
-| Deployment Protection | Vercel Authentication, Standard Protection |
-| Deployment Checks de Vercel | Ninguno configurado |
-| Build machine | Basic: 2 CPU, 8 GB |
-| Concurrencia de builds | Uno cada vez |
+| Parámetro                             | Valor                                                         |
+| ------------------------------------- | ------------------------------------------------------------- |
+| Framework                             | Astro                                                         |
+| Root Directory                        | Vacío: raíz del repositorio                                   |
+| Install Command                       | Detección automática; el build ejecutado usa pnpm 10.28.0     |
+| Build Command                         | Automático; el log confirma `pnpm run build` → `astro build`  |
+| Output Directory                      | `dist` (Astro estático); Vercel empaqueta en `/vercel/output` |
+| Node.js Version                       | `24.x` en Settings → Build and Deployment                     |
+| Rama de producción                    | `main`                                                        |
+| Auto-assign Custom Production Domains | Activado                                                      |
+| Preview                               | Todas las ramas Git no asignadas a otro entorno               |
+| Pull Request Comments                 | Activado                                                      |
+| Commit Status                         | Activado                                                      |
+| deployment_status Events              | Activado                                                      |
+| repository_dispatch Events            | Activado                                                      |
+| Deployment Protection                 | Vercel Authentication, Standard Protection                    |
+| Deployment Checks de Vercel           | Ninguno configurado                                           |
+| Build machine                         | Basic: 2 CPU, 8 GB                                            |
+| Concurrencia de builds                | Uno cada vez                                                  |
 
 Preview requiere una sesión autorizada de Vercel; se ha abierto con la sesión existente de `rubenbpv`. El dominio principal de producción es público. La política de protección no se ha modificado.
 

@@ -11,10 +11,21 @@
   },
   "preparation": {
     "command": "pnpm install --frozen-lockfile",
-    "requirements": ["Node 24.21.0", "pnpm 12.4.1", "Python 3", "Chrome or Playwright Chromium"]
+    "requirements": [
+      "Node 24.21.0",
+      "pnpm 12.4.1",
+      "Python 3",
+      "Chrome or Playwright Chromium"
+    ]
   },
   "verification": {
-    "commands": ["pnpm build", "pnpm lint", "pnpm typecheck", "pnpm test:unit", "pnpm test:e2e"],
+    "commands": [
+      "pnpm build",
+      "pnpm lint",
+      "pnpm typecheck",
+      "pnpm test:unit",
+      "pnpm test:e2e"
+    ],
     "e2e": {
       "origin": "http://127.0.0.1:4173",
       "serves": "dist",

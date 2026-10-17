@@ -460,10 +460,7 @@
   "nativeRuntimeRemoved": true,
   "restart": {
     "count": 2,
-    "statuses": [
-      "stopped",
-      "stopped"
-    ],
+    "statuses": ["stopped", "stopped"],
     "taskResent": false
   },
   "package": "rebobina-archivo",

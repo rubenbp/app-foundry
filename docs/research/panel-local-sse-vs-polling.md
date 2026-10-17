@@ -16,11 +16,11 @@ La inspección del checkout de la Factory en `32cbf07`, incluidos sus cambios lo
 
 Hay tres enlaces independientes:
 
-| Enlace | Función | Consecuencia |
-| --- | --- | --- |
-| OpenCode → Factory | Recoger actividad del agente mediante el stream de eventos y consultar sus recursos | Existe con cualquiera de las dos opciones del panel. La documentación ofrece `/event` como SSE y suscripción en el SDK. [Servidor](https://opencode.ai/docs/server/#events), [SDK](https://opencode.ai/docs/sdk/#events). |
-| Factory → navegador | Mostrar estado, mensajes, herramientas y salidas ya observados | Es la elección investigada. No debería exponer directamente OpenCode, porque también hay verificaciones, esperas humanas y deployments que pertenecen a la Factory. |
-| Factory → GitHub/Vercel | Consultar instrucciones y hechos externos | Mantener los 15 segundos ya acordados. SSE en el navegador no acelera hechos que la Factory todavía no ha observado. [Workflow acordado](https://github.com/rubenbp/app-foundry/issues/5#issuecomment-6201919022). |
+| Enlace                  | Función                                                                             | Consecuencia                                                                                                                                                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenCode → Factory      | Recoger actividad del agente mediante el stream de eventos y consultar sus recursos | Existe con cualquiera de las dos opciones del panel. La documentación ofrece `/event` como SSE y suscripción en el SDK. [Servidor](https://opencode.ai/docs/server/#events), [SDK](https://opencode.ai/docs/sdk/#events). |
+| Factory → navegador     | Mostrar estado, mensajes, herramientas y salidas ya observados                      | Es la elección investigada. No debería exponer directamente OpenCode, porque también hay verificaciones, esperas humanas y deployments que pertenecen a la Factory.                                                       |
+| Factory → GitHub/Vercel | Consultar instrucciones y hechos externos                                           | Mantener los 15 segundos ya acordados. SSE en el navegador no acelera hechos que la Factory todavía no ha observado. [Workflow acordado](https://github.com/rubenbp/app-foundry/issues/5#issuecomment-6201919022).        |
 
 La investigación previa de OpenCode constató que el stream inspeccionado no ofrece replay desde `Last-Event-ID`. Esto no impide crear SSE propio, pero tampoco permite reutilizar el stream como historial completo. Al perder la conexión con OpenCode se reconcilian sus recursos y se señalan las lagunas que no puedan recuperarse. [Conclusión y código fijado de la investigación previa](https://github.com/rubenbp/app-foundry/issues/3#issuecomment-6132966041).
 
@@ -34,16 +34,16 @@ Un proceso HTTP local puede mantener una respuesta abierta y escribir sucesivos 
 
 ## Comparación funcional
 
-| Aspecto | Polling local cada 2 segundos | SSE sencillo con reconciliación |
-| --- | --- | --- |
-| Actividad visible | Mensajes y cambios llegan agrupados en cada consulta. | Cambios llegan al publicarlos la Factory; pueden agruparse para no repintar por token. |
-| Demora añadida | Aproximadamente 0–2 segundos de espera, más consulta y renderizado, con pestaña activa y servidor rápido. Media aproximada de 1 segundo si los cambios llegan uniformemente. | Elimina la espera del intervalo. Sigue habiendo persistencia, entrega, posible buffering y renderizado; no se promete una latencia exacta. |
-| Tráfico en reposo | Hasta unas 30 consultas/minuto por pestaña, 1.800/hora, si se mantiene la cadencia. | Una conexión abierta y heartbeats; menos solicitudes sin cambios. |
-| Primera carga | Consulta inmediata de resumen y actividad reciente; historial bajo demanda. | Estado inicial en el stream o consulta sincronizada con la suscripción; historial bajo demanda. |
-| Corte y reinicio | Cada consulta nueva recupera el estado; hay que detectar errores, aplicar timeout y evitar solapes. | `EventSource` ayuda a reconectar; al volver debe obtenerse un estado vigente y recuperar el detalle desde disco. |
-| Historial | La persistencia previa evita perder transiciones entre dos consultas. | La persistencia previa evita depender de eventos perdidos mientras no había conexión. |
-| Recurso que exige gestión | Timer y petición en curso. | Conexión, listeners, heartbeat y cliente lento. |
-| Qué no resuelve | Pérdida de eventos antes de que la Factory los registre; incertidumbre externa. | Los mismos límites; mantener una conexión abierta no acredita actividad del agente. |
+| Aspecto                   | Polling local cada 2 segundos                                                                                                                                                | SSE sencillo con reconciliación                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Actividad visible         | Mensajes y cambios llegan agrupados en cada consulta.                                                                                                                        | Cambios llegan al publicarlos la Factory; pueden agruparse para no repintar por token.                                                     |
+| Demora añadida            | Aproximadamente 0–2 segundos de espera, más consulta y renderizado, con pestaña activa y servidor rápido. Media aproximada de 1 segundo si los cambios llegan uniformemente. | Elimina la espera del intervalo. Sigue habiendo persistencia, entrega, posible buffering y renderizado; no se promete una latencia exacta. |
+| Tráfico en reposo         | Hasta unas 30 consultas/minuto por pestaña, 1.800/hora, si se mantiene la cadencia.                                                                                          | Una conexión abierta y heartbeats; menos solicitudes sin cambios.                                                                          |
+| Primera carga             | Consulta inmediata de resumen y actividad reciente; historial bajo demanda.                                                                                                  | Estado inicial en el stream o consulta sincronizada con la suscripción; historial bajo demanda.                                            |
+| Corte y reinicio          | Cada consulta nueva recupera el estado; hay que detectar errores, aplicar timeout y evitar solapes.                                                                          | `EventSource` ayuda a reconectar; al volver debe obtenerse un estado vigente y recuperar el detalle desde disco.                           |
+| Historial                 | La persistencia previa evita perder transiciones entre dos consultas.                                                                                                        | La persistencia previa evita depender de eventos perdidos mientras no había conexión.                                                      |
+| Recurso que exige gestión | Timer y petición en curso.                                                                                                                                                   | Conexión, listeners, heartbeat y cliente lento.                                                                                            |
+| Qué no resuelve           | Pérdida de eventos antes de que la Factory los registre; incertidumbre externa.                                                                                              | Los mismos límites; mantener una conexión abierta no acredita actividad del agente.                                                        |
 
 Las cifras de demora y tráfico son cálculos del intervalo propuesto, no benchmarks. El navegador puede retrasar timers; 2 segundos es una cadencia objetivo, no un SLA. Para evitar peticiones solapadas o respuestas fuera de orden se programa la siguiente consulta después de terminar la anterior, o se salta un tick si hay una en curso. [Advertencias de `setInterval`](https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval#delay_restrictions).
 
@@ -69,11 +69,11 @@ Para un cliente lento se puede cerrar y obligar a reconciliar, en lugar de almac
 
 Estimación orientativa por descomposición, sin prototipo ni mediciones. Supone una persona que conoce HTTP y el runtime escogido, una Ejecución, una página de consulta local, mismo origen, sin proxy ni autenticación adicional del panel. Supone ya disponibles el resumen persistido, la consulta del historial y una forma interna de avisar de cambios. No incluye construir esa base común, la interfaz, integrar OpenCode, GitHub o Vercel, ni documentar el TFM.
 
-| Trabajo incremental de transporte | Rango orientativo |
-| --- | --- |
-| REST con polling, timeout, ausencia de solapes, estado de conexión y comprobación de corte/reinicio | 2–4 horas |
-| SSE sencillo, snapshot/reconciliación, heartbeat, limpieza, cliente lento y comprobaciones equivalentes | 4–8 horas |
-| Sobrecoste de SSE frente al polling sobre la misma base | Aproximadamente 2–4 horas; no sumar mecánicamente extremos de los rangos anteriores |
+| Trabajo incremental de transporte                                                                       | Rango orientativo                                                                   |
+| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| REST con polling, timeout, ausencia de solapes, estado de conexión y comprobación de corte/reinicio     | 2–4 horas                                                                           |
+| SSE sencillo, snapshot/reconciliación, heartbeat, limpieza, cliente lento y comprobaciones equivalentes | 4–8 horas                                                                           |
+| Sobrecoste de SSE frente al polling sobre la misma base                                                 | Aproximadamente 2–4 horas; no sumar mecánicamente extremos de los rangos anteriores |
 
 No son tarifas universales ni compromisos de entrega. Un framework familiar con streaming fiable puede reducir el diferencial a 1–2 horas. Elegir runtime y servidor, descubrir buffering, separar orígenes o carecer de notificaciones internas puede ampliarlo. Actualmente no hay código que permita verificar esos supuestos. Por eso resulta impropio asegurar que SSE serían «unas pocas líneas» o que necesariamente necesitaría varios días.
 

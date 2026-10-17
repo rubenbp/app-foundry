@@ -27,12 +27,12 @@ Para tarifa plana, la atribución de la cuota a cada ejecución exige una regla 
 
 ## Opciones de la Factory
 
-| Opción | Qué registra | Ventaja | Límite |
-| --- | --- | --- | --- |
-| A. Estimación de OpenCode | Contadores y `cost` del SDK, con procedencia y modalidad de pago | Integración mínima; catálogo existente; admite override | Catálogo o uso incompletos; OAuth puede producir cero |
-| B. Cálculo propio | Contadores normalizados × catálogo versionado de la Factory | Comparación reproducible y políticas propias | Mantener tarifas, tramos y excepciones; sigue siendo estimación |
-| C. Conciliación con proveedor | Consumo/cargos mediante API, exportación o factura | Contrasta el importe cobrado | Integración por proveedor, permisos, demora y atribución a ejecuciones |
-| D. Híbrida | A durante ejecución; B solo para equivalentes cuando haga falta; C posteriormente | Separa consumo, estimación y cargo | Más complejidad si se implementa todo al inicio |
+| Opción                        | Qué registra                                                                      | Ventaja                                                 | Límite                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| A. Estimación de OpenCode     | Contadores y `cost` del SDK, con procedencia y modalidad de pago                  | Integración mínima; catálogo existente; admite override | Catálogo o uso incompletos; OAuth puede producir cero                  |
+| B. Cálculo propio             | Contadores normalizados × catálogo versionado de la Factory                       | Comparación reproducible y políticas propias            | Mantener tarifas, tramos y excepciones; sigue siendo estimación        |
+| C. Conciliación con proveedor | Consumo/cargos mediante API, exportación o factura                                | Contrasta el importe cobrado                            | Integración por proveedor, permisos, demora y atribución a ejecuciones |
+| D. Híbrida                    | A durante ejecución; B solo para equivalentes cuando haga falta; C posteriormente | Separa consumo, estimación y cargo                      | Más complejidad si se implementa todo al inicio                        |
 
 Los proveedores pueden aportar costes directamente, pero no hay un contrato universal. OpenRouter documenta `usage.cost`; OpenAI ofrece dashboard y exportaciones para revisión y conciliación. No se debe asumir que un coste informado por un gateway llega sin cambios a `AssistantMessage.cost`: el cálculo de OpenCode verificado utiliza sus propias tarifas. [OpenRouter Usage Accounting](https://openrouter.ai/docs/cookbook/administration/usage-accounting), [OpenAI revisión de consumo y costes](https://help.openai.com/en/articles/10478918-reviewing-api-usage-and-costs).
 
