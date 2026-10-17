@@ -617,6 +617,34 @@ summary {
 .usage dd {
   overflow-wrap: anywhere;
 }
+.verification {
+  margin-top: 18px;
+  overflow-wrap: anywhere;
+}
+.verification h3 {
+  margin: 22px 0 10px;
+  font-size: 14px;
+}
+.verification-checks,
+.criteria {
+  padding-left: 22px;
+}
+.verification-checks > li,
+.criteria > li {
+  margin-top: 16px;
+}
+.criterion-text {
+  white-space: pre-wrap;
+}
+.output:target {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+.badge.verifying,
+.badge.awaiting_preview {
+  background: #e2f2eb;
+  color: #235d46;
+}
 .badge.queued,
 .badge.preparing {
   background: #edf2ff;

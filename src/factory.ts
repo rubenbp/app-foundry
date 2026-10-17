@@ -30,6 +30,12 @@ export class Factory {
         run.status = "intervention";
         run.error =
           "Factory restarted. Work/process state uncertain; no task was resent. Inspect owned PID before recovery.";
+        if (run.verification?.status === "running") {
+          run.verification.status = "intervention";
+          run.verification.error = run.error;
+          for (const check of run.verification.checks)
+            if (check.status === "running") check.status = "uncertain";
+        }
         run.gaps.push("Observation interrupted by Factory restart");
         this.record(run, "recovery", run.error);
         this.store.save(run);
@@ -184,6 +190,14 @@ export class Factory {
     this.assertWritable();
     const run = this.view(id);
     if (!run || run.status === "stopped") return;
+    // Late agent observations cannot move an independently verified candidate back into editing.
+    if (
+      run.phase === "verification" &&
+      fact.type !== "part" &&
+      fact.type !== "usage" &&
+      fact.type !== "gap"
+    )
+      return;
     const at = this.now();
     const text = "text" in fact ? this.clean(fact.text) : null;
     if (fact.type === "status" && run.agentStatus !== fact.status) {
@@ -294,7 +308,14 @@ export class Factory {
     this.persist(run);
     let result;
     try {
-      result = await this.agent.stop(run.sessionId);
+      result =
+        run.phase === "verification" && run.process?.exited
+          ? {
+              exited: true,
+              detail:
+                "Owned agent was already confirmed absent before verification",
+            }
+          : await this.agent.stop(run.sessionId);
     } catch (error) {
       result = { exited: false, detail: `Stop unconfirmed: ${String(error)}` };
     }

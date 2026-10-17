@@ -7,9 +7,10 @@ import type { Effect, WorkspacePort } from "../application/ports.ts";
 export interface ProcessOptions {
   cwd: string;
   env: NodeJS.ProcessEnv;
+  signal?: AbortSignal;
 }
 export interface CommandResult {
-  code: number;
+  code: number | null;
   output: string;
 }
 export type ProcessPort = (
@@ -20,10 +21,24 @@ export type ProcessPort = (
 
 export const execute: ProcessPort = (command, args, options) =>
   new Promise((resolve, reject) => {
+    const { signal, ...settings } = options;
+    if (signal?.aborted) {
+      reject(signal.reason);
+      return;
+    }
     const child = spawn(command, args, {
-      ...options,
+      ...settings,
+      detached: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
+    const abort = () => {
+      try {
+        if (child.pid) process.kill(-child.pid, "SIGKILL");
+      } catch {
+        /* Exit is observed below. */
+      }
+    };
+    signal?.addEventListener("abort", abort, { once: true });
     let output = "";
     let truncated = false;
     const collect = (chunk: Buffer) => {
@@ -32,13 +47,17 @@ export const execute: ProcessPort = (command, args, options) =>
     };
     child.stdout.on("data", collect);
     child.stderr.on("data", collect);
-    child.once("error", reject);
-    child.once("close", (code) =>
+    child.once("error", (error) => {
+      signal?.removeEventListener("abort", abort);
+      reject(error);
+    });
+    child.once("close", (code) => {
+      signal?.removeEventListener("abort", abort);
       resolve({
-        code: code ?? -1,
+        code,
         output: output + (truncated ? "\n[TRUNCATED]" : ""),
-      }),
-    );
+      });
+    });
   });
 
 // This reduces accidental access. Processes under the same macOS user are not an OS sandbox.

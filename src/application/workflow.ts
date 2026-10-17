@@ -12,12 +12,16 @@ import { requestContext } from "./agent-task.ts";
 import { authorize } from "../domain/request.ts";
 import type { ReadyIssue } from "../domain/request.ts";
 import type { AgentPort, FactoryConfig } from "../types.ts";
+import { verificationPlan } from "../domain/verification.ts";
+import { CandidateVerifier } from "../infrastructure/verification.ts";
+import type { ProcessPort } from "../infrastructure/workspace.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
   workspace?: WorkspacePort;
   github?: GitHubPort;
   secrets?: string[];
+  verificationProcess?: ProcessPort;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
 }
 
@@ -29,6 +33,10 @@ export class Workflow {
   private createAgent: (config: FactoryConfig) => AgentPort;
   private ownership: WorkflowOwnership;
   private closed = false;
+  private verifying = false;
+  private verificationAbort?: AbortController;
+  private verificationDone?: Promise<void>;
+  private verifier: CandidateVerifier;
   get observation() {
     return this.factory.store.observation();
   }
@@ -36,6 +44,10 @@ export class Workflow {
     this.github = options.github;
     this.workspace = options.workspace;
     this.createAgent = options.createAgent;
+    this.verifier = new CandidateVerifier(
+      config.dataDir,
+      options.verificationProcess,
+    );
     if (!config.managedProject)
       throw new Error("Trusted Managed project configuration required");
     validateProject(config.managedProject);
@@ -79,6 +91,7 @@ export class Workflow {
     if (!this.github) throw new Error("GitHub adapter required");
     this.polling = true;
     try {
+      await this.verifyCandidate();
       const issues = await this.github.ready(
         this.factory.config.managedProject!.repository,
       );
@@ -193,6 +206,102 @@ export class Workflow {
   queue() {
     return queuedRuns(this.list());
   }
+  async verifyCandidate() {
+    const id = this.factory.active;
+    const run = id ? this.view(id) : null;
+    if (
+      this.halted ||
+      this.verifying ||
+      run?.status !== "awaiting_verification"
+    )
+      return null;
+    this.verifying = true;
+    this.verificationAbort = new AbortController();
+    let done!: () => void;
+    this.verificationDone = new Promise<void>((resolve) => {
+      done = resolve;
+    });
+    try {
+      this.factory.assertRunning(run.id);
+      if (!run.workspace || !run.request || !this.workspace)
+        throw new Error("Prepared candidate context required");
+      run.phase = "verification";
+      run.status = "verifying";
+      run.endedAt = null;
+      run.verification = verificationPlan(
+        run.workspace.baseSha,
+        run.request.configuration.verification.commands,
+        run.request.body,
+      );
+      this.factory.record(
+        run,
+        "intent",
+        "Stop agent editing before fixing candidate head",
+      );
+      this.factory.persist(run);
+      const stopped = await this.factory.agent.stop(run.sessionId);
+      this.factory.assertRunning(run.id);
+      const latest = this.view(run.id)!;
+      if (latest.process) latest.process.exited = stopped.exited;
+      this.factory.record(latest, "agent-stop", stopped.detail);
+      this.factory.persist(latest);
+      if (!stopped.exited)
+        throw new Error(
+          "Agent editing stop unconfirmed; candidate cannot be fixed",
+        );
+      await this.workspace.validate(run.workspace, run.request.configuration);
+      await this.verifier.verify(
+        run.workspace,
+        run.request.configuration,
+        run.verification,
+        (report, output) => {
+          this.factory.assertRunning(run.id);
+          if (output)
+            this.factory.ingest(run.id, {
+              type: "part",
+              messageId: "verification",
+              kind: "evidence",
+              ...output,
+            });
+          const current = this.view(run.id)!;
+          current.verification = sanitizedRecord(report, this.factory.clean);
+          this.factory.persist(current);
+        },
+        this.verificationAbort.signal,
+      );
+      await this.workspace.validate(run.workspace, run.request.configuration);
+      const completed = this.view(run.id)!;
+      completed.status =
+        completed.verification!.status === "passed"
+          ? "awaiting_preview"
+          : "intervention";
+      completed.error = completed.verification!.error;
+      this.factory.record(
+        completed,
+        "verification",
+        completed.error ??
+          "Technical checks passed; criterion judgment and preview pending",
+      );
+      this.factory.persist(completed);
+      return completed;
+    } catch (error) {
+      this.factory.assertWritable();
+      const current = this.view(run!.id)!;
+      current.status = "intervention";
+      current.error = this.factory.clean(String(error)).text;
+      if (current.verification) {
+        current.verification.status = "intervention";
+        current.verification.error = current.error;
+      }
+      this.factory.record(current, "verification-error", current.error);
+      this.factory.persist(current);
+      return current;
+    } finally {
+      this.verifying = false;
+      this.verificationAbort = undefined;
+      done();
+    }
+  }
   list() {
     return this.factory.list();
   }
@@ -203,6 +312,12 @@ export class Workflow {
     return this.factory.output(runId, partId);
   }
   async stop(id: string) {
+    if (this.verifying && this.factory.active === id) {
+      this.verificationAbort?.abort(
+        new Error("Verification cancelled; command completion is not approved"),
+      );
+      await this.verificationDone;
+    }
     const result = await this.factory.stop(id);
     if (result.status === "stopped") this.ownership.releaseRun(id);
     return result;

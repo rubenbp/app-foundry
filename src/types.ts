@@ -3,6 +3,7 @@ import type {
   ManagedProject,
   Workspace,
 } from "./domain/request.ts";
+import type { Verification } from "./domain/verification.ts";
 export interface FactoryConfig {
   dataDir: string;
   projectDir: string;
@@ -20,6 +21,8 @@ export type RunStatus =
   | "running"
   | "waiting"
   | "awaiting_verification"
+  | "verifying"
+  | "awaiting_preview"
   | "intervention"
   | "stopped";
 export interface History {
@@ -60,7 +63,8 @@ export interface Run {
   task: string;
   request?: AuthorizedRequest;
   workspace?: Workspace;
-  phase?: "preparation" | "implementation";
+  verification?: Verification;
+  phase?: "preparation" | "implementation" | "verification";
   status: RunStatus;
   startedAt: number;
   endedAt: number | null;

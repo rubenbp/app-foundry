@@ -27,6 +27,9 @@
       "pnpm test:e2e"
     ],
     "e2e": {
+      "command": "pnpm test:e2e",
+      "configFile": "playwright.config.mjs",
+      "serverCommand": "python3 -m http.server 4173 --bind 127.0.0.1 --directory dist",
       "origin": "http://127.0.0.1:4173",
       "serves": "dist",
       "reuseExistingServer": false,

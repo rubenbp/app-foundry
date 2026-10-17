@@ -6,7 +6,19 @@ export interface ManagedProject {
   baseBranch: string;
   instructions: string[];
   preparation: { command: string };
-  verification: { commands: string[] };
+  verification: {
+    commands: string[];
+    surfaces?: string[];
+    e2e?: {
+      command: string;
+      configFile: string;
+      serverCommand: string;
+      origin: string;
+      serves: string;
+      reuseExistingServer: false;
+      offline: boolean;
+    };
+  };
   publication: {
     provider: "vercel";
     projectId: string;

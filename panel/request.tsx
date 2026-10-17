@@ -8,14 +8,21 @@ export function RequestDetails({ run }: { run: Run }) {
       ? "Cola"
       : run.phase === "preparation"
         ? "Preparación de la base"
-        : "Implementación";
+        : run.phase === "verification"
+          ? "Verificación"
+          : "Implementación";
 
   return (
     <>
       <section className="card" aria-label="Fases de la Ejecución">
         <h2>Fases</h2>
         <ol className="phases">
-          {["Cola", "Preparación de la base", "Implementación"].map((phase) => (
+          {[
+            "Cola",
+            "Preparación de la base",
+            "Implementación",
+            "Verificación",
+          ].map((phase) => (
             <li
               key={phase}
               aria-current={phase === current ? "step" : undefined}

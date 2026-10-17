@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RequestDetails } from "./request.tsx";
+import { VerificationDetails } from "./verification.tsx";
 import { Button } from "./components/button.tsx";
 import { poll } from "./polling.ts";
 import {
@@ -28,6 +29,8 @@ const labels: Record<RunStatus, string> = {
   running: "En curso",
   waiting: "Espera humana",
   awaiting_verification: "Resultado sin verificar",
+  verifying: "Verificando candidato",
+  awaiting_preview: "Verificado · Preview pendiente",
   intervention: "Requiere intervención",
   stopped: "Detenida",
 };
@@ -69,7 +72,7 @@ function Output({ runId, part }: { runId: string; part: PartView }) {
     };
   }, [open, runId, part.id, part.updatedAt]);
   return (
-    <li className="output">
+    <li className="output" id={`part-${part.id}`}>
       <Button
         variant="ghost"
         aria-expanded={open}
@@ -131,6 +134,7 @@ function App() {
     now - (run.lastActivity ?? run.startedAt) >= 120_000;
   const opencodeDisconnected =
     run &&
+    run.phase !== "verification" &&
     !["queued", "preparing", "stopped"].includes(run.status) &&
     now - (run.lastObservation ?? run.startedAt) >= 30_000;
   const duration = run
@@ -332,11 +336,13 @@ function App() {
                   </div>
                 </dl>
                 <p className="verification-note">
-                  El resultado requiere verificación independiente. El estado
-                  idle y el texto del agente no acreditan éxito.
+                  {run.verification?.status === "passed"
+                    ? "Contrato técnico comprobado. Los criterios requieren revisión humana; preview y aceptación siguen pendientes."
+                    : "El resultado requiere verificación independiente. El estado idle y el texto del agente no acreditan éxito."}
                 </p>
               </section>
               <RequestDetails run={run} />
+              <VerificationDetails run={run} />
               <section
                 className="health-grid"
                 aria-label="Antigüedad y procedencia de observaciones"
