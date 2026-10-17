@@ -405,6 +405,11 @@ export class OpenCode implements AgentPort {
         ]
       : policy;
     if (project) {
+      writeFileSync(
+        join(this.runtime, "package.json"),
+        JSON.stringify({ type: "commonjs" }),
+        { mode: 0o600 },
+      );
       const guards = join(this.runtime, "bin");
       mkdirSync(guards, { mode: 0o700 });
       const script = `#!${process.execPath}

@@ -82,7 +82,9 @@ if (command === "serve") {
       if (data.command === "run" && !workflow && typeof data.task === "string")
         result = await factory.run(data.task);
       else if (data.command === "stop" && typeof data.id === "string")
-        result = await factory.stop(data.id);
+        result = await (workflow
+          ? workflow.stop(data.id)
+          : factory.stop(data.id));
       else throw new Error("Use run with a task or stop with the Ejecución ID");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(
@@ -113,7 +115,10 @@ if (command === "serve") {
     workflow?.halt();
     clearTimeout(pollTimer);
     try {
-      if (factory.active) await factory.stop(factory.active);
+      if (factory.active)
+        await (workflow
+          ? workflow.stop(factory.active)
+          : factory.stop(factory.active));
       await polling;
     } catch {
       console.error(

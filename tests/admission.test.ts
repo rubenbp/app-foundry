@@ -169,3 +169,40 @@ test("untrusted or incomplete project configuration is rejected before creating 
   );
   assert.equal(started, false);
 });
+
+test("the fixed request retains the selected agent configuration while it waits in the queue", async () => {
+  const s = setup();
+  const workflow = createWorkflow(
+    { ...s.config, opencodeCli: "/trusted/opencode" },
+    { createAgent: () => s.agent },
+  );
+  try {
+    await workflow.observe([ready()]);
+    assert.deepEqual(workflow.list()[0].request?.runtime, {
+      provider: "openai",
+      model: "gpt-6-luna",
+      auth: "opencode",
+      opencodeCli: "/trusted/opencode",
+    });
+  } finally {
+    workflow.close();
+  }
+});
+
+test("an unauthorized issue cannot block other authorized requests in the same observation", async () => {
+  const s = setup();
+  const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
+  try {
+    await workflow.observe([
+      {
+        ...ready(9),
+        authorization: { ...ready(9).authorization, canWrite: false },
+      },
+      ready(2),
+    ]);
+    assert.equal(workflow.list()[0]?.request?.number, 2);
+    assert.match(workflow.observation.error!, /write permission/);
+  } finally {
+    workflow.close();
+  }
+});

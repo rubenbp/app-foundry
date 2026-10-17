@@ -16,7 +16,11 @@ export function acquireLock(path: string) {
     unlinkSync(path);
   }
   writeFileSync(path, String(process.pid), { flag: "wx", mode: 0o600 });
+  let released = false;
+
   return () => {
+    if (released) return;
+    released = true;
     if (existsSync(path) && readFileSync(path, "utf8") === String(process.pid))
       unlinkSync(path);
   };

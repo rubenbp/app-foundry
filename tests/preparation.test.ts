@@ -8,7 +8,7 @@ import { createWorkflow } from "../src/workflow.ts";
 import { GitWorkspace, execute } from "../src/infrastructure/workspace.ts";
 import type { AgentPort } from "../src/types.ts";
 
-function fixture() {
+function fixture(options: { stopConfirmed?: boolean } = {}) {
   const root = mkdtempSync(join(tmpdir(), "foundry-prepare-"));
   const source = join(root, "source");
   mkdirSync(source);
@@ -64,7 +64,13 @@ function fixture() {
       tasks.push(task);
     },
     async stop() {
-      return { exited: true, detail: "Owned process absent" };
+      return {
+        exited: options.stopConfirmed !== false,
+        detail:
+          options.stopConfirmed === false
+            ? "Owned process state uncertain"
+            : "Owned process absent",
+      };
     },
   };
   const config = {
@@ -126,6 +132,8 @@ function fixture() {
 
   return {
     root,
+    config,
+    agent,
     source,
     baseSha,
     workflow,
@@ -153,7 +161,7 @@ test("an authorized request verifies its base in an owned branch before deliveri
     assert.ok(s.tasks[0].includes("Keep the whole catalogue accessible."));
     assert.equal(run.request?.body.length, s.issue.body.length);
     assert.match(
-      s.workflow.factory.output(run.id, "base-1")!,
+      s.workflow.output(run.id, "base-1")!,
       /catalogue base verified/,
     );
     await s.workflow.observe([
@@ -183,7 +191,7 @@ test("a pre-existing base failure requires intervention and never attributes a r
     assert.match(run.error!, /Pre-existing base failed/);
     assert.equal(run.sessionId, null);
     assert.equal(s.tasks.length, 0);
-    assert.match(s.workflow.factory.output(run.id, "base-1")!, /broken base/);
+    assert.match(s.workflow.output(run.id, "base-1")!, /broken base/);
     assert.equal(await s.workflow.startNext(), null);
   } finally {
     s.workflow.close();
@@ -200,6 +208,46 @@ test("preparation cannot hand an altered branch to the agent", async () => {
     assert.match(run.error!, /branch or hook policy changed/);
     assert.equal(s.tasks.length, 0);
   } finally {
+    s.workflow.close();
+  }
+});
+
+test("uncertain work reserves its Managed project after the Workflow closes, including another data root", async () => {
+  const s = fixture({ stopConfirmed: false });
+  try {
+    await s.workflow.observe([s.issue]);
+    const run = await s.workflow.startNext();
+    assert.equal(run?.status, "running");
+    assert.equal((await s.workflow.stop(run.id)).status, "intervention");
+    s.workflow.close();
+    assert.throws(
+      () =>
+        createWorkflow(
+          { ...s.config, dataDir: join(s.root, "other-data") },
+          { createAgent: () => s.agent },
+        ),
+      /reserved|uncertain/i,
+    );
+  } finally {
+    s.workflow.close();
+  }
+});
+
+test("confirmed stop releases the reservation for another data root", async () => {
+  const s = fixture();
+  let other: ReturnType<typeof createWorkflow> | undefined;
+  try {
+    await s.workflow.observe([s.issue]);
+    const run = (await s.workflow.startNext())!;
+    assert.equal((await s.workflow.stop(run.id)).status, "stopped");
+    s.workflow.close();
+    other = createWorkflow(
+      { ...s.config, dataDir: join(s.root, "other-data") },
+      { createAgent: () => s.agent },
+    );
+    assert.deepEqual(other.list(), []);
+  } finally {
+    other?.close();
     s.workflow.close();
   }
 });

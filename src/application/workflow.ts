@@ -2,8 +2,13 @@ import { sanitizedRecord } from "../sanitize.ts";
 import { queuedRuns } from "../domain/queue.ts";
 import { Factory } from "../factory.ts";
 import { validateProject } from "../domain/configuration.ts";
-import type { Effect, GitHubPort, WorkspacePort } from "./ports.ts";
-import { requestContext } from "../domain/request.ts";
+import type {
+  Effect,
+  GitHubPort,
+  WorkspacePort,
+  WorkflowOwnership,
+} from "./ports.ts";
+import { requestContext } from "./agent-task.ts";
 import { authorize } from "../domain/request.ts";
 import type { ReadyIssue } from "../domain/request.ts";
 import type { AgentPort, FactoryConfig } from "../types.ts";
@@ -13,7 +18,7 @@ export interface WorkflowOptions {
   workspace?: WorkspacePort;
   github?: GitHubPort;
   secrets?: string[];
-  acquireOwnership: (config: FactoryConfig) => () => void;
+  acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
 }
 
 export class Workflow {
@@ -22,7 +27,8 @@ export class Workflow {
   private polling = false;
   private workspace?: WorkspacePort;
   private createAgent: (config: FactoryConfig) => AgentPort;
-  private release: () => void;
+  private ownership: WorkflowOwnership;
+  private closed = false;
   get observation() {
     return this.factory.store.observation();
   }
@@ -33,13 +39,33 @@ export class Workflow {
     if (!config.managedProject)
       throw new Error("Trusted Managed project configuration required");
     validateProject(config.managedProject);
-    this.release = options.acquireOwnership(config);
+    this.ownership = options.acquireOwnership(config);
     try {
       this.factory = new Factory(config, options.createAgent(config), {
         secrets: options.secrets,
       });
+      const reserved = this.ownership.reservation();
+      if (!reserved && this.factory.active)
+        this.ownership.reserve(this.factory.active);
+      if (reserved) {
+        const run = this.view(reserved);
+        if (!run)
+          throw new Error(
+            "Reserved Ejecución missing from this data root; inspect ownership manually",
+          );
+        if (run.status === "stopped") this.ownership.releaseRun(reserved);
+        else if (run.status === "queued") {
+          run.status = "intervention";
+          run.phase = "preparation";
+          run.error =
+            "Preparation ownership was reserved before restart; inspect effects before recovery. No task was resent.";
+          this.factory.active = run.id;
+          this.factory.record(run, "recovery", run.error);
+          this.factory.persist(run);
+        }
+      }
     } catch (error) {
-      this.release();
+      this.ownership.close();
       throw error;
     }
   }
@@ -73,6 +99,7 @@ export class Workflow {
   }
   async observe(issues: ReadyIssue[]) {
     const observedAt = this.factory.now();
+    const errors: string[] = [];
     for (const issue of issues) {
       if (
         this.factory
@@ -89,19 +116,26 @@ export class Workflow {
           issue,
           this.factory.config.managedProject!,
           observedAt,
+          {
+            provider: this.factory.config.provider,
+            model: this.factory.config.model,
+            auth: this.factory.config.auth,
+            ...(this.factory.config.opencodeCli
+              ? { opencodeCli: this.factory.config.opencodeCli }
+              : {}),
+          },
         );
         const safe = sanitizedRecord(request, this.factory.clean);
         this.factory.enqueue(safe.body, safe);
       } catch (error) {
         this.factory.assertWritable();
-        this.factory.store.observation({
-          at: this.factory.now(),
-          error: this.factory.clean(`${issue.url}: ${String(error)}`).text,
-        });
-        return;
+        errors.push(`${issue.url}: ${String(error)}`);
       }
     }
-    this.factory.store.observation({ at: this.factory.now(), error: null });
+    this.factory.store.observation({
+      at: this.factory.now(),
+      error: errors.length ? this.factory.clean(errors.join("\n")).text : null,
+    });
   }
   async startNext() {
     if (this.halted || this.factory.active) return null;
@@ -109,6 +143,7 @@ export class Workflow {
     if (!next) return null;
     if (!this.workspace)
       throw new Error("Workspace preparation adapter required");
+    this.ownership.reserve(next.id);
     return this.factory.start(next.id, async (run) => {
       const effect: Effect = async (id, description, action) => {
         this.factory.assertRunning(run.id);
@@ -148,6 +183,7 @@ export class Workflow {
         task: requestContext(run.request!, workspace),
         agent: this.createAgent({
           ...this.factory.config,
+          ...run.request!.runtime,
           projectDir: workspace.directory,
           managedProject: run.request!.configuration,
         }),
@@ -163,9 +199,22 @@ export class Workflow {
   view(id: string) {
     return this.factory.view(id);
   }
+  output(runId: string, partId: string) {
+    return this.factory.output(runId, partId);
+  }
+  async stop(id: string) {
+    const result = await this.factory.stop(id);
+    if (result.status === "stopped") this.ownership.releaseRun(id);
+    return result;
+  }
   close() {
+    if (this.closed) return;
     this.halt();
+    const reserved = this.ownership.reservation();
+    if (reserved && this.view(reserved)?.status === "stopped")
+      this.ownership.releaseRun(reserved);
     this.factory.close();
-    this.release();
+    this.ownership.close();
+    this.closed = true;
   }
 }

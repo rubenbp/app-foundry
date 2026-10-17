@@ -25,3 +25,10 @@ export interface WorkspacePort {
   ): Promise<Workspace>;
   validate(workspace: Workspace, project: ManagedProject): Promise<void>;
 }
+
+export interface WorkflowOwnership {
+  reservation(): string | null;
+  reserve(runId: string): void;
+  releaseRun(runId: string): void;
+  close(): void;
+}

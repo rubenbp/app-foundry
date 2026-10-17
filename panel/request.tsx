@@ -79,7 +79,11 @@ export function RequestDetails({ run }: { run: Run }) {
         <details>
           <summary>Configuración e instrucciones capturadas</summary>
           <pre tabIndex={0}>
-            {JSON.stringify(request.configuration, null, 2)}
+            {JSON.stringify(
+              { project: request.configuration, agent: request.runtime },
+              null,
+              2,
+            )}
           </pre>
           {run.workspace?.instructions.map((instruction) => (
             <div key={instruction.path}>
