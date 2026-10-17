@@ -16,6 +16,7 @@ for (const scenario of [
   "wrong text",
   "dirty marker",
   "alias changes",
+  "page redirects",
 ] as const) {
   test(`public production ${scenario}: completion requires visible behavior and a stable integrated version`, async () => {
     const directory = mkdtempSync(join(tmpdir(), "foundry-public-"));
@@ -73,6 +74,9 @@ for (const scenario of [
               dirty: scenario === "dirty marker",
             }),
           );
+        } else if (scenario === "page redirects" && req.url === "/") {
+          res.writeHead(302, { Location: "/other/" });
+          res.end();
         } else {
           res.setHeader("Content-Type", "text/html");
           res.end(
@@ -120,6 +124,8 @@ for (const scenario of [
         expect(s.facts.request.open).toBe(true);
         if (scenario === "wrong text")
           expect(output.checks[1].observed).toBe("Wrong catalogue");
+        else if (scenario === "page redirects")
+          expect(output.error).toContain("redirected");
         else expect(output.error).toContain("dirty build");
       }
     } finally {

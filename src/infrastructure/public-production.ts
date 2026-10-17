@@ -92,10 +92,11 @@ export async function verifyPublicProduction(
         if (
           !response ||
           response.status() !== 200 ||
-          new URL(page.url()).origin !== origin
+          page.url() !== `${origin}${check.path}` ||
+          response.request().redirectedFrom() !== null
         )
           throw new Error(
-            `Public page ${check.path} unavailable or redirected`,
+            `Public page ${check.path} unavailable or redirected to ${page.url()}`,
           );
         const element = page.locator(check.selector);
         const count = await element.count();

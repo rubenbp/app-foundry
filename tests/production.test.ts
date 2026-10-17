@@ -68,3 +68,20 @@ test("a manually closed request still requires the complete production proof", a
     s.close();
   }
 });
+
+test("an unauthorized correction before merge cannot invalidate a human accepted integration", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.comment("Corrige el catálogo.", { author: "outsider" });
+    s.merge();
+    s.productionReady();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+  } finally {
+    s.close();
+  }
+});

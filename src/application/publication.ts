@@ -393,12 +393,16 @@ export class CandidatePublication {
         (comment) => comment.id === accepted?.commentId,
       );
       const intent = comment ? interpretComment(comment.body) : null;
-      const conflicting = facts.comments.some(
+      const invalidations = facts.comments.filter(
         (comment) =>
           !this.isOwn(run, comment) &&
           comment.createdAt <= (pull.mergedAt ?? 0) &&
           interpretComment(comment.body).kind === "invalidate",
       );
+      let conflicting = false;
+      for (const comment of invalidations)
+        if (await this.port.canWrite(run.request!.repository, comment.author))
+          conflicting = true;
       if (
         !accepted ||
         !pull.mergeSha ||

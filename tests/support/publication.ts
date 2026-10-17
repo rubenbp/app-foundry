@@ -84,8 +84,8 @@ export function publicationFixture(
         throw new Error("Lost status response");
       }
     },
-    async canWrite() {
-      return writer;
+    async canWrite(_repository, author) {
+      return writer && author !== "outsider";
     },
     async prepareHead() {
       writes.push({ kind: "prepare-head" });
