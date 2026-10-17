@@ -39,6 +39,7 @@ export interface Publication {
     head: string;
     preview: string;
     bodyHash: string;
+    evidence: { id: string; url: string; bodyHash: string }[];
   };
   deployments: { at: number; preview: Preview }[];
   reports: NonNullable<Publication["report"]>[];
@@ -57,6 +58,8 @@ export interface Publication {
   observationError: string | null;
   blocked?: string;
   mergeSha?: string;
+  integratedAcceptance?: NonNullable<Publication["acceptance"]>;
+  recoveryRequired?: boolean;
   limitations: string[];
 }
 
@@ -151,10 +154,9 @@ export function validPreview(
 }
 
 export function fenced(text: string) {
-  const longest = Math.max(
-    2,
-    ...[...text.matchAll(/`+/g)].map((match) => match[0].length),
-  );
+  let longest = 2;
+  for (const match of text.matchAll(/`+/g))
+    longest = Math.max(longest, match[0].length);
   const fence = "`".repeat(longest + 1);
 
   return `${fence}text\n${text}\n${fence}`;

@@ -29,6 +29,16 @@ test("large reports publish the complete accumulated diff and sanitized outputs 
     );
     assert.doesNotMatch(reports.join("\n"), /fictional-publication-secret/);
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    s.comment();
+    await s.workflow.poll();
+    assert.equal(s.facts.status?.state, "success");
+    const fragment = s.facts.comments.find((comment) =>
+      comment.body.includes(":evidence:"),
+    )!;
+    s.facts.comments.splice(s.facts.comments.indexOf(fragment), 1);
+    await s.workflow.poll();
+    assert.equal(s.facts.status?.state, "pending");
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
   } finally {
     s.close();
   }
@@ -54,7 +64,7 @@ test("publication persistence failure prevents any remote effect", async () => {
   }
 });
 
-test("restarting reconciles an uncertain PR creation without sending another agent task or PR", async () => {
+test("restart observes an uncertain PR creation but holds intervention without resuming publication", async () => {
   const s = publicationFixture();
   try {
     s.uncertainEffect("pull");
@@ -62,9 +72,37 @@ test("restarting reconciles an uncertain PR creation without sending another age
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
     s.reopen();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.match(s.workflow.view(run.id)!.error!, /reinicio/i);
+    assert.equal(
+      s.writes.filter((write) => write.kind === "comment").length,
+      0,
+    );
     assert.equal(s.writes.filter((write) => write.kind === "pull").length, 1);
     assert.equal(s.writes.filter((write) => write.kind === "push").length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("an accepted merge preserves its accepted head and integration SHA across repeated observations", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.facts.pull!.merged = true;
+    s.facts.pull!.open = false;
+    s.facts.pull!.mergeSha = "a".repeat(40);
+    await s.workflow.poll();
+    assert.match(s.workflow.view(run.id)!.error!, /Merge humano observado/);
+    await s.workflow.poll();
+    assert.match(s.workflow.view(run.id)!.error!, /Merge humano observado/);
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.mergeSha,
+      "a".repeat(40),
+    );
   } finally {
     s.close();
   }
@@ -387,7 +425,15 @@ test("the Workflow publishes a verified candidate and only enables human merge a
     assert.equal(writes.filter((write) => write === "report").length, 1);
     assert.equal(writes.filter((write) => write === "success").length, 1);
     s.reopen();
-    assert.equal(s.workflow.view(run.id)?.publication?.acceptance?.head, head);
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.acceptances.at(-1)?.head,
+      head,
+    );
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(facts.status?.state, "pending");
+    assert.equal(writes.filter((write) => write === "success").length, 1);
   } finally {
     s.close();
   }

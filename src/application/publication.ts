@@ -135,6 +135,21 @@ export class CandidatePublication {
       !comment.human
     );
   }
+  private reportIntact(run: Run, facts: PublicationFacts) {
+    const report = run.publication!.report;
+
+    return Boolean(
+      report &&
+      [report, ...report.evidence].every((expected) =>
+        facts.comments.some(
+          (comment) =>
+            comment.id === expected.id &&
+            createHash("sha256").update(comment.body).digest("hex") ===
+              expected.bodyHash,
+        ),
+      ),
+    );
+  }
   private async canMerge(run: Run, facts: PublicationFacts) {
     const publication = run.publication!;
     const report = publication.report;
@@ -145,12 +160,7 @@ export class CandidatePublication {
       (comment) => comment.id === acceptance.commentId,
     );
     const intent = comment ? interpretComment(comment.body) : null;
-    const unchangedReport = facts.comments.some(
-      (comment) =>
-        comment.id === report.id &&
-        createHash("sha256").update(comment.body).digest("hex") ===
-          report.bodyHash,
-    );
+    const unchangedReport = this.reportIntact(run, facts);
     const newInstructions = facts.comments.some(
       (comment) =>
         !this.isOwn(run, comment) &&
@@ -295,6 +305,7 @@ export class CandidatePublication {
     const digest = createHash("sha256").update(evidence).digest("hex");
     const key = `report:${publication.head}:${preview.id}:${digest}`;
     let details = fenced(evidence);
+    const fragments: NonNullable<typeof publication.report>["evidence"] = [];
     if (details.length > 45_000) {
       const links: string[] = [];
       // Split by UTF-16 code units without cutting a surrogate pair.
@@ -307,6 +318,11 @@ export class CandidatePublication {
           `${key}:evidence:${index}`,
           `Evidencia completa, fragmento ${index}. SHA ${publication.head}.\n\n${fenced(evidence.slice(start, end))}`,
         );
+        fragments.push({
+          id: comment.id,
+          url: comment.url,
+          bodyHash: createHash("sha256").update(comment.body).digest("hex"),
+        });
         links.push(`[Fragmento ${index}](${comment.url})`);
         start = end;
       }
@@ -324,6 +340,7 @@ export class CandidatePublication {
       head: publication.head,
       preview: preview.url!,
       bodyHash: createHash("sha256").update(comment.body).digest("hex"),
+      evidence: fragments,
     };
     publication.reports.push(publication.report);
     this.save(run);
@@ -344,7 +361,7 @@ export class CandidatePublication {
     const publication = run.publication;
     try {
       this.save(run);
-      let facts = await this.facts(run);
+      let facts = await this.facts(run, !publication.recoveryRequired);
       this.factory.assertRunning(run.id);
       publication.observedAt = this.factory.now();
       publication.observationError = null;
@@ -363,6 +380,31 @@ export class CandidatePublication {
             preview: facts.preview,
           });
       }
+      if (publication.recoveryRequired) {
+        run.status = "intervention";
+        run.error =
+          "Efectos observados tras reinicio; la recuperación requiere intervención autorizada. No se reanuda la publicación.";
+        for (const [key, confirmed] of [
+          [`push:${publication.head}`, facts.remoteHead === publication.head],
+          ["pull", Boolean(facts.pull)],
+        ] as const) {
+          if (confirmed && publication.operations[key]?.state === "intent") {
+            publication.operations[key] = {
+              state: "confirmed",
+              at: this.factory.now(),
+            };
+            this.factory.record(
+              run,
+              "confirmed",
+              `${key}: reconciled by observation after restart`,
+            );
+          }
+        }
+        this.save(run);
+        if (facts.remoteHead === publication.head)
+          await this.setStatus(run, "pending");
+        return;
+      }
       const intact =
         facts.request.open &&
         facts.request.title === run.request.title &&
@@ -372,9 +414,15 @@ export class CandidatePublication {
           "Petición alterada o cerrada; se requiere intervención y una nueva autorización.";
       if (facts.pull?.merged) {
         publication.mergeSha = facts.pull.mergeSha;
-        publication.blocked =
+        if (
           publication.acceptance &&
-          facts.pull.head === publication.acceptance.head
+          facts.pull.head === publication.acceptance.head &&
+          !publication.integratedAcceptance
+        )
+          publication.integratedAcceptance = publication.acceptance;
+        publication.blocked =
+          publication.integratedAcceptance &&
+          facts.pull.head === publication.integratedAcceptance.head
             ? "Merge humano observado; comprobación de producción pendiente del siguiente incremento."
             : "Incidencia: merge externo sin aceptación vigente acreditada.";
       } else if (facts.pull && !facts.pull.open)
@@ -475,12 +523,7 @@ export class CandidatePublication {
         publication.report &&
         (publication.report.preview !== facts.preview!.url ||
           publication.report.head !== publication.head ||
-          !facts.comments.some(
-            (comment) =>
-              comment.id === publication.report!.id &&
-              createHash("sha256").update(comment.body).digest("hex") ===
-                publication.report!.bodyHash,
-          ))
+          !this.reportIntact(run, facts))
       ) {
         delete publication.report;
         delete publication.acceptance;

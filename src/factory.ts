@@ -30,6 +30,10 @@ export class Factory {
         run.status = "intervention";
         run.error =
           "Factory restarted. Work/process state uncertain; no task was resent. Inspect owned PID before recovery.";
+        if (run.publication) {
+          run.publication.recoveryRequired = true;
+          delete run.publication.acceptance;
+        }
         if (run.verification?.status === "running") {
           run.verification.effectsUncertain = run.verification.checks.some(
             (check) =>
