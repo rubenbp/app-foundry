@@ -398,7 +398,7 @@ export class OpenCode implements AgentPort {
             "git log *",
             "git show *",
           ].map((resource) => ({
-            action: "bash",
+            action: "shell",
             resource,
             effect: "allow" as const,
           })),
