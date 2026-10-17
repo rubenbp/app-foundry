@@ -110,9 +110,19 @@ export class Observer {
         this.client.form.list({}, options),
       ]);
       if (this.abort.signal.aborted) return;
-      const rows = messages.data ?? [];
-      if (messages.cursor.next) this.emit({ type: "gap", text: "OpenCode reconciliation capped at 200 messages; coverage partial" });
-      for (const row of rows) this.message(row);
+      let page = messages;
+      let last: SessionMessageInfo | undefined;
+      const cursors = new Set<string>();
+      while (true) {
+        signal.throwIfAborted();
+        const rows = page.data ?? [];
+        for (const row of rows) { this.message(row); if (row.type === "assistant") last = row; }
+        const next = page.cursor.next;
+        if (!rows.length || !next) break;
+        if (cursors.has(next)) throw new Error("OpenCode repeated a message cursor; coverage partial");
+        cursors.add(next);
+        page = await this.client.message.list({ sessionID: this.sessionId, limit: 200, order: "asc", cursor: next }, options);
+      }
       const pending: Pending[] = [
         ...(permissions.data ?? []).filter(p => p.sessionID === this.sessionId).map(p => ({ id: p.id, kind: "permission" as const, text: `${p.action}: ${p.resources.join(", ")}` })),
         ...(forms.data ?? []).filter(f => f.sessionID === this.sessionId).map(f => ({ id: f.id, kind: "question" as const, text: f.title + "\n" + f.fields.map(field => field.title ?? field.key).join("\n") })),
@@ -120,7 +130,6 @@ export class Observer {
       this.pending = new Map(pending.map(p => [p.id, p])); this.emit({ type: "pending", pending });
       this.emit({ type: "status", status: active[this.sessionId] ? "busy" : "idle" });
       this.emit({ type: "observed" });
-      const last = rows.filter(r => r.type === "assistant").at(-1);
       if (!pending.length && last?.type === "assistant" && last.time.completed && last.finish === "stop" && !last.error) {
         this.emit({ type: "finished", text: last.content.filter(p => p.type === "text").map(p => p.text).join("\n") });
       }

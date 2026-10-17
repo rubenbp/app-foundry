@@ -185,7 +185,7 @@
           "estimatedCost": null,
           "apiEquivalent": null,
           "accreditedSpend": null,
-          "source": "OpenCode SDK 1.19.3 / assistant message identity",
+          "source": "OpenCode HTTP SDK 2.0.32 / assistant message identity",
           "currency": "USD",
           "modality": "OpenCode OAuth / subscription; no invoice attribution",
           "coverage": "observed messages; provider completeness unverified",
@@ -414,7 +414,7 @@
           "estimatedCost": null,
           "apiEquivalent": null,
           "accreditedSpend": null,
-          "source": "OpenCode SDK 1.19.3 / assistant message identity",
+          "source": "OpenCode HTTP SDK 2.0.32 / assistant message identity",
           "currency": "USD",
           "modality": "OpenCode OAuth / subscription; no invoice attribution",
           "coverage": "partial / unavailable",
@@ -627,5 +627,13 @@
         }
       ]
     }
-  ]
+  ],
+  "readVerification": {
+    "source": "Independent comparison with cloned package.json",
+    "package": "rebobina-archivo",
+    "build": "node --version && pnpm --version && astro build",
+    "matches": true
+  },
+  "projectCommit": "9133647c7e99964802dd2485d0ef8221f97c9b73",
+  "metadataCorrection": "Usage source label derived from recorded runtime SDK version; no model rerun."
 }

@@ -79,6 +79,22 @@ test("late observations cannot revive a stopped Ejecución", async () => {
   s.factory.close();
 });
 
+test("pending requests and completion cannot clear an intervention", async () => {
+  for (const failure of [{ type: "error", text: "Provider failure" }, { type: "process-exit", detail: "Unexpected exit" }] as const) {
+    const s = setup();
+    const run = await s.factory.run("A bounded task");
+    s.emit(failure);
+    s.emit({ type: "pending", pending: [{ id: "p1", kind: "permission", text: "edit file" }] });
+    assert.equal(s.factory.view(run.id)!.status, "intervention");
+    assert.equal(s.factory.view(run.id)!.pending.length, 1);
+    s.emit({ type: "pending", pending: [] });
+    s.emit({ type: "finished", text: "Claimed completion" });
+    assert.equal(s.factory.view(run.id)!.status, "intervention");
+    assert.ok(s.factory.view(run.id)!.error);
+    s.factory.close();
+  }
+});
+
 test("permissions remain pending, stop is explicit, and restart preserves history without resending", async () => {
   const s = setup();
   const run = await s.factory.run("A bounded task");

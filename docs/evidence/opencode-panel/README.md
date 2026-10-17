@@ -1,13 +1,13 @@
 # OpenCode y primer panel — #14
 
-Evidencia del 16/10/2026. Node 24.21.0, OpenCode/SDK 1.19.3. [Registro saneado](experiment.json).
+Evidencia del 17/10/2026. Node 24.21.0, OpenCode/cliente HTTP 2.0.32 y OpenAI GPT-6 Luna mediante OAuth. [Registro saneado](experiment.json) · [Panel con historial real](panel.png).
 
 | Comprobación | Resultado |
 | --- | --- |
 | Servidor propio, SDK, sesión y observación desde API | Comprobados con servicios reales. |
-| Tarea real de lectura | Pendiente: Gemini 2.5 devolvió 404; Gemini 3.8 no respondió en 90 s. |
+| Tarea real de lectura | Nombre y build coinciden con package.json del clon público de Rebobina. |
 | Detención manual | Abort reconocido y grupo propio ausente; efectos del proveedor no acreditados. |
-| Permisos, consumo y resultado del modelo | Cubiertos con dobles; aún sin acreditar en el experimento real. |
+| Permisos y consumo | Edición pendiente sin aprobar; 3.159 tokens observados en lectura. Coste y gasto acreditado no disponibles. |
 | Panel/API/SQLite, reinicio, saneamiento y avisos | Pruebas integradas locales superadas. |
 
-El historial saneado completo permanece en las raíces externas indicadas en el registro. No se acredita el happy path ni el MVP completo.
+Dos ejecuciones detenidas recuperadas tras reinicio, sin reenvío. El registro conserva los intentos fallidos previos; el historial saneado completo permanece fuera del repositorio. El panel mantiene el resultado sin verificar: esta comprobación puntual no acredita el flujo completo del MVP.

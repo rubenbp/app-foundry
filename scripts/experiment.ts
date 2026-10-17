@@ -46,6 +46,9 @@ try {
   const task = "Use the read tool to inspect package.json in this directory. Report the package name and its build script in one sentence. Do not edit files, run commands, or delegate. This is a bounded observation experiment.";
   const first = await factory.run(task);
   let result = await waitFor(first.id, status => status === "awaiting_verification");
+  const packageInfo = JSON.parse(readFileSync(join(projectDir, "package.json"), "utf8"));
+  evidence.readVerification = { source: "Independent comparison with cloned package.json", package: packageInfo.name, build: packageInfo.scripts?.build,
+    matches: typeof packageInfo.name === "string" && typeof packageInfo.scripts?.build === "string" && Boolean(result.result?.includes(packageInfo.name) && result.result?.includes(packageInfo.scripts.build)) };
   const api = await fetch(`${origin}/api/view`).then(r => r.json());
   cases.push({ kind: "read", run: summarize(result), apiObservedRun: api.run?.id === first.id });
   console.log(`Read experiment: ${result.status}; messages=${result.parts.length}; tokens=${consumption(result.usage).observedTokens}`);
@@ -64,7 +67,7 @@ try {
   evidence.nativeRuntimeRemoved = agent.runtime !== null && !existsSync(agent.runtime);
   factory.close(); factory = new Factory(config, new OpenCode(config));
   evidence.restart = { count: factory.list().length, statuses: factory.list().map(r => r.status), taskResent: false };
-  evidence.package = JSON.parse(readFileSync(join(projectDir, "package.json"), "utf8")).name;
+  evidence.package = packageInfo.name;
 } catch (error) {
   evidence.error = factory.clean(String(error)).text; process.exitCode = 1;
 } finally {

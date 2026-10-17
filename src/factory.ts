@@ -102,7 +102,7 @@ export class Factory {
       const pending = fact.pending.map(p => ({ id: p.id, kind: p.kind, text: this.clean(p.text, 4096).text }));
       if (JSON.stringify(run.pending) !== JSON.stringify(pending)) {
         run.pending = pending; run.lastActivity = at;
-        if (pending.length) run.status = "waiting";
+        if (pending.length && run.status !== "intervention") run.status = "waiting";
         else if (run.status === "waiting") run.status = "running";
         this.record(run, "pending", pending.length ? pending.map(p => `${p.kind}: ${p.text}`).join("\n") : "No pending requests");
       }
