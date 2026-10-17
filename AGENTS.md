@@ -4,6 +4,10 @@ Usa siempre Caveman lite: frases completas, sin relleno y en español. Escribe c
 
 ## Agent skills
 
+### Coding standards
+
+Antes de escribir, modificar o revisar código, lee y aplica [CODING_STANDARDS.md](CODING_STANDARDS.md).
+
 ### Issue tracker
 
 Los issues y specs se guardan en GitHub Issues de `rubenbp/app-foundry`. Antes de crear, leer o actualizar tickets, lee `docs/agents/issue-tracker.md`.
