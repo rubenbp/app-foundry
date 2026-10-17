@@ -7,6 +7,9 @@ import { readConfig } from "./config.ts";
 import { OpenCode } from "./opencode.ts";
 import { Factory } from "./factory.ts";
 import { panelServer } from "./server.ts";
+import { createWorkflow } from "./workflow.ts";
+import { GitHub } from "./infrastructure/github.ts";
+import { GitWorkspace } from "./infrastructure/workspace.ts";
 import { acquireLock } from "./lock.ts";
 
 const args = process.argv.slice(2);
@@ -21,22 +24,48 @@ const command = args[0] ?? "serve";
 
 if (command === "serve") {
   const lock = join(config.dataDir, "factory.lock");
-  const releaseData = acquireLock(lock);
+  const releaseData = config.managedProject ? () => {} : acquireLock(lock);
   const projectLock = `/tmp/app-foundry-project-${createHash("sha256").update(config.projectDir).digest("hex").slice(0, 16)}.lock`;
   let releaseProject: () => void;
   try {
-    releaseProject = acquireLock(projectLock);
+    releaseProject = config.managedProject
+      ? () => {}
+      : acquireLock(projectLock);
   } catch (error) {
     releaseData();
     throw error;
   }
-  if (existsSync(socket)) unlinkSync(socket);
   const agent = new OpenCode(config);
   const secrets = Object.entries(process.env)
     .filter(([key]) => /KEY|TOKEN|SECRET|PASSWORD/.test(key))
     .map(([, value]) => value!)
     .filter(Boolean);
-  const factory = new Factory(config, agent, { secrets });
+  const workflow = config.managedProject
+    ? createWorkflow(config, {
+        createAgent: (config) => new OpenCode(config),
+        workspace: new GitWorkspace(config.dataDir),
+        github: new GitHub(),
+        secrets,
+      })
+    : null;
+  if (existsSync(socket)) unlinkSync(socket);
+  const factory = workflow?.factory ?? new Factory(config, agent, { secrets });
+  let pollTimer: ReturnType<typeof setTimeout> | undefined;
+  let closing = false;
+  let polling: Promise<void> | undefined;
+  const tick = () => {
+    if (!workflow || closing) return;
+    polling = workflow
+      .poll()
+      .catch(() => {
+        console.error(
+          "Workflow persistence failed; inspect panel and owned processes.",
+        );
+      })
+      .finally(() => {
+        if (!closing) pollTimer = setTimeout(tick, 15_000);
+      });
+  };
   const panel = panelServer(factory);
   const control = createServer(async (req, res) => {
     let bytes = 0;
@@ -50,7 +79,7 @@ if (command === "serve") {
       }
       const data = JSON.parse(Buffer.concat(chunks).toString());
       let result;
-      if (data.command === "run" && typeof data.task === "string")
+      if (data.command === "run" && !workflow && typeof data.task === "string")
         result = await factory.run(data.task);
       else if (data.command === "stop" && typeof data.id === "string")
         result = await factory.stop(data.id);
@@ -77,12 +106,15 @@ if (command === "serve") {
     `Factory panel: http://127.0.0.1:${(panel.address() as { port: number }).port}`,
   );
   console.log(`Factory PID ${process.pid}; local control socket ${socket}`);
-  let closing = false;
+  tick();
   const close = async () => {
     if (closing) return;
     closing = true;
+    workflow?.halt();
+    clearTimeout(pollTimer);
     try {
-      if (factory.active && agent.process) await factory.stop(factory.active);
+      if (factory.active) await factory.stop(factory.active);
+      await polling;
     } catch {
       console.error(
         "Stop unconfirmed; inspect recorded OpenCode PID manually.",
@@ -92,7 +124,8 @@ if (command === "serve") {
     panel.close();
     control.closeAllConnections();
     control.close();
-    factory.close();
+    if (workflow) workflow.close();
+    else factory.close();
     releaseProject();
     releaseData();
   };

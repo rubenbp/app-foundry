@@ -1,8 +1,8 @@
 {
-  "projectDir": "/absolute/path/to/managed-project-clone",
   "dataDir": "/absolute/path/to/factory-data",
   "provider": "openai",
   "model": "gpt-6-luna",
   "auth": "opencode",
-  "opencodeCli": "/opt/homebrew/bin/opencode"
+  "opencodeCli": "/opt/homebrew/bin/opencode",
+  "managedProjectFile": "config/managed-projects/rebobina.json"
 }

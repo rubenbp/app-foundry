@@ -1,6 +1,7 @@
+import type { AuthorizedRequest, Workspace } from "./domain/request.ts";
 import { randomUUID } from "node:crypto";
 import { Store } from "./store.ts";
-import { sanitizer } from "./sanitize.ts";
+import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact, FactoryConfig, Run } from "./types.ts";
 
 export class Factory {
@@ -25,7 +26,7 @@ export class Factory {
     this.clean = sanitizer(this.secrets);
     this.store = new Store(config.dataDir);
     for (const run of this.store.list()) {
-      if (run.status !== "stopped") {
+      if (run.status !== "stopped" && run.status !== "queued") {
         run.status = "intervention";
         run.error =
           "Factory restarted. Work/process state uncertain; no task was resent. Inspect owned PID before recovery.";
@@ -67,16 +68,15 @@ export class Factory {
         "Ejecución stopped while effect was in flight; no further task will be sent",
       );
   }
-  async run(task: string) {
+  enqueue(task: string, request?: AuthorizedRequest) {
     this.assertWritable();
-    if (this.active)
-      throw new Error("One Ejecución already occupies the Factory");
     if (!task.trim()) throw new Error("Task required");
     const run: Run = {
       id: randomUUID(),
       attempt: 1,
-      task: this.clean(task).text,
-      status: "starting",
+      task: this.clean(task, Number.MAX_SAFE_INTEGER).text,
+      ...(request ? { request } : {}),
+      status: "queued",
       startedAt: this.now(),
       endedAt: null,
       sessionId: null,
@@ -94,10 +94,58 @@ export class Factory {
         "Only selected SDK fields retained; authentication, reasoning and arbitrary metadata omitted",
       ],
     };
-    this.record(run, "intent", "Start owned OpenCode server");
+    this.record(run, "admitted", "Fixed request admitted to queue");
     this.persist(run);
+
+    return run;
+  }
+  async run(task: string) {
+    if (this.active)
+      throw new Error("One Ejecución already occupies the Factory");
+    return this.start(this.enqueue(task).id);
+  }
+  async start(
+    id: string,
+    prepare?: (
+      run: Run,
+    ) => Promise<{ workspace: Workspace; task: string; agent: AgentPort }>,
+  ) {
+    this.assertWritable();
+    if (this.active)
+      throw new Error("One Ejecución already occupies the Factory");
+    const run = this.view(id);
+    if (!run || run.status !== "queued")
+      throw new Error("Queued request required");
     this.active = run.id;
+    run.status = prepare ? "preparing" : "starting";
+    run.phase = prepare ? "preparation" : "implementation";
+    this.record(
+      run,
+      "intent",
+      prepare
+        ? "Prepare owned clone and verify base"
+        : "Start owned OpenCode server",
+    );
+    this.persist(run);
     try {
+      let task = run.task;
+      if (prepare) {
+        const prepared = await prepare(run);
+        this.assertRunning(run.id);
+        Object.assign(run, this.view(run.id));
+        run.workspace = prepared.workspace;
+        task = prepared.task;
+        this.agent = prepared.agent;
+        run.phase = "implementation";
+        run.status = "starting";
+        this.record(
+          run,
+          "confirmed",
+          "Base checks passed; owned workspace prepared",
+        );
+        this.record(run, "intent", "Start owned OpenCode server");
+        this.persist(run);
+      }
       const process = await this.agent.start(
         (fact) => this.ingest(run.id, fact),
         (secrets) => {
@@ -107,15 +155,21 @@ export class Factory {
       );
       this.assertRunning(run.id);
       Object.assign(run, this.view(run.id));
-      run.process = JSON.parse(this.clean(JSON.stringify(process)).text);
+      run.process = sanitizedRecord(process, this.clean);
+      this.record(run, "confirmed", "Owned OpenCode server started");
       this.record(run, "intent", "Create OpenCode session");
       this.persist(run);
       run.sessionId = await this.agent.create();
       this.assertRunning(run.id);
+      this.record(run, "confirmed", "OpenCode session created");
       run.status = "running";
       this.record(run, "intent", "Send task once; no automatic retry");
       this.persist(run);
       await this.agent.send(run.sessionId, task);
+      this.assertRunning(run.id);
+      const sent = this.view(run.id)!;
+      this.record(sent, "confirmed", "Task delivered to OpenCode");
+      this.persist(sent);
     } catch (error) {
       if (this.store.failed) throw error;
       if (this.view(run.id)?.status !== "stopped")

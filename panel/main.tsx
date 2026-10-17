@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { RequestDetails } from "./request.tsx";
 import { Button } from "./components/button.tsx";
 import { poll } from "./polling.ts";
 import {
@@ -12,12 +13,17 @@ import "./style.css";
 
 interface View {
   serverNow: number;
+  admission: { at: number; lastSuccess: number | null; error: string | null };
+  source: string | null;
+  queue: { id: string; title: string }[];
   fault: string | null;
   runs: Pick<Run, "id" | "task" | "status" | "startedAt">[];
   run: Run | null;
   consumption: ReturnType<typeof consumption> | null;
 }
 const labels: Record<RunStatus, string> = {
+  queued: "En cola",
+  preparing: "Preparando base",
   starting: "Preparando",
   running: "En curso",
   waiting: "Espera humana",
@@ -125,7 +131,7 @@ function App() {
     now - (run.lastActivity ?? run.startedAt) >= 120_000;
   const opencodeDisconnected =
     run &&
-    !["stopped"].includes(run.status) &&
+    !["queued", "preparing", "stopped"].includes(run.status) &&
     now - (run.lastObservation ?? run.startedAt) >= 30_000;
   const duration = run
     ? Math.max(0, Math.floor(((run.endedAt ?? now) - run.startedAt) / 1000))
@@ -182,7 +188,7 @@ function App() {
           Loopback · Solo consulta
           <p>Las decisiones humanas permanecen en GitHub.</p>
           <a
-            href="https://github.com/rubenbp/app-foundry/issues/14"
+            href="https://github.com/rubenbp/app-foundry/issues/15"
             target="_blank"
             rel="noreferrer"
           >
@@ -237,6 +243,43 @@ function App() {
             ) : null}
             {view?.fault ? <p className="notice danger">{view.fault}</p> : null}
           </div>
+          {view?.source ? (
+            <section className="card" aria-label="Entrada de GitHub">
+              <h2>Entrada de GitHub</h2>
+              <p>
+                Última consulta correcta: {time(view.admission.lastSuccess)} ·{" "}
+                {age(view.admission.lastSuccess, now)}
+              </p>
+              {view.admission.error ? (
+                <p className="notice danger" role="alert">
+                  {view.admission.error}
+                </p>
+              ) : null}
+              <a href={view.source} target="_blank" rel="noreferrer">
+                Revisar autorización en GitHub ↗
+              </a>
+            </section>
+          ) : null}
+          {view?.queue.length ? (
+            <section className="card" aria-labelledby="queue-title">
+              <h2 id="queue-title">Cola de peticiones</h2>
+              <ol>
+                {view.queue.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      className="queue-choice"
+                      onClick={() => setSelected(item.id)}
+                    >
+                      {item.title}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <p className="small muted">
+                Un solo puesto. Las esperas y las intervenciones lo conservan.
+              </p>
+            </section>
+          ) : null}
           {!run ? (
             <section className="card empty">
               <span className="empty-mark" aria-hidden="true">
@@ -245,9 +288,9 @@ function App() {
               <h2>
                 {view?.runs.length
                   ? "Cargando ejecución"
-                  : "Todo empieza con una tarea"}
+                  : "Todo empieza con una petición"}
               </h2>
-              <p>Inicia una tarea acotada desde la CLI de la Factory.</p>
+              <p>Autoriza un issue del Managed project con factory:ready.</p>
               <p className="muted">
                 Aquí aparecerán el Intento, sus mensajes y las solicitudes
                 pendientes.
@@ -261,7 +304,7 @@ function App() {
                     <span className="eyebrow">
                       EJECUCIÓN {run.id.slice(0, 8)}
                     </span>
-                    <h2 id="run-title">{run.task}</h2>
+                    <h2 id="run-title">{run.request?.title ?? run.task}</h2>
                   </div>
                   <span className={`badge ${run.status}`}>
                     {labels[run.status]}
@@ -270,7 +313,10 @@ function App() {
                 <dl className="run-facts">
                   <div>
                     <dt>Intento</dt>
-                    <dd>01 · OpenCode</dd>
+                    <dd>
+                      {String(run.attempt).padStart(2, "0")} ·{" "}
+                      {run.sessionId ? "OpenCode" : "Pendiente de agente"}
+                    </dd>
                   </div>
                   <div>
                     <dt>Inicio</dt>
@@ -290,6 +336,7 @@ function App() {
                   idle y el texto del agente no acreditan éxito.
                 </p>
               </section>
+              <RequestDetails run={run} />
               <section
                 className="health-grid"
                 aria-label="Antigüedad y procedencia de observaciones"
@@ -318,8 +365,16 @@ function App() {
                 <section className="notice danger">
                   <h2>Requiere intervención</h2>
                   <pre>{run.error}</pre>
+                  <p>
+                    Revisa la causa y el contexto en el issue. Ejemplo:
+                    «Ejecución {run.id}: necesito aclarar los criterios». El
+                    panel conserva el puesto; consultar no reanuda el trabajo.
+                  </p>
                   <a
-                    href="https://github.com/rubenbp/app-foundry/issues/14"
+                    href={
+                      run.request?.url ??
+                      "https://github.com/rubenbp/app-foundry/issues/15"
+                    }
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -346,7 +401,10 @@ function App() {
                     ))}
                   </ul>
                   <a
-                    href="https://github.com/rubenbp/app-foundry/issues/14"
+                    href={
+                      run.request?.url ??
+                      "https://github.com/rubenbp/app-foundry/issues/15"
+                    }
                     target="_blank"
                     rel="noreferrer"
                   >

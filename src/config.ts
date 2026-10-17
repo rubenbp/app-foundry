@@ -1,5 +1,7 @@
 import { readFileSync, mkdirSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { validateProject } from "./domain/configuration.ts";
+import { dirname } from "node:path";
 import type { FactoryConfig } from "./types.ts";
 
 export function readConfig(path: string): FactoryConfig {
@@ -7,7 +9,7 @@ export function readConfig(path: string): FactoryConfig {
   if (!value || typeof value !== "object")
     throw new Error("Configuration must be an object");
   const config = value as Record<string, unknown>;
-  for (const key of ["dataDir", "projectDir", "provider", "model"])
+  for (const key of ["dataDir", "provider", "model"])
     if (typeof config[key] !== "string" || !config[key])
       throw new Error(`Missing ${key}`);
   if (
@@ -22,6 +24,8 @@ export function readConfig(path: string): FactoryConfig {
     throw new Error(
       "opencodeCli must identify the absolute OpenCode CLI path supporting auth export",
     );
+  if (config.managedProjectFile && config.projectDir === undefined)
+    config.projectDir = realpathSync(dirname(path));
   if (
     !isAbsolute(String(config.dataDir)) ||
     !isAbsolute(String(config.projectDir))
@@ -45,7 +49,28 @@ export function readConfig(path: string): FactoryConfig {
         "Data root must be separate from Factory code and Managed project",
       );
   }
+  let managedProject;
+  if (config.managedProjectFile !== undefined) {
+    if (typeof config.managedProjectFile !== "string")
+      throw new Error("managedProjectFile must be a trusted path");
+    const trustedPath = realpathSync(
+      resolve(dirname(path), config.managedProjectFile),
+    );
+    for (const candidate of [realpathSync(path), trustedPath]) {
+      if (
+        candidate === projectDir ||
+        candidate.startsWith(projectDir + sep) ||
+        candidate.startsWith(resolve(dataDir, "workspaces") + sep)
+      )
+        throw new Error(
+          "Trusted configuration must be outside candidate clones",
+        );
+    }
+    managedProject = JSON.parse(readFileSync(trustedPath, "utf8"));
+    validateProject(managedProject);
+  }
   return {
+    ...(managedProject ? { managedProject } : {}),
     dataDir,
     projectDir,
     provider: String(config.provider),

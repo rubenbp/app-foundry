@@ -14,8 +14,41 @@ export class Store {
     mkdirSync(join(root, "artifacts"), { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(join(root, "factory.sqlite"));
     this.db.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, body TEXT NOT NULL)",
+      "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, body TEXT NOT NULL); CREATE TABLE IF NOT EXISTS observation (id INTEGER PRIMARY KEY CHECK(id=1), body TEXT NOT NULL)",
     );
+  }
+  observation(value?: { at: number; error: string | null }) {
+    if (value) {
+      if (this.failed)
+        throw new Error("Persistence unavailable: effects blocked");
+      try {
+        const previous = this.observation();
+        this.db
+          .prepare(
+            "INSERT INTO observation VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET body=excluded.body",
+          )
+          .run(
+            JSON.stringify({
+              ...value,
+              lastSuccess: value.error ? previous.lastSuccess : value.at,
+            }),
+          );
+      } catch (error) {
+        this.failed = true;
+        throw error;
+      }
+    }
+    const row = this.db
+      .prepare("SELECT body FROM observation WHERE id=1")
+      .get();
+
+    return row
+      ? (JSON.parse(String(row.body)) as {
+          at: number;
+          error: string | null;
+          lastSuccess: number | null;
+        })
+      : { at: 0, error: null, lastSuccess: null };
   }
   save(run: Run) {
     if (this.failed)

@@ -593,3 +593,32 @@ summary {
     flex-direction: column;
   }
 }
+
+.phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-left: 1.25rem;
+}
+.phases [aria-current="step"] {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.queue-choice {
+  color: var(--color-foreground);
+  background: transparent;
+  border: 0;
+  padding: 0.5rem;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+}
+.usage dd {
+  overflow-wrap: anywhere;
+}
+.badge.queued,
+.badge.preparing {
+  background: #edf2ff;
+  color: #28428b;
+}

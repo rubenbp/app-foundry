@@ -1,3 +1,8 @@
+import type {
+  AuthorizedRequest,
+  ManagedProject,
+  Workspace,
+} from "./domain/request.ts";
 export interface FactoryConfig {
   dataDir: string;
   projectDir: string;
@@ -5,9 +10,12 @@ export interface FactoryConfig {
   model: string;
   auth: "opencode";
   opencodeCli?: string;
+  managedProject?: ManagedProject;
 }
 
 export type RunStatus =
+  | "queued"
+  | "preparing"
   | "starting"
   | "running"
   | "waiting"
@@ -50,6 +58,9 @@ export interface Run {
   id: string;
   attempt: number;
   task: string;
+  request?: AuthorizedRequest;
+  workspace?: Workspace;
+  phase?: "preparation" | "implementation";
   status: RunStatus;
   startedAt: number;
   endedAt: number | null;
