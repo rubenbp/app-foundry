@@ -1,0 +1,437 @@
+Base 7b429e02d3e5e89685c6ce015f58fe477a028c06
+Head 9ffc8eb8c458e20ac8acfd67d988a8bd6ee54350
+Command: pnpm test:e2e --config '/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/candidate-playwright.mjs'
+Exit: 0
+$ pnpm build && playwright test --config /var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/candidate-playwright.mjs
+$ node --version && pnpm --version && astro build
+v24.21.0
+12.14.0
+23:34:27 [content] Syncing content
+23:34:27 [content] Synced content
+23:34:27 [types] Generated 344ms
+23:34:27 [build] output: "static"
+23:34:27 [build] mode: "static"
+23:34:27 [build] directory: /private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/dist/
+23:34:27 [build] Collecting build info...
+23:34:27 [build] ✓ Completed in 376ms.
+23:34:27 [build] Building static entrypoints...
+23:34:27 [vite] ✓ built in 130ms
+23:34:27 [vite] ✓ built in 25ms
+23:34:27 [build] Rearranging server assets...
+
+ generating static routes 
+23:34:27   ├─ /404.html (+6ms) 
+23:34:27   ├─ /catalogo/index.html (+4ms) 
+23:34:27   ├─ /juegos/castlevania-symphony-of-the-night/index.html (+2ms) 
+23:34:27   ├─ /juegos/chrono-trigger/index.html (+1ms) 
+23:34:27   ├─ /juegos/crash-bandicoot/index.html (+1ms) 
+23:34:27   ├─ /juegos/donkey-kong-country/index.html (+1ms) 
+23:34:27   ├─ /juegos/dr-mario/index.html (+1ms) 
+23:34:27   ├─ /juegos/f-zero/index.html (+1ms) 
+23:34:27   ├─ /juegos/final-fantasy/index.html (+1ms) 
+23:34:27   ├─ /juegos/final-fantasy-vi/index.html (+1ms) 
+23:34:27   ├─ /juegos/final-fantasy-vii/index.html (+1ms) 
+23:34:27   ├─ /juegos/intelligent-qube/index.html (+1ms) 
+23:34:27   ├─ /juegos/kirbys-adventure/index.html (+1ms) 
+23:34:27   ├─ /juegos/mega-man-x/index.html (+1ms) 
+23:34:27   ├─ /juegos/metroid/index.html (+1ms) 
+23:34:27   ├─ /juegos/mortal-kombat-ii/index.html (+1ms) 
+23:34:27   ├─ /juegos/outrun/index.html (+1ms) 
+23:34:27   ├─ /juegos/phantasy-star-iv/index.html (+1ms) 
+23:34:27   ├─ /juegos/punch-out/index.html (+1ms) 
+23:34:27   ├─ /juegos/puyo-puyo/index.html (+1ms) 
+23:34:27   ├─ /juegos/puzzle-bobble/index.html (+1ms) 
+23:34:27   ├─ /juegos/rc-pro-am/index.html (+1ms) 
+23:34:27   ├─ /juegos/ridge-racer/index.html (+1ms) 
+23:34:27   ├─ /juegos/samurai-shodown/index.html (+1ms) 
+23:34:27   ├─ /juegos/secret-of-mana/index.html (+1ms) 
+23:34:27   ├─ /juegos/sonic-the-hedgehog-2/index.html (+1ms) 
+23:34:27   ├─ /juegos/street-fighter-ii-turbo/index.html (+1ms) 
+23:34:27   ├─ /juegos/super-mario-kart/index.html (+1ms) 
+23:34:27   ├─ /juegos/super-mario-world/index.html (+1ms) 
+23:34:27   ├─ /juegos/super-metroid/index.html (+1ms) 
+23:34:27   ├─ /juegos/tekken-3/index.html (+1ms) 
+23:34:27   ├─ /juegos/tetris/index.html (+1ms) 
+23:34:27   ├─ /juegos/the-legend-of-zelda/index.html (+1ms) 
+23:34:27   ├─ /juegos/the-legend-of-zelda-a-link-to-the-past/index.html (+1ms) 
+23:34:27   ├─ /juegos/tomb-raider/index.html (+1ms) 
+23:34:27   ├─ /sobre-rebobina/index.html (+2ms) 
+23:34:27   ├─ /version.json (+40ms) 
+23:34:27   ├─ /index.html (+3ms) 
+23:34:27 ✓ Completed in 98ms.
+
+23:34:27 [build] ✓ Completed in 279ms.
+23:34:27 [build] 37 page(s) built in 665ms
+23:34:27 [build] Complete!
+FACTORY_E2E_METADATA=[{"name":"chromium","channel":null,"executablePath":"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"}]
+{
+  "config": {
+    "argv": [
+      "<home>/.local/share/fnm/node-versions/v24.21.0/installation/bin/node",
+      "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/node_modules/.pnpm/@playwright+test@1.64.1/node_modules/@playwright/test/cli.js",
+      "test",
+      "--config",
+      "/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/candidate-playwright.mjs"
+    ],
+    "configFile": "/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/candidate-playwright.mjs",
+    "rootDir": "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": "[OMITTED]",
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": "[OMITTED]",
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": "[OMITTED]",
+        "name": "chromium",
+        "testDir": "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/tests/e2e",
+        "snapshotDir": "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/tests/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:4173",
+          "trace": "off",
+          "offline": false,
+          "video": "off",
+          "screenshot": "off",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium",
+          "launchOptions": {
+            "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 5,
+    "webServer": {
+      "command": "python3 -m http.server 4173 --bind 127.0.0.1 --directory dist",
+      "cwd": "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129",
+      "url": "http://127.0.0.1:4173",
+      "reuseExistingServer": false,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "catalog.spec.mjs",
+      "file": "catalog.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "busca sin tildes y abre la ficha de Castlevania",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1792,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:28.985Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f3358616d79b25ef16d-944315716fa2a57cf8a3",
+          "file": "catalog.spec.mjs",
+          "line": 18,
+          "column": 1
+        },
+        {
+          "title": "todos los géneros tienen juegos en las tres épocas",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 12171,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:28.981Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f3358616d79b25ef16d-e8ccf39d34713b263471",
+          "file": "catalog.spec.mjs",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "muestra la época de la URL y limpia todos los filtros",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 1833,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:28.980Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f3358616d79b25ef16d-cb5d0b7122e3a9c289fa",
+          "file": "catalog.spec.mjs",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "la ficha ampliada se lee en móvil con movimiento reducido",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 1517,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:28.991Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f3358616d79b25ef16d-2078fc49beab74d3f4c6",
+          "file": "catalog.spec.mjs",
+          "line": 67,
+          "column": 1
+        },
+        {
+          "title": "las secciones aparecen al desplazarse y las tarjetas responden al cursor",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 4,
+                  "status": "passed",
+                  "duration": 2346,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:28.997Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f3358616d79b25ef16d-36c15368f739834c47de",
+          "file": "catalog.spec.mjs",
+          "line": 93,
+          "column": 1
+        },
+        {
+          "title": "combina género y consola para abrir la ficha de Sonic",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 1546,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:31.794Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2f3358616d79b25ef16d-5ce1ff9753935286eb5b",
+          "file": "catalog.spec.mjs",
+          "line": 114,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "version.spec.mjs",
+      "file": "version.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "el build servido identifica el commit y los cambios locales",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 383,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T21:34:32.088Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9028c9b6e39b26070c71-89bc023bffffbfc7242a",
+          "file": "version.spec.mjs",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-17T21:34:28.269Z",
+    "duration": 14428.697,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

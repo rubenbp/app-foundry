@@ -1,0 +1,68 @@
+Base 7b429e02d3e5e89685c6ce015f58fe477a028c06
+Command: pnpm build
+Exit: 0
+$ node --version && pnpm --version && astro build
+v24.21.0
+12.14.0
+▶ Astro collects anonymous usage data.
+  This information helps us improve Astro.
+  Run "astro telemetry disable" to opt-out.
+  https://astro.build/telemetry
+
+23:33:48 [content] Syncing content
+23:33:48 [content] Synced content
+23:33:48 [types] Generated 445ms
+23:33:48 [build] output: "static"
+23:33:48 [build] mode: "static"
+23:33:48 [build] directory: /private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129/dist/
+23:33:48 [build] Collecting build info...
+23:33:48 [build] ✓ Completed in 476ms.
+23:33:48 [build] Building static entrypoints...
+23:33:48 [vite] ✓ built in 517ms
+23:33:48 [vite] ✓ built in 25ms
+23:33:48 [build] Rearranging server assets...
+
+ generating static routes 
+23:33:48   ├─ /404.html (+7ms) 
+23:33:48   ├─ /catalogo/index.html (+4ms) 
+23:33:48   ├─ /juegos/castlevania-symphony-of-the-night/index.html (+2ms) 
+23:33:48   ├─ /juegos/chrono-trigger/index.html (+1ms) 
+23:33:48   ├─ /juegos/crash-bandicoot/index.html (+1ms) 
+23:33:48   ├─ /juegos/donkey-kong-country/index.html (+1ms) 
+23:33:48   ├─ /juegos/dr-mario/index.html (+1ms) 
+23:33:48   ├─ /juegos/f-zero/index.html (+1ms) 
+23:33:48   ├─ /juegos/final-fantasy/index.html (+1ms) 
+23:33:48   ├─ /juegos/final-fantasy-vi/index.html (+1ms) 
+23:33:48   ├─ /juegos/final-fantasy-vii/index.html (+1ms) 
+23:33:48   ├─ /juegos/intelligent-qube/index.html (+1ms) 
+23:33:48   ├─ /juegos/kirbys-adventure/index.html (+1ms) 
+23:33:48   ├─ /juegos/mega-man-x/index.html (+1ms) 
+23:33:48   ├─ /juegos/metroid/index.html (+1ms) 
+23:33:48   ├─ /juegos/mortal-kombat-ii/index.html (+1ms) 
+23:33:48   ├─ /juegos/outrun/index.html (+1ms) 
+23:33:48   ├─ /juegos/phantasy-star-iv/index.html (+1ms) 
+23:33:48   ├─ /juegos/punch-out/index.html (+1ms) 
+23:33:48   ├─ /juegos/puyo-puyo/index.html (+1ms) 
+23:33:48   ├─ /juegos/puzzle-bobble/index.html (+1ms) 
+23:33:48   ├─ /juegos/rc-pro-am/index.html (+1ms) 
+23:33:48   ├─ /juegos/ridge-racer/index.html (+1ms) 
+23:33:48   ├─ /juegos/samurai-shodown/index.html (+1ms) 
+23:33:48   ├─ /juegos/secret-of-mana/index.html (+1ms) 
+23:33:48   ├─ /juegos/sonic-the-hedgehog-2/index.html (+1ms) 
+23:33:48   ├─ /juegos/street-fighter-ii-turbo/index.html (+1ms) 
+23:33:48   ├─ /juegos/super-mario-kart/index.html (+1ms) 
+23:33:48   ├─ /juegos/super-mario-world/index.html (+1ms) 
+23:33:48   ├─ /juegos/super-metroid/index.html (+1ms) 
+23:33:48   ├─ /juegos/tekken-3/index.html (+1ms) 
+23:33:48   ├─ /juegos/tetris/index.html (+1ms) 
+23:33:48   ├─ /juegos/the-legend-of-zelda/index.html (+1ms) 
+23:33:48   ├─ /juegos/the-legend-of-zelda-a-link-to-the-past/index.html (+1ms) 
+23:33:48   ├─ /juegos/tomb-raider/index.html (+1ms) 
+23:33:48   ├─ /sobre-rebobina/index.html (+1ms) 
+23:33:48   ├─ /version.json (+46ms) 
+23:33:49   ├─ /index.html (+2ms) 
+23:33:49 ✓ Completed in 110ms.
+
+23:33:49 [build] ✓ Completed in 675ms.
+23:33:49 [build] 37 page(s) built in 1.15s
+23:33:49 [build] Complete!

@@ -1,0 +1,15 @@
+Base 7b429e02d3e5e89685c6ce015f58fe477a028c06
+Command: pnpm test:unit
+Exit: 0
+$ node --test tests/unit/*.test.mjs
+✔ busca términos sin depender de tildes ni mayúsculas (1.485542ms)
+✔ combina género, consola y generación en el mismo resultado (0.132542ms)
+✔ devuelve el catálogo completo cuando no hay filtros (0.080542ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 55.302583

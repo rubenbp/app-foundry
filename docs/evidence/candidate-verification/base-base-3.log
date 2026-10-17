@@ -1,0 +1,13 @@
+Base 7b429e02d3e5e89685c6ce015f58fe477a028c06
+Command: pnpm typecheck
+Exit: 0
+$ astro check
+23:33:53 [content] Syncing content
+23:33:53 [content] Synced content
+23:33:53 [types] Generated 353ms
+23:33:53 [check] Getting diagnostics for Astro files in /private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129...
+Result (25 files): 
+- 0 errors
+- 0 warnings
+- 0 hints
+

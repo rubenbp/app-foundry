@@ -1,0 +1,283 @@
+{
+  "factorySha": "918744dff66d77236d7cf70013457e4b5020d27a",
+  "startedAt": "2026-10-17T21:33:34.949Z",
+  "mode": "Local diagnostic; real GitHub clone, Git, dependency installation, five configured commands and Chrome. No agent/model/admission/preview/acceptance/merge/production accreditation.",
+  "configuration": {
+    "id": "rebobina",
+    "repository": "rubenbp/appfoundry-site-demo",
+    "baseBranch": "main",
+    "instructions": ["AGENTS.md", "README.md"],
+    "toolchain": {
+      "node": "24.21.0",
+      "pnpm": "12.4.1",
+      "nodeVersionFile": ".node-version",
+      "lockfile": "pnpm-lock.yaml"
+    },
+    "preparation": {
+      "command": "pnpm install --frozen-lockfile",
+      "requirements": [
+        "Node 24.21.0",
+        "pnpm 12.4.1",
+        "Python 3",
+        "Chrome or Playwright Chromium"
+      ]
+    },
+    "verification": {
+      "commands": [
+        "pnpm build",
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm test:unit",
+        "pnpm test:e2e"
+      ],
+      "e2e": {
+        "command": "pnpm test:e2e",
+        "configFile": "playwright.config.mjs",
+        "serverCommand": "python3 -m http.server 4173 --bind 127.0.0.1 --directory dist",
+        "origin": "http://127.0.0.1:4173",
+        "serves": "dist",
+        "reuseExistingServer": false,
+        "offline": false
+      }
+    },
+    "publication": {
+      "provider": "vercel",
+      "teamId": "team_lO097zw1T7irxaAeicmM02ne",
+      "projectId": "prj_xELrnqlWcsy0MNKqyZN2Dekd0PKE",
+      "projectName": "appfoundry-site-demo",
+      "previewEnvironment": "Preview",
+      "productionEnvironment": "Production",
+      "productionOrigin": "https://rebobina-appfoundry.vercel.app",
+      "versionPath": "/version.json",
+      "commitVariable": "VERCEL_GIT_COMMIT_SHA",
+      "requiredStatusCheck": "Vercel",
+      "requireUpToDateBranch": true,
+      "humanMergeRequired": true
+    }
+  },
+  "baseEffects": [
+    {
+      "id": "clone",
+      "description": "Create owned clone and branch",
+      "startedAt": "2026-10-17T21:33:34.952Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:35.996Z",
+      "label": "Owned clone ready",
+      "output": "base-clone.log"
+    },
+    {
+      "id": "base-context",
+      "description": "Capture base identity and complete instructions",
+      "startedAt": "2026-10-17T21:33:35.996Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:36.134Z",
+      "label": "Base identity captured",
+      "output": "base-base-context.log"
+    },
+    {
+      "id": "preparation",
+      "description": "Prepare base: pnpm install --frozen-lockfile",
+      "startedAt": "2026-10-17T21:33:36.135Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:44.601Z",
+      "label": "pnpm install --frozen-lockfile · exit 0",
+      "code": 0,
+      "output": "base-preparation.log"
+    },
+    {
+      "id": "base-1",
+      "description": "Check pre-existing base: pnpm build",
+      "startedAt": "2026-10-17T21:33:44.603Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:49.311Z",
+      "label": "pnpm build · exit 0",
+      "code": 0,
+      "output": "base-base-1.log"
+    },
+    {
+      "id": "base-2",
+      "description": "Check pre-existing base: pnpm lint",
+      "startedAt": "2026-10-17T21:33:49.312Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:51.416Z",
+      "label": "pnpm lint · exit 0",
+      "code": 0,
+      "output": "base-base-2.log"
+    },
+    {
+      "id": "base-3",
+      "description": "Check pre-existing base: pnpm typecheck",
+      "startedAt": "2026-10-17T21:33:51.417Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:55.566Z",
+      "label": "pnpm typecheck · exit 0",
+      "code": 0,
+      "output": "base-base-3.log"
+    },
+    {
+      "id": "base-4",
+      "description": "Check pre-existing base: pnpm test:unit",
+      "startedAt": "2026-10-17T21:33:55.567Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:33:56.235Z",
+      "label": "pnpm test:unit · exit 0",
+      "code": 0,
+      "output": "base-base-4.log"
+    },
+    {
+      "id": "base-5",
+      "description": "Check pre-existing base: pnpm test:e2e",
+      "startedAt": "2026-10-17T21:33:56.236Z",
+      "status": "observed",
+      "endedAt": "2026-10-17T21:34:13.719Z",
+      "label": "pnpm test:e2e · exit 0",
+      "code": 0,
+      "output": "base-base-5.log"
+    }
+  ],
+  "candidateCommits": [
+    "5827de154de6e672903236940aec04966cb53fdf",
+    "9ffc8eb8c458e20ac8acfd67d988a8bd6ee54350"
+  ],
+  "workspace": {
+    "directory": "/private<probe-root>/workspaces/cb4f67a4-4479-4f06-94f5-83cb636ec129",
+    "branch": "codex/execution-cb4f67a4-4479-4f06-94f5-83cb636ec129",
+    "baseSha": "7b429e02d3e5e89685c6ce015f58fe477a028c06",
+    "instructionPaths": ["AGENTS.md", "README.md"]
+  },
+  "observedToolchain": {
+    "node": "v24.21.0",
+    "pnpm": "12.14.0",
+    "python": "Python 3.14.6",
+    "packageManager": "pnpm@12.14.0",
+    "lockfileSha256": "f2549be282b15224063d04997c76dd82cab0f85099507f15faccd68314cf625a"
+  },
+  "editorState": "No agent process was started. Probe editing finished and committed before fixing head; no remote writes were performed.",
+  "verification": {
+    "baseSha": "7b429e02d3e5e89685c6ce015f58fe477a028c06",
+    "headSha": "9ffc8eb8c458e20ac8acfd67d988a8bd6ee54350",
+    "status": "passed",
+    "diffPartId": "verification-diff",
+    "configurationPartId": "verification-configuration",
+    "checks": [
+      {
+        "command": "pnpm build",
+        "executedCommand": "pnpm build",
+        "status": "passed",
+        "code": 0,
+        "partId": "verification-check-1",
+        "startedAt": 1792272855022,
+        "endedAt": 1792272859550,
+        "pid": 36079,
+        "cleanup": "confirmed"
+      },
+      {
+        "command": "pnpm lint",
+        "executedCommand": "pnpm lint",
+        "status": "passed",
+        "code": 0,
+        "partId": "verification-check-2",
+        "startedAt": 1792272859598,
+        "endedAt": 1792272861140,
+        "pid": 36344,
+        "cleanup": "confirmed"
+      },
+      {
+        "command": "pnpm typecheck",
+        "executedCommand": "pnpm typecheck",
+        "status": "passed",
+        "code": 0,
+        "partId": "verification-check-3",
+        "startedAt": 1792272861179,
+        "endedAt": 1792272865240,
+        "pid": 36469,
+        "cleanup": "confirmed"
+      },
+      {
+        "command": "pnpm test:unit",
+        "executedCommand": "pnpm test:unit",
+        "status": "passed",
+        "code": 0,
+        "partId": "verification-check-4",
+        "startedAt": 1792272865279,
+        "endedAt": 1792272865867,
+        "pid": 36660,
+        "cleanup": "confirmed"
+      },
+      {
+        "command": "pnpm test:e2e",
+        "executedCommand": "pnpm test:e2e --config '/var/folders/vd/8tyhwv7j2xqcfzx4g1_q5wkm0000gn/T/foundry-e2e-kb8T52/candidate-playwright.mjs'",
+        "status": "passed",
+        "code": 0,
+        "partId": "verification-check-5",
+        "startedAt": 1792272865905,
+        "endedAt": 1792272882720,
+        "pid": 36755,
+        "cleanup": "confirmed"
+      }
+    ],
+    "criteria": [
+      {
+        "text": "- Execute every configured check on the complete Rebobina candidate.",
+        "status": "human_pending",
+        "evidence": [
+          "verification-check-1",
+          "verification-check-2",
+          "verification-check-3",
+          "verification-check-4",
+          "verification-check-5"
+        ],
+        "missing": [
+          "No criterion-specific automated evidence. Human judgment required; a passing suite does not prove this criterion."
+        ]
+      },
+      {
+        "text": "- Serve its build with an exclusive local E2E server and preserve evidence.",
+        "status": "human_pending",
+        "evidence": [
+          "verification-check-1",
+          "verification-check-2",
+          "verification-check-3",
+          "verification-check-4",
+          "verification-check-5"
+        ],
+        "missing": [
+          "No criterion-specific automated evidence. Human judgment required; a passing suite does not prove this criterion."
+        ]
+      }
+    ],
+    "controls": [],
+    "limitations": [
+      "Control comparison is conservative and cannot detect every semantic weakening.",
+      "Local verification does not accredit preview, acceptance, merge or production.",
+      "Native Playwright traces, media and attachments are omitted and temporary test output is removed; only sanitized text and selected browser metadata are retained."
+    ],
+    "error": null,
+    "e2e": {
+      "origin": "http://127.0.0.1:4173",
+      "serves": "dist",
+      "reuseExistingServer": false,
+      "offline": false,
+      "browsers": [
+        {
+          "name": "chromium",
+          "channel": null,
+          "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        }
+      ],
+      "executedTests": 7,
+      "skippedTests": 0
+    }
+  },
+  "finalWorktree": "",
+  "finishedAt": "2026-10-17T21:34:42.782Z",
+  "observedBrowser": {
+    "version": "Google Chrome 155.0.8059.80",
+    "versionSource": "Chrome executable --version observed after run; candidate report records the same executable path",
+    "headless": true,
+    "headlessSource": "Playwright default, no headed flag or headless override",
+    "offline": false,
+    "modes": "No PLAYWRIGHT_OFFLINE, CAPTURE_DEMO or CHROME_PATH passed; reducedEnvironment selects only explicit fields"
+  },
+  "configurationMetadataNote": "This run captured the original sample metadata pnpm 12.4.1. Effective pnpm was 12.14.0, pinned by Managed project packageManager. Closure updates only toolchain.pnpm and preparation.requirements to 12.14.0; verification commands and E2E contract are unchanged."
+}

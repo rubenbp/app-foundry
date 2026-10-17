@@ -5,7 +5,7 @@
   "instructions": ["AGENTS.md", "README.md"],
   "toolchain": {
     "node": "24.21.0",
-    "pnpm": "12.4.1",
+    "pnpm": "12.14.0",
     "nodeVersionFile": ".node-version",
     "lockfile": "pnpm-lock.yaml"
   },
@@ -13,7 +13,7 @@
     "command": "pnpm install --frozen-lockfile",
     "requirements": [
       "Node 24.21.0",
-      "pnpm 12.4.1",
+      "pnpm 12.14.0",
       "Python 3",
       "Chrome or Playwright Chromium"
     ]
