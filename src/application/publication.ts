@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
-import type { Factory } from "../factory.ts";
-import { sanitizedRecord } from "../sanitize.ts";
-import type { Run } from "../types.ts";
+import type { Factory } from "./factory.ts";
+import { sanitizedRecord } from "./sanitize.ts";
+import type { Run } from "../domain/run.ts";
 import type { ManagedProject, Workspace } from "../domain/request.ts";
 import {
   fenced,

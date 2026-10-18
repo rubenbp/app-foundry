@@ -8,15 +8,17 @@ import {
 } from "@opencode/client";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { installLocalGitGuard } from "./infrastructure/agent-git.ts";
-import { reducedEnvironment } from "./infrastructure/workspace.ts";
+import { installLocalGitGuard } from "../agent-git.ts";
+import { reducedEnvironment } from "../workspace.ts";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { createServer } from "node:net";
 import { once } from "node:events";
-import type { AgentPort, Fact, FactoryConfig, Pending } from "./types.ts";
+import type { AgentPort, Fact } from "../../application/agent.ts";
+import type { FactoryConfig } from "../../application/configuration.ts";
+import type { Pending } from "../../domain/run.ts";
 
 export const OPENCODE_VERSION = "2.0.32";
 export const SDK_VERSION = "2.0.32";
@@ -339,7 +341,7 @@ export class OpenCode implements AgentPort {
         "Requires openai/gpt-6-luna with an opencodeCli supporting OAuth export",
       );
     const binary = new URL(
-      "../node_modules/@opencode/cli/bin/opencode.exe",
+      "../../../node_modules/@opencode/cli/bin/opencode.exe",
       import.meta.url,
     ).pathname;
     const version = spawnSync(binary, ["--version"], {

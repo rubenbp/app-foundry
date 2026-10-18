@@ -1,4 +1,4 @@
-import type { Run } from "../src/types.ts";
+import type { Run } from "../src/domain/run.ts";
 
 const deploymentLabels = {
   pending: "Pendiente",

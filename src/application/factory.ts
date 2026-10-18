@@ -1,11 +1,13 @@
-import type { AuthorizedRequest, Workspace } from "./domain/request.ts";
+import type { AuthorizedRequest, Workspace } from "../domain/request.ts";
 import { randomUUID } from "node:crypto";
-import { Store } from "./store.ts";
+import type { RunRepository } from "./run-repository.ts";
 import { sanitizer, sanitizedRecord } from "./sanitize.ts";
-import type { AgentPort, Fact, FactoryConfig, Run } from "./types.ts";
+import type { AgentPort, Fact } from "./agent.ts";
+import type { FactoryConfig } from "./configuration.ts";
+import type { Run } from "../domain/run.ts";
 
 export class Factory {
-  store: Store;
+  store: RunRepository;
   config: FactoryConfig;
   agent: AgentPort;
   now: () => number;
@@ -17,6 +19,7 @@ export class Factory {
   constructor(
     config: FactoryConfig,
     agent: AgentPort,
+    store: RunRepository,
     options: { secrets?: string[]; now?: () => number } = {},
   ) {
     this.config = config;
@@ -24,7 +27,7 @@ export class Factory {
     this.now = options.now ?? Date.now;
     this.secrets = options.secrets ?? [];
     this.clean = sanitizer(this.secrets);
-    this.store = new Store(config.dataDir);
+    this.store = store;
     for (const run of this.store.list()) {
       if (
         run.status !== "stopped" &&

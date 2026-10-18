@@ -8,8 +8,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { acquireLock } from "../lock.ts";
-import type { FactoryConfig } from "../types.ts";
+import { acquireLock } from "./lock.ts";
+import type { FactoryConfig } from "../application/configuration.ts";
 import type { WorkflowOwnership } from "../application/ports.ts";
 
 export function acquireWorkflowOwnership(

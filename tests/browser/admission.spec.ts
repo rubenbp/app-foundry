@@ -3,10 +3,10 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { once } from "node:events";
-import { createWorkflow } from "../../src/workflow.ts";
+import { createWorkflow } from "../../src/composition/workflow.ts";
 import type { Workflow } from "../../src/application/workflow.ts";
-import { panelServer } from "../../src/server.ts";
-import type { Fact } from "../../src/types.ts";
+import { panelServer } from "../../src/infrastructure/http/panel-server.ts";
+import type { Fact } from "../../src/application/agent.ts";
 
 test("panel follows a queued request through base preparation, implementation and GitHub intervention", async ({
   page,

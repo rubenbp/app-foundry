@@ -3,9 +3,9 @@ import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { once } from "node:events";
-import { Factory } from "../../src/factory.ts";
-import { panelServer } from "../../src/server.ts";
-import type { Fact, AgentPort } from "../../src/types.ts";
+import { createFactory } from "../../src/composition/factory.ts";
+import { panelServer } from "../../src/infrastructure/http/panel-server.ts";
+import type { Fact, AgentPort } from "../../src/application/agent.ts";
 
 test("panel observes persisted API state, pending work, text outputs and history after restart", async ({
   page,
@@ -39,7 +39,7 @@ test("panel observes persisted API state, pending work, text outputs and history
     model: "gemini-2.5-flash",
     auth: "opencode" as const,
   };
-  let factory = new Factory(config, agent, {
+  let factory = createFactory(config, agent, {
     secrets: ["fictional-secret-123"],
   });
   const run = await factory.run("Inspeccionar el paquete del Managed project");
@@ -111,7 +111,7 @@ test("panel observes persisted API state, pending work, text outputs and history
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     factory.close();
-    factory = new Factory(config, agent);
+    factory = createFactory(config, agent);
     server = panelServer(factory);
     server.listen(port, "127.0.0.1");
     await once(server, "listening");
@@ -140,7 +140,7 @@ test("local connection and automatic activity warnings use separate clocks and n
   const root = mkdtempSync(join(tmpdir(), "foundry-clock-"));
   let sends = 0;
   let emit: (fact: Fact) => void = () => {};
-  const factory = new Factory(
+  const factory = createFactory(
     {
       dataDir: root,
       projectDir: root + "/project",

@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createWorkflow } from "../src/workflow.ts";
+import { createWorkflow } from "../src/composition/workflow.ts";
 import type { ReadyIssue, ManagedProject } from "../src/domain/request.ts";
-import type { AgentPort } from "../src/types.ts";
+import type { AgentPort } from "../src/application/agent.ts";
 
 export const project: ManagedProject = {
   id: "other-product",

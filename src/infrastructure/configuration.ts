@@ -1,8 +1,8 @@
 import { readFileSync, mkdirSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { validateProject } from "./domain/configuration.ts";
+import { validateProject } from "../domain/configuration.ts";
 import { dirname } from "node:path";
-import type { FactoryConfig } from "./types.ts";
+import type { FactoryConfig } from "../application/configuration.ts";
 
 export function readConfig(path: string): FactoryConfig {
   const value: unknown = JSON.parse(readFileSync(path, "utf8"));
@@ -41,7 +41,7 @@ export function readConfig(path: string): FactoryConfig {
   mkdirSync(String(config.dataDir), { recursive: true, mode: 0o700 });
   const dataDir = realpathSync(String(config.dataDir));
   for (const codeDir of [
-    realpathSync(resolve(import.meta.dirname, "..")),
+    realpathSync(resolve(import.meta.dirname, "../..")),
     ...(hasExplicitProjectDir ? [projectDir] : []),
   ]) {
     const child = relative(codeDir, dataDir);

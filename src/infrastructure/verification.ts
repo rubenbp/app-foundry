@@ -9,12 +9,12 @@ import type { Verification } from "../domain/verification.ts";
 import { controlChange } from "../domain/verification-controls.ts";
 import { execute, reducedEnvironment, type ProcessPort } from "./workspace.ts";
 
-export type VerificationProgress = (
-  report: Verification,
-  output?: { id: string; label: string; text: string },
-) => void;
+import type {
+  CandidateVerification,
+  VerificationProgress,
+} from "../application/verification.ts";
 
-export class CandidateVerifier {
+export class CandidateVerifier implements CandidateVerification {
   constructor(privateRoot: string, processPort: ProcessPort = execute) {
     this.root = privateRoot;
     this.process = processPort;

@@ -1,4 +1,4 @@
-import type { Run } from "../src/types.ts";
+import type { Run } from "../src/domain/run.ts";
 
 export function RequestDetails({ run }: { run: Run }) {
   if (!run.request) return null;

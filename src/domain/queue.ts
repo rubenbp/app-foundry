@@ -1,4 +1,4 @@
-import type { Run } from "../types.ts";
+import type { Run } from "./run.ts";
 
 export function queuedRuns(runs: Run[]) {
   return runs

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { once } from "node:events";
-import { panelServer } from "../../src/server.ts";
+import { panelServer } from "../../src/infrastructure/http/panel-server.ts";
 import { publicationFixture } from "../support/publication.ts";
 
 test("panel guides review and human merge with PR, candidate, deployment and report links", async ({

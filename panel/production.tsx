@@ -1,4 +1,4 @@
-import type { Run } from "../src/types.ts";
+import type { Run } from "../src/domain/run.ts";
 
 export function ProductionDetails({ run }: { run: Run }) {
   const publication = run.publication;

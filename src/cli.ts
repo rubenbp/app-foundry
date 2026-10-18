@@ -3,15 +3,15 @@ import { createHash } from "node:crypto";
 import { readFileSync, unlinkSync, existsSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { once } from "node:events";
-import { readConfig } from "./config.ts";
-import { OpenCode } from "./opencode.ts";
-import { Factory } from "./factory.ts";
-import { panelServer } from "./server.ts";
-import { createWorkflow } from "./workflow.ts";
+import { readConfig } from "./infrastructure/configuration.ts";
+import { OpenCode } from "./infrastructure/opencode/agent.ts";
+import { createFactory } from "./composition/factory.ts";
+import { panelServer } from "./infrastructure/http/panel-server.ts";
+import { createWorkflow } from "./composition/workflow.ts";
 import { GitHub } from "./infrastructure/github.ts";
 import { GitWorkspace } from "./infrastructure/workspace.ts";
 import { GitHubPublication } from "./infrastructure/publication.ts";
-import { acquireLock } from "./lock.ts";
+import { acquireLock } from "./infrastructure/lock.ts";
 
 const args = process.argv.slice(2);
 const option = (name: string) => {
@@ -55,7 +55,8 @@ if (command === "serve") {
       })
     : null;
   if (existsSync(socket)) unlinkSync(socket);
-  const factory = workflow?.factory ?? new Factory(config, agent, { secrets });
+  const factory =
+    workflow?.factory ?? createFactory(config, agent, { secrets });
   let pollTimer: ReturnType<typeof setTimeout> | undefined;
   let closing = false;
   let polling: Promise<void> | undefined;

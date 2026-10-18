@@ -1,21 +1,6 @@
-import type {
-  AuthorizedRequest,
-  ManagedProject,
-  Workspace,
-} from "./domain/request.ts";
-import type { Verification } from "./domain/verification.ts";
-import type { Publication } from "./domain/publication.ts";
-export interface FactoryConfig {
-  dataDir: string;
-  projectDir: string;
-  provider: string;
-  model: string;
-  auth: "opencode";
-  opencodeCli?: string;
-  vercelCli?: string;
-  managedProject?: ManagedProject;
-}
-
+import type { AuthorizedRequest, Workspace } from "./request.ts";
+import type { Verification } from "./verification.ts";
+import type { Publication } from "./publication.ts";
 export type RunStatus =
   | "queued"
   | "preparing"
@@ -93,35 +78,6 @@ export interface Run {
   history: History[];
   gaps: string[];
 }
-export type Fact =
-  | { type: "status"; status: string }
-  | {
-      type: "part";
-      id: string;
-      messageId: string;
-      kind: string;
-      text: string;
-      label?: string;
-    }
-  | { type: "usage"; usage: Usage }
-  | { type: "pending"; pending: Pending[] }
-  | { type: "finished"; text: string }
-  | { type: "error"; text: string }
-  | { type: "gap"; text: string }
-  | { type: "observed" }
-  | { type: "process-started"; pid: number }
-  | { type: "process-exit"; detail: string };
-
-export interface AgentPort {
-  start(
-    emit: (fact: Fact) => void,
-    protect?: (secrets: string[]) => void,
-  ): Promise<NonNullable<Run["process"]>>;
-  create(): Promise<string>;
-  send(sessionId: string, task: string): Promise<void>;
-  stop(sessionId: string | null): Promise<{ exited: boolean; detail: string }>;
-}
-
 export function consumption(usage: Usage[]) {
   const withTokens = usage.filter((u) => u.tokens !== null);
   const observed = withTokens.length

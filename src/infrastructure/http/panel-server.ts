@@ -1,9 +1,9 @@
 import { createServer, type Server } from "node:http";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, extname, sep } from "node:path";
-import { queuedRuns } from "./domain/queue.ts";
-import { consumption } from "./types.ts";
-import type { Factory } from "./factory.ts";
+import { queuedRuns } from "../../domain/queue.ts";
+import { consumption } from "../../domain/run.ts";
+import type { Factory } from "../../application/factory.ts";
 
 export function panelServer(factory: Factory, dist = resolve("dist")): Server {
   return createServer((req, res) => {

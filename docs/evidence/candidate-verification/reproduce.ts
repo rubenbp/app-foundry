@@ -15,7 +15,10 @@ import {
 } from "../../../src/infrastructure/workspace.ts";
 import { CandidateVerifier } from "../../../src/infrastructure/verification.ts";
 import { verificationPlan } from "../../../src/domain/verification.ts";
-import { sanitizer, sanitizedRecord } from "../../../src/sanitize.ts";
+import {
+  sanitizer,
+  sanitizedRecord,
+} from "../../../src/application/sanitize.ts";
 
 const factoryDirectory = resolve(import.meta.dirname, "../../..");
 const evidence = join(factoryDirectory, "docs/evidence/candidate-verification");

@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import { OpenCode } from "@opencode/client";
-import { Observer } from "../src/opencode.ts";
-import type { Fact } from "../src/types.ts";
+import { Observer } from "../src/infrastructure/opencode/agent.ts";
+import type { Fact } from "../src/application/agent.ts";
 
 test("SDK observer preserves streamed transitions and reconciles messages and pending requests", async () => {
   const server = createServer((req, res) => {

@@ -9,9 +9,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Factory } from "../src/factory.ts";
-import type { AgentPort, Fact } from "../src/types.ts";
-import { consumption } from "../src/types.ts";
+import { createFactory } from "../src/composition/factory.ts";
+import type { AgentPort, Fact } from "../src/application/agent.ts";
+import { consumption } from "../src/domain/run.ts";
 import { DatabaseSync } from "node:sqlite";
 
 function setup() {
@@ -49,7 +49,7 @@ function setup() {
     model: "gemini-2.5-flash",
     auth: "opencode" as const,
   };
-  const factory = new Factory(config, agent, {
+  const factory = createFactory(config, agent, {
     secrets: ["fictional-secret-123"],
     now: () => 1000,
   });
@@ -181,7 +181,7 @@ test("permissions remain pending, stop is explicit, and restart preserves histor
   assert.equal(s.factory.view(run.id)!.status, "waiting");
   await assert.rejects(s.factory.run("Second task"), /already occupies/);
   s.factory.close();
-  const resumed = new Factory(s.config, s.agent);
+  const resumed = createFactory(s.config, s.agent);
   assert.equal(resumed.view(run.id)!.status, "intervention");
   assert.equal(resumed.view(run.id)!.pending[0].id, "q1");
   assert.equal(s.sends(), 1);

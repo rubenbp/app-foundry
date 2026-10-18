@@ -3,10 +3,10 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createWorkflow } from "../../src/workflow.ts";
+import { createWorkflow } from "../../src/composition/workflow.ts";
 import { GitWorkspace, execute } from "../../src/infrastructure/workspace.ts";
 import type { ProcessPort } from "../../src/infrastructure/workspace.ts";
-import type { Fact, AgentPort } from "../../src/types.ts";
+import type { Fact, AgentPort } from "../../src/application/agent.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
 import type {
   PublicationPort,

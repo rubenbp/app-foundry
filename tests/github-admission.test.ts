@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createWorkflow } from "../src/workflow.ts";
+import { createWorkflow } from "../src/composition/workflow.ts";
 import { GitHub } from "../src/infrastructure/github.ts";
 
 test("GitHub authorization needs the label actor's effective write permission and unchanged content", async () => {

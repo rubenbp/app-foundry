@@ -11,7 +11,7 @@ import {
   type Run,
   type RunStatus,
   type PartView,
-} from "../src/types.ts";
+} from "../src/domain/run.ts";
 import "./style.css";
 
 interface View {

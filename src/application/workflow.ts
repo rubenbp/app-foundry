@@ -1,6 +1,6 @@
-import { sanitizedRecord } from "../sanitize.ts";
+import { sanitizedRecord } from "./sanitize.ts";
 import { queuedRuns } from "../domain/queue.ts";
-import { Factory } from "../factory.ts";
+import type { Factory } from "./factory.ts";
 import { validateProject } from "../domain/configuration.ts";
 import type {
   Effect,
@@ -11,10 +11,10 @@ import type {
 import { requestContext } from "./agent-task.ts";
 import { authorize } from "../domain/request.ts";
 import type { ReadyIssue } from "../domain/request.ts";
-import type { AgentPort, FactoryConfig } from "../types.ts";
+import type { AgentPort } from "./agent.ts";
+import type { FactoryConfig } from "./configuration.ts";
 import { verificationPlan } from "../domain/verification.ts";
-import { CandidateVerifier } from "../infrastructure/verification.ts";
-import type { ProcessPort } from "../infrastructure/workspace.ts";
+import type { CandidateVerification } from "./verification.ts";
 import {
   CandidatePublication,
   type PublicationPort,
@@ -25,8 +25,8 @@ export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
   workspace?: WorkspacePort;
   github?: GitHubPort;
-  secrets?: string[];
-  verificationProcess?: ProcessPort;
+  verifier: CandidateVerification;
+  createFactory: (config: FactoryConfig, agent: AgentPort) => Factory;
   publication?: PublicationPort;
   production?: ProductionPort;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
@@ -43,7 +43,7 @@ export class Workflow {
   private verifying = false;
   private verificationAbort?: AbortController;
   private verificationDone?: Promise<void>;
-  private verifier: CandidateVerifier;
+  private verifier: CandidateVerification;
   private publication?: CandidatePublication;
   get observation() {
     return this.factory.store.observation();
@@ -52,18 +52,13 @@ export class Workflow {
     this.github = options.github;
     this.workspace = options.workspace;
     this.createAgent = options.createAgent;
-    this.verifier = new CandidateVerifier(
-      config.dataDir,
-      options.verificationProcess,
-    );
+    this.verifier = options.verifier;
     if (!config.managedProject)
       throw new Error("Trusted Managed project configuration required");
     validateProject(config.managedProject);
     this.ownership = options.acquireOwnership(config);
     try {
-      this.factory = new Factory(config, options.createAgent(config), {
-        secrets: options.secrets,
-      });
+      this.factory = options.createFactory(config, options.createAgent(config));
       if (options.publication)
         this.publication = new CandidatePublication(
           this.factory,

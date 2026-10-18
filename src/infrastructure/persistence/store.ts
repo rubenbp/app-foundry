@@ -2,10 +2,12 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, writeFileSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import type { Run } from "./types.ts";
+import type { Run } from "../../domain/run.ts";
+
+import type { RunRepository } from "../../application/run-repository.ts";
 
 // Only sanitized domain records reach this boundary. No SDK payloads or raw logs.
-export class Store {
+export class Store implements RunRepository {
   db: DatabaseSync;
   root: string;
   failed = false;

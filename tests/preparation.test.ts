@@ -4,9 +4,9 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { createWorkflow } from "../src/workflow.ts";
+import { createWorkflow } from "../src/composition/workflow.ts";
 import { GitWorkspace, execute } from "../src/infrastructure/workspace.ts";
-import type { AgentPort } from "../src/types.ts";
+import type { AgentPort } from "../src/application/agent.ts";
 
 function fixture(options: { stopConfirmed?: boolean } = {}) {
   const root = mkdtempSync(join(tmpdir(), "foundry-prepare-"));

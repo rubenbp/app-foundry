@@ -10,11 +10,11 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { once } from "node:events";
-import { Factory } from "../src/factory.ts";
-import { OpenCode } from "../src/opencode.ts";
-import { panelServer } from "../src/server.ts";
-import { consumption } from "../src/types.ts";
-import type { Run } from "../src/types.ts";
+import { createFactory } from "../src/composition/factory.ts";
+import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
+import { panelServer } from "../src/infrastructure/http/panel-server.ts";
+import { consumption } from "../src/domain/run.ts";
+import type { Run } from "../src/domain/run.ts";
 
 // Explicit opt-in only. This script calls a real paid model; it is never part of npm test.
 if (!process.argv.includes("--real"))
@@ -52,7 +52,7 @@ const config = {
   opencodeCli: process.env.FACTORY_OPENCODE_CLI ?? "/opt/homebrew/bin/opencode",
 };
 const agent = new OpenCode(config);
-let factory = new Factory(config, agent, {
+let factory = createFactory(config, agent, {
   secrets: [process.env.GEMINI_API_KEY ?? ""],
 });
 const server = panelServer(factory);
@@ -177,7 +177,7 @@ try {
   evidence.nativeRuntimeRemoved =
     agent.runtime !== null && !existsSync(agent.runtime);
   factory.close();
-  factory = new Factory(config, new OpenCode(config));
+  factory = createFactory(config, new OpenCode(config));
   evidence.restart = {
     count: factory.list().length,
     statuses: factory.list().map((r) => r.status),
