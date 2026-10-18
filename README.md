@@ -2,6 +2,8 @@
 
 Factory local que admite una Petición autorizada desde GitHub, prepara un clon y una rama propios, comprueba la base, encarga un Intento a OpenCode y verifica independientemente el candidato completo. Publica su PR, correlaciona la preview, presenta evidencias y habilita el merge humano tras la aceptación del SHA. El panel muestra cada fase y sus enlaces. Tras observar el merge humano, correlaciona producción con el commit integrado y comprueba el dominio público, su marcador y las aserciones de la petición antes de publicar evidencia y cerrar el issue.
 
+La organización del código y sus límites se describen en [Arquitectura de la Factory](docs/architecture.md).
+
 ## Preparación
 
 Requiere macOS, Node **24.21.0**, npm **11.19.0** y una cuenta OpenAI OAuth activa en OpenCode v2. No pongas credenciales en archivos del proyecto ni en la tarea. `@opencode/cli` y el SDK HTTP `@opencode/client` están fijados en **2.0.32** mediante `package-lock.json`. La Factory ejecuta el binario local y comprueba su versión y PID mediante `/api/info`. La ruta `opencodeCli` de configuración solo sirve para exportar en memoria la cuenta OAuth activa existente; no cambia la cuenta global. El método OAuth y sus metadatos se conservan al importarlos en el servidor propio.
