@@ -1,6 +1,6 @@
 # 5. Variantes e intervención
 
-[Índice](README.md) · [Anterior](04-produccion-y-cierre.md) · [Siguiente: guía de un issue](06-guia-de-un-issue.md)
+[Índice](README.md) · [Anterior](04-integracion-y-cierre.md) · [Siguiente: guía de un issue](06-guia-de-un-issue.md)
 
 ## Elegir el tipo de respuesta
 
@@ -18,7 +18,7 @@ flowchart TD
     V -->|"No"| I
 ```
 
-`intervention` no significa que todos los componentes dejen de observar. Antes del merge, algunas consultas de publicación siguen conciliando hechos y pueden recuperar una condición transitoria. Eso no autoriza a repetir el trabajo del agente, la preparación o una producción fallida.
+`intervention` no significa que todos los componentes dejen de observar. Antes del merge, algunas consultas de publicación siguen conciliando hechos y pueden recuperar una condición transitoria. Eso no autoriza a repetir el trabajo del agente o la preparación.
 
 ## Variantes antes de publicar
 
@@ -64,14 +64,10 @@ Cerrar manualmente el issue antes del merge impide mantener una aceptación efec
 | Situación                                                                                  | Resultado                                                                                                                              |
 | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Merge sin aceptación vigente, sin control favorable o por identidad sin permiso acreditado | Incidencia de integración; no acreditar el ciclo como correcto.                                                                        |
-| Squash con SHA diferente del Commit candidato                                              | Variante válida: conservar ambas versiones y comprobar producción contra el SHA integrado.                                             |
+| Squash con SHA diferente del Commit candidato                                              | Variante válida: conservar ambas versiones en el resumen de integración.                                                               |
 | Merge mientras la Factory estaba consultando o intentando revocar                          | Contrastar aceptación, informe y control históricos anteriores al merge. No asumir que el orden de observación local es el orden real. |
-| Deployment de producción pendiente o `inactive`                                            | Mantener `checking_production` y esperar otra observación.                                                                             |
-| Deployment de otro SHA, proyecto, repositorio o entorno                                    | Intervención; no usarlo como prueba del resultado.                                                                                     |
-| Plan `factory-production` ausente, inválido o incompleto                                   | Intervención; el plan no se inventa después ni se cambia silenciosamente el Issue autorizado.                                          |
-| Dominio público sirve otra versión, exige acceso, redirige o falla un criterio             | Guardar la evidencia disponible; intervención sin cierre automático por éxito.                                                         |
-| Error o incertidumbre operativa después del merge                                          | Conservar hechos y evidencia; no reanudar efectos de producción automáticamente.                                                       |
-| Issue cerrado manualmente                                                                  | Seguir exigiendo evidencia completa. Si ya estaba cerrado, no atribuirle un cierre verificado hasta comprobar producción e informar.   |
+| Error o incertidumbre operativa después del merge                                          | Conservar hechos y error. Conciliar el resumen y el cierre antes de repetir efectos.                                                   |
+| Issue cerrado manualmente                                                                  | Publicar el resumen y confirmar la integración autorizada; reconocer el cierre existente.                                              |
 | Fallo al publicar informe o cerrar issue                                                   | No marcar `completed` sin confirmar lo necesario. Conservar efectos para inspección, sin repetirlos a ciegas.                          |
 
 ## Parar no deshace lo ocurrido
@@ -99,7 +95,7 @@ flowchart TD
     I --> P{"¿Había publicación iniciada?"}
     P -->|"Sí"| O["Observar efectos remotos ya ocurridos<br/>Revocar aceptación activa y exigir recuperación"]
     P -->|"No"| C["Inspeccionar procesos y efectos locales"]
-    O --> H["Sin reanudar push, PR, informes<br/>ni producción automáticamente"]
+    O --> H["Sin reanudar push, PR, informes<br/>ni cierre automáticamente"]
 ```
 
 La Factory registra intención antes de los efectos y confirmación después. Esta separación permite reconocer una PR creada aunque se haya perdido la respuesta. No garantiza una transacción única entre GitHub, Vercel y el almacenamiento local.
@@ -117,7 +113,7 @@ Si falla la persistencia, bloquea nuevos efectos propios. La persona debe inspec
 | `awaiting_preview`                    | Candidato verificado; publicación o preview todavía sin acreditar.      |
 | `awaiting_review`                     | Informe disponible; falta aceptación válida.                            |
 | `awaiting_merge`                      | Aceptación acreditada y control favorable; falta merge humano.          |
-| `checking_production`                 | Merge observado; falta acreditar producción y terminar cierre.          |
+| `closing_issue`                       | Merge autorizado observado; falta confirmar resumen y cierre.           |
 | `intervention`                        | Fallo, garantía ausente o efectos inciertos; revisar la causa concreta. |
 | `stopped` / `completed`               | Parada confirmada / recorrido completo acreditado.                      |
 

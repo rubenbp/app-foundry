@@ -4,56 +4,26 @@
 
 ## Ejemplo: cambiar un pie y comprobar su enlace
 
-El ejemplo es una plantilla de petición, no un issue ya creado ni una garantía sobre los selectores actuales del producto. Los selectores y textos deben revisarse antes de autorizar.
+El ejemplo es una petición sencilla. No hace falta conocer selectores ni definir pruebas técnicas.
 
 Crear el issue en el repositorio del **Managed project**, con un título como «Actualizar el mensaje del pie y conservar la vuelta al inicio» y este cuerpo:
 
-````markdown
-## Objetivo
-
-Mostrar «Otra partida.» en el pie y permitir volver al inicio desde la página Sobre.
-
-## Criterios de aceptación
-
-- [ ] La página de inicio muestra «Otra partida.» en el texto del pie.
-- [ ] El enlace del pie de la página Sobre permite volver al inicio.
-
-## Comprobaciones de producción
-
-```factory-production
-[
-  {
-    "criterion": 1,
-    "path": "/",
-    "selector": "footer p",
-    "text": "Otra partida."
-  },
-  {
-    "criterion": 2,
-    "path": "/sobre/",
-    "selector": "footer a",
-    "href": "/",
-    "follow": true
-  }
-]
+```text
+Quiero mostrar «Otra partida.» en el pie. La página de inicio debe mostrar ese mensaje y el enlace del pie de la página Sobre debe seguir permitiendo volver al inicio.
 ```
-````
 
-La primera comprobación prueba el texto visible en el inicio. La segunda exige un único enlace visible en el pie de Sobre, con destino `/`, y comprueba que al pulsarlo se llega correctamente al inicio.
-
-El número `criterion` sigue el orden de la lista. La sección separada evita que el bloque técnico forme parte del texto de un criterio. Si cambia el orden, deben revisarse las referencias antes de autorizar.
+También se pueden usar encabezados de objetivo y criterios, listas o contexto adicional. Son ayudas de escritura, no requisitos del formato. La Factory prepara las comprobaciones técnicas; si falta una decisión de producto, pide una aclaración concreta en lenguaje natural.
 
 ## Pasos de la persona responsable
 
-1. **Revisar la petición.** Confirmar objetivo, criterios observables y comprobaciones públicas. Si el comportamiento no se puede expresar con el plan actual, ampliar la capacidad de verificación antes de usarlo para cerrar ese trabajo.
-2. **Autorizar en GitHub.** Una persona con escritura aplica `factory:ready` al contenido estable. Si aún no se admite por ambigüedad, revisar la causa y volver a aplicar la etiqueta tras estabilizarlo.
-3. **Seguir la Ejecución.** Abrir el Dashboard y comprobar si espera turno, prepara, trabaja o requiere intervención. Una petición admitida no se cancela quitando la etiqueta.
-4. **Revisar la PR y su informe.** Leer el diff completo, resultados y lagunas. Confirmar que el SHA informado es el del Commit candidato vigente.
-5. **Probar la preview.** Revisar cada criterio en la URL del informe. Comprobar el resultado visible y la navegación, además de las pruebas técnicas.
-6. **Aceptar o pedir corrección.** Si el resultado es correcto, copiar el ejemplo del informe con SHA completo y URL. Publicarlo como comentario nuevo en el issue o la conversación principal de la PR. Si no es correcto, una orden reconocida como `Corrige el texto del pie.` revoca el control y requiere intervención; hoy no lanza otro Intento.
-7. **Realizar el merge.** Esperar `Factory / ready-to-merge: success` y los demás controles exigidos. Hacer el merge en GitHub. Si cambió el Commit candidato, esperar verificación, preview, informe y aceptación nuevos.
-8. **Esperar la comprobación pública.** La Factory debe acreditar el deployment del commit integrado y los criterios en el dominio público. No cerrar manualmente para saltarse este paso.
-9. **Confirmar el final.** Comprobar informe de producción en el issue y estado `completed` de la Ejecución. El puesto queda libre para la siguiente petición.
+1. **Revisar la petición.** Confirmar que el objetivo y el resultado esperado se entienden.
+2. **Autorizar en GitHub.** Una persona con escritura aplica `factory:ready` al contenido estable.
+3. **Seguir la Ejecución.** Consultar el Dashboard y cualquier pregunta o intervención. Retirar la etiqueta no cancela un trabajo admitido.
+4. **Revisar la PR y su informe.** Leer diff, resultados y lagunas del Commit candidato vigente.
+5. **Probar la preview.** El creador del issue se responsabiliza de conseguir la revisión de cada criterio en la URL del informe.
+6. **Aceptar o pedir corrección.** Cualquier persona con escritura puede copiar el ejemplo del informe con SHA completo y URL y publicarlo como comentario nuevo. Una orden reconocida de corrección revoca el control y requiere intervención; hoy no lanza otro Intento.
+7. **Realizar el merge.** Esperar `Factory / ready-to-merge: success` y los demás controles. Si cambió el candidato, esperar verificación, preview, informe y aceptación nuevos.
+8. **Confirmar el final.** Comprobar el resumen de integración, el issue cerrado y el estado `completed`. La Factory no espera ni comprueba producción.
 
 ## Decidir durante la revisión
 
@@ -70,7 +40,7 @@ flowchart TD
     H --> G{"¿Control favorable y demás requisitos de GitHub?"}
     G -->|"No"| V["Revisar cambios, permisos y observaciones"]
     G -->|"Sí"| M["Hacer merge humano"]
-    M --> F["Esperar evidencia pública y completed"]
+    M --> F["Confirmar resumen, cierre y completed"]
 ```
 
 ## Cómo reconocer un issue terminado
@@ -83,7 +53,6 @@ flowchart TD
 | Preview e informe                          | Qué versión se presentó a revisión y con qué evidencia.                 |
 | Comentario de aceptación                   | Qué SHA y preview aceptó una persona con permiso.                       |
 | Merge y control histórico                  | Qué candidato se integró, por quién y bajo qué aceptación.              |
-| Marcador y comprobaciones públicas         | Qué commit sirve producción y si pasan las aserciones declaradas.       |
 | Informe en el issue y `completed`          | Que la Factory conservó la evidencia y completó el recorrido de cierre. |
 
-La cobertura final se limita a las aserciones declaradas y al juicio humano sobre el Commit candidato. El informe debe conservar esa limitación; no acredita comportamientos del producto que nadie haya comprobado.
+La revisión humana del preview determina si el resultado cumple los criterios. Las pruebas técnicas aportan evidencia previa al merge; el resumen final acredita la integración y el cierre del issue.

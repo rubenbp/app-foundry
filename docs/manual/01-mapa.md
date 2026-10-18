@@ -13,9 +13,7 @@ flowchart TB
     A -->|"Edita y crea commits locales"| W["Clon propio del Managed project"]
     F -->|"Prepara y verifica"| W
     G -->|"Integración Git"| V["Vercel<br/>Preview y producción"]
-    F -->|"Comprueba identidad y versión"| V
-    F -->|"Comprueba comportamiento público"| P["Dominio de producción"]
-    V -->|"Sirve la versión publicada"| P
+    F -->|"Comprueba identidad y versión de preview"| V
     F -->|"Expone estado y evidencias"| L["Dashboard"]
     H -->|"Consulta"| L
 ```
@@ -38,7 +36,7 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 | Término                      | Significado práctico                                                                                                                                                        |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Issue autorizado**         | Objetivo y criterios aprobados por una persona. Permite empezar, pero no acepta el resultado.                                                                               |
-| **Ejecución**                | Recorrido completo para atender esa petición, incluidas esperas, integración y publicación.                                                                                 |
+| **Ejecución**                | Recorrido completo para atender esa petición, incluidas esperas, integración y cierre del issue.                                                                            |
 | **Intento**                  | Trabajo encargado al agente dentro de la Ejecución. El modelo permite varios; hoy no existe continuación guiada ni reintento automático.                                    |
 | **Aceptación del resultado** | Decisión humana sobre un Commit candidato concreto y su preview. Autoriza su integración y publicación.                                                                     |
 | **Base**                     | Versión de partida del producto, identificada por su SHA.                                                                                                                   |
@@ -53,7 +51,7 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 
 ```mermaid
 flowchart TD
-    I["Issue con objetivo, criterios y comprobaciones públicas"] --> A["Una persona con escritura aplica factory:ready"]
+    I["Issue con objetivo y criterios en lenguaje natural"] --> A["Una persona con escritura aplica factory:ready"]
     A --> D{"¿Autorización y contenido acreditados?"}
     D -->|"No"| N["No se admite<br/>Aclarar y volver a autorizar"]
     D -->|"Sí"| Q["Capturar Issue autorizado y poner en cola"]
@@ -67,8 +65,7 @@ flowchart TD
     E --> H["Persona acepta SHA y preview"]
     H --> G["Factory habilita su control de merge"]
     G --> M["Persona hace merge en GitHub"]
-    M --> P["Comprobar deployment y dominio público"]
-    P --> C["Guardar evidencia, informar y cerrar issue"]
+    M --> C["Publicar resumen de integración y cerrar issue"]
     C --> F["Ejecución completada<br/>Liberar puesto y atender siguiente"]
     B -. "Fallo o incertidumbre" .-> X["Intervención"]
     O -. "Fallo" .-> X
@@ -76,7 +73,6 @@ flowchart TD
     T -. "Fallo o evidencia insuficiente" .-> X
     V -. "Deployment fallido" .-> X
     M -. "Merge fuera del contrato" .-> X
-    P -. "Resultado no acreditado" .-> X
 ```
 
 Este es el camino favorable. [Las variantes](05-variantes-e-intervencion.md) explican cuándo se espera, se vuelve a comprobar o se exige intervención.
@@ -86,9 +82,8 @@ Este es el camino favorable. [Las variantes](05-variantes-e-intervencion.md) exp
 ```mermaid
 flowchart LR
     B["Base<br/>Versión de partida"] --> C["Candidato<br/>Versión comprobada y aceptada"]
-    C -->|"Merge humano, incluido squash"| M["Integrado<br/>Versión que debe servir producción"]
+    C -->|"Merge humano, incluido squash"| M["Integrado<br/>Versión resultante del merge"]
     C --> V["Preview debe servir el SHA del Commit candidato"]
-    M --> P["Producción debe servir el SHA integrado"]
 ```
 
-Un sitio que responde correctamente puede estar sirviendo una versión antigua. Por eso se comprueban tanto la identidad de la versión como el comportamiento solicitado.
+La preview debe servir el Commit candidato que se presenta a revisión. La persona responsable comprueba allí el resultado antes de aceptarlo; la Factory termina con la integración y el cierre.

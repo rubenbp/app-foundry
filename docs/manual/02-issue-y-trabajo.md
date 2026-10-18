@@ -4,7 +4,7 @@
 
 ## Antes del primer issue
 
-La persona que opera la Factory prepara una configuración de confianza: repositorio del Managed project, rama base, instrucciones, instalación, verificaciones, proyecto Vercel y dominio público. La configuración permanece fuera del clon que modifica el agente.
+La persona que opera la Factory prepara una configuración de confianza: repositorio del Managed project, rama base, instrucciones, instalación, verificaciones, identidad del proyecto Vercel para las previews. La configuración permanece fuera del clon que modifica el agente.
 
 También prepara los accesos de GitHub, Vercel y OpenCode, el marcador de versión del producto y la protección de la rama. El marcador, normalmente `/version.json`, declara el SHA completo del build. Un build marcado como sucio (`dirty: true`) no sirve como evidencia.
 
@@ -14,7 +14,7 @@ Los pasos técnicos están en el [README](../../README.md) y la [guía de Vercel
 
 ## Preparar y autorizar la petición
 
-El issue debe explicar el objetivo y los criterios de aceptación. Para completar el ciclo actual debe incluir además un plan `factory-production`, separado de los criterios, que permita comprobarlos en el sitio público. El [ejemplo completo](06-guia-de-un-issue.md) muestra el formato.
+El issue debe explicar el objetivo y los criterios de aceptación en lenguaje natural. Encabezados y listas son opcionales; se acepta texto seguido. El contexto y los límites son opcionales. La persona no necesita preparar pruebas técnicas, selectores ni JSON: la Factory decide las comprobaciones anteriores al merge. Si falta una decisión de producto, el agente pide una aclaración concreta antes de implementar.
 
 La persona revisa el contenido estable y aplica `factory:ready`. Debe tener permiso efectivo de escritura; ser quien creó el issue no basta. La autorización queda ligada al evento de la etiqueta y al contenido observado.
 
@@ -33,7 +33,7 @@ flowchart TD
 
 La Factory consulta eventos, permisos, ediciones y una segunda lectura del issue. Una edición simultánea o posterior puede impedir acreditar la autorización; incluso otra actividad que actualice el issue puede exigir autorizar de nuevo. La comprobación es conservadora y no elimina todas las carreras posibles con GitHub.
 
-**Importante:** la admisión no valida por adelantado toda la suficiencia de los criterios ni el plan de producción. Un issue puede ser admitido y quedar detenido después por un plan ausente o inválido. Conviene prepararlo completo antes de autorizar.
+La admisión comprueba contenido y autorización, sin imponer una plantilla. Si el objetivo o los criterios necesitan una decisión de producto, el agente pregunta antes de implementar. El Dashboard muestra la solicitud pendiente.
 
 ## Qué queda fijado
 
@@ -43,7 +43,7 @@ Cada issue se consume una sola vez dentro del historial persistido. Retirar y vo
 
 ## Cola y puesto de trabajo
 
-Solo hay una Ejecución activa. El puesto sigue ocupado durante las esperas de revisión, merge y producción, y también durante una intervención.
+Solo hay una Ejecución activa. El puesto sigue ocupado durante las esperas de revisión, merge y cierre del issue, y también durante una intervención.
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,7 @@ flowchart TD
     A -->|"No"| R["Reservar Managed project"]
     R --> B["Preparar siguiente Ejecución"]
     B --> T{"¿Cómo termina?"}
-    T -->|"Producción acreditada"| F["Completar y liberar puesto"]
+    T -->|"Integración autorizada e issue cerrado"| F["Completar y liberar puesto"]
     T -->|"Parada confirmada"| F
     T -->|"Espera o intervención"| K["Mantener puesto reservado"]
     F --> S["Atender siguiente petición"]

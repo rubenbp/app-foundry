@@ -1,6 +1,6 @@
 # 3. Del Commit candidato a la aceptación
 
-[Índice](README.md) · [Anterior](02-issue-y-trabajo.md) · [Siguiente: producción y cierre](04-produccion-y-cierre.md)
+[Índice](README.md) · [Anterior](02-issue-y-trabajo.md) · [Siguiente: integración y cierre](04-integracion-y-cierre.md)
 
 ## Verificar el árbol del Commit candidato
 

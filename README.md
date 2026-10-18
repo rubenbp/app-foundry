@@ -1,6 +1,6 @@
 # App Foundry
 
-Factory local que admite un Issue autorizado de GitHub, prepara un clon y una rama propios, comprueba la base, encarga un Intento a OpenCode y verifica independientemente el árbol del Commit candidato. Publica su PR, correlaciona la preview, presenta evidencias y habilita el merge humano tras la aceptación del SHA. El dashboard muestra cada fase y sus enlaces. Tras observar el merge humano, correlaciona producción con el commit integrado y comprueba el dominio público, su marcador y las aserciones del Issue autorizado antes de publicar evidencia y cerrar el issue.
+Factory local que admite un Issue autorizado de GitHub, prepara un clon y una rama propios, comprueba la base, encarga un Intento a OpenCode y verifica independientemente el árbol del Commit candidato. Publica su PR, correlaciona la preview, presenta evidencias y habilita el merge humano tras la aceptación del SHA. El dashboard muestra cada fase y sus enlaces. Tras observar el merge humano autorizado, publica el resumen de integración, cierra el issue y completa la Ejecución.
 
 La organización del código y sus límites se describen en [Arquitectura de la Factory](docs/architecture.md).
 
@@ -60,31 +60,21 @@ Después de verificar, la Factory registra intención antes de push, PR, comenta
 
 El informe de la PR contiene petición, Ejecución, base/head, diff acumulado completo, verificaciones, relación criterio/evidencia, lagunas y preview. Si excede el tamaño de comentario, publica fragmentos enlazados sin truncar evidencia. Los criterios quedan pendientes de juicio humano; una suite verde no los acepta por sí sola. Para aceptar, responde en el issue o conversación principal de la PR con el ejemplo mostrado en el informe: `Acepto la versión SHA_COMPLETO y su preview URL.` Una referencia ambigua solicita un comentario nuevo con SHA y preview; una consulta no acepta. La Factory exige permiso efectivo, comentario sin editar, posterioridad al informe y coincidencia con la versión vigente. Consume cada ID una sola vez y excluye IDs, marcadores propios y bots, permitiendo una cuenta compartida sin afirmar separación técnica de identidades.
 
-La aceptación vigente permite `Factory / ready-to-merge: success`. La persona realiza el merge en GitHub. Cambiar head invalida verificaciones, preview, informe y aceptación; la Factory obtiene esa cabecera en el mismo clon y vuelve a verificar. Cambiar la petición, retirar el permiso del aceptante, editar/eliminar el informe o cualquiera de sus fragmentos, o pedir corrección/cancelación revoca el control al observarlo. Las correcciones y cancelaciones completas requieren el incremento posterior y quedan en intervención. El polling no garantiza revocación instantánea; si falla la red, la revocación remota puede quedar sin confirmar. El dashboard muestra esa incertidumbre. Un merge observado conserva por separado base, Commit candidato aceptado y commit integrado (incluido squash). Solo pasa a producción cuando conserva informe, aceptación anterior, permisos y control favorable; un merge fuera del contrato queda como incidencia.
+La aceptación vigente permite `Factory / ready-to-merge: success`. La persona realiza el merge en GitHub. Cambiar head invalida verificaciones, preview, informe y aceptación; la Factory obtiene esa cabecera en el mismo clon y vuelve a verificar. Cambiar la petición, retirar el permiso del aceptante, editar/eliminar el informe o cualquiera de sus fragmentos, o pedir corrección/cancelación revoca el control al observarlo. Las correcciones y cancelaciones completas requieren el incremento posterior y quedan en intervención. El polling no garantiza revocación instantánea; si falla la red, la revocación remota puede quedar sin confirmar. El dashboard muestra esa incertidumbre. Un merge observado conserva por separado base, Commit candidato aceptado y commit integrado (incluido squash). Solo completa la integración cuando conserva informe, aceptación anterior, permisos y control favorable; un merge fuera del contrato queda como incidencia.
 
-La comprobación de producción exige el deployment GitHub del commit integrado, repositorio y entorno configurados (`productionEnvironment`, por defecto `Production`) y su identidad Vercel con `target: production` y el proyecto correcto. No usa `production_environment` como prueba. `pending` e `inactive` mantienen la espera; un error de consulta conserva la falta de observación y exige intervención, sin declarar el deployment fallido.
+El humano escribe el objetivo y los criterios de aceptación en lenguaje natural. Los encabezados y listas son opcionales; también se acepta texto seguido. Puede añadir contexto o límites si ayudan, sin aportar JSON, selectores ni un plan técnico de comprobaciones. Por ejemplo:
 
-La issue autorizado debe incluir un único bloque JSON `factory-production`, bajo una sección distinta de los criterios. Cada comprobación relaciona un criterio numerado desde 1 con una ruta pública, selector visible y texto exacto o enlace interno; `follow: true` comprueba además la navegación. Por ejemplo:
-
-````markdown
-## Acceptance criteria
-
-- [ ] El pie muestra «Otra partida.».
-- [ ] Su enlace permite volver al inicio.
-
-## Production checks
-
-```factory-production
-[
-  {"criterion": 1, "path": "/", "selector": "footer p", "text": "Otra partida."},
-  {"criterion": 2, "path": "/sobre/", "selector": "footer a", "href": "/", "follow": true}
-]
+```text
+Quiero mostrar «Otra partida.» en el pie. Debe aparecer en la página de inicio y el enlace del pie de la página Sobre debe seguir permitiendo volver al inicio.
 ```
-````
 
-Estas aserciones forman parte del alcance que la persona revisa al aceptar el Commit candidato. La cobertura exige al menos una comprobación por criterio; no se infiere cobertura semántica de una suite verde. El incremento editorial comprueba contenido visible y navegación interna. Una petición con interacciones que estas aserciones no expresen necesita ampliar su verificación antes de acreditar producción. Un plan ausente o inválido exige intervención.
+El agente interpreta el texto completo, resuelve las decisiones técnicas a partir del repositorio y prepara las pruebas pertinentes antes del merge. Si falta una decisión de producto, pide una aclaración concreta en lenguaje natural antes de implementar. La solicitud queda visible en el Dashboard; la continuación guiada todavía no está disponible.
 
-Chrome abre una sesión nueva, pública, online y sin credenciales; solo permite GET/HEAD al origen configurado. Comprueba el marcador del commit integrado antes y después de las aserciones, rechaza builds sucios y guarda resultados y capturas en `dataDir/production/`. Persiste el artefacto saneado y el informe en el issue antes del cierre. Un cierre manual no sustituye las comprobaciones ni cancela la Ejecución. Solo una producción acreditada termina como `completed` y libera el puesto; reiniciar conserva ese resultado. Fallo o incertidumbre después del merge conserva estado y evidencia en intervención, sin reanudar ni repetir efectos automáticamente. La recuperación completa y los límites de fase llegan en incrementos posteriores.
+El creador del issue se responsabiliza de conseguir la revisión del preview. Cualquier persona con permiso efectivo de escritura puede aceptar la versión concreta mediante el comentario indicado en el informe. Cambiar el Commit candidato exige otra verificación, preview y aceptación.
+
+Después del merge autorizado, la Factory conserva el Commit candidato aceptado y el commit integrado, publica un resumen de integración en el issue y confirma su cierre. Solo entonces marca `completed` y libera el puesto. `closing_issue` identifica este cierre en curso. Un issue cerrado manualmente tras el merge sigue necesitando el resumen y la integración autorizada. Si se pierde una confirmación remota, la siguiente consulta concilia el efecto antes de repetirlo. Un reinicio conserva la intervención y exige recuperación autorizada.
+
+El MVP termina con la integración y el cierre del issue. No espera ni consulta deployments de producción, no navega por el dominio público y no genera un plan estructurado de comprobaciones de producción. La integración Git de Vercel puede desplegar la rama base por su cuenta; ese despliegue queda fuera del ciclo de la Factory.
 
 El primer recorrido editorial es una prueba de desarrollo, no la evaluación formal del MVP. Requiere aceptación humana del Commit candidato y merge humano en GitHub; el caso de contenido y el filtro reservados a la evaluación no se preparan manualmente durante esta prueba.
 

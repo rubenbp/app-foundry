@@ -35,7 +35,7 @@ npm --version
 python3 --version
 ```
 
-Debe estar instalado Google Chrome en `/Applications/Google Chrome.app`: la comprobación pública de producción lo usa. El puerto `4173` debe quedar libre para el servidor E2E de la Factory; no dejes otro preview usándolo.
+El puerto `4173` debe quedar libre para el servidor E2E de la Factory; no dejes otro preview usándolo.
 
 ```sh
 lsof -nP -iTCP:4173 -sTCP:LISTEN
@@ -147,9 +147,9 @@ gh issue create --repo rubenbp/appfoundry-site-demo \
   --body-file docs/manual/ejemplo-issue-prueba-local.md
 ```
 
-Apunta el número que devuelve GitHub. Lee el [cuerpo preparado](ejemplo-issue-prueba-local.md) antes de autorizarlo: cambia únicamente el mensaje del pie y conserva la vuelta al inicio. Incluye tres criterios y tres comprobaciones públicas. No toca los casos de introducción editorial ni filtro de dificultad reservados a la evaluación.
+Apunta el número que devuelve GitHub. Lee el [cuerpo preparado](ejemplo-issue-prueba-local.md) antes de autorizarlo: cambia únicamente el mensaje del pie y conserva la vuelta al inicio. Incluye el objetivo y tres criterios observables, sin plan técnico de pruebas. No toca los casos de introducción editorial ni filtro de dificultad reservados a la evaluación.
 
-La sección de entrega pide que el agente use un autor explícito asociado a `rubenbp`. La Factory establece por defecto `factory@localhost`, y cambiar tu `git config --global user.email` no sustituye ese valor del entorno. Vercel puede bloquear la preview si no atribuye el autor; su [documentación de colaboración](https://vercel.com/docs/deployments/troubleshoot-project-collaboration) explica esa comprobación. La instrucción usa `git commit --author`, permitido por el control Git local, sin cambiar el runtime. Verifica el autor de los commits en la PR; este paso depende de que el agente siga la instrucción.
+La identidad Git de la automatización pertenece a la preparación del Managed project. Antes de esta prueba, indica una sola vez en las instrucciones de confianza de la rama base el autor reconocido por Vercel, por ejemplo `git commit --author "App Foundry (rubenbp) <570775+rubenbp@users.noreply.github.com>" ...`. El control Git permite ese argumento sin cambiar configuración, remotos ni hooks. La Factory usa por defecto `factory@localhost`; cambiar tu `git config --global user.email` no sustituye ese valor del entorno. Si Vercel rechaza el autor, revisa esa preparación y los commits de la PR. Estas instrucciones operativas no forman parte del issue de producto.
 
 ## 7. Autorizar y observar
 
@@ -201,17 +201,9 @@ Espera `awaiting_merge` y `Factory / ready-to-merge: success`. Si cambia el Comm
 
 Haz el merge manualmente en GitHub cuando estén favorables los controles de Factory y Vercel. Mantén encendida la Factory.
 
-El dashboard debe pasar a `checking_production`. Cuando el deployment de producción esté listo, la Factory comprobará la versión y los tres criterios en el dominio público, publicará el informe en el issue y lo cerrará. El resultado final debe ser `completed`.
+La Factory debe publicar el resumen de integración en el issue, confirmar su cierre y pasar a `completed`. Puede mostrar brevemente `closing_issue` mientras confirma esos efectos. El resumen conserva el Commit candidato aceptado y el commit integrado, que pueden diferir si usaste squash.
 
-Puedes observar el sitio y el marcador:
-
-```sh
-open https://rebobina-appfoundry.vercel.app
-curl --fail --silent --show-error -H 'Cache-Control: no-cache' \
-  https://rebobina-appfoundry.vercel.app/version.json
-```
-
-El `sha` debe ser el commit integrado, que puede diferir del Commit candidato si usaste squash. Debe mostrar `dirty: false`. El marcador por sí solo no sustituye los criterios ni el informe de producción.
+El visto bueno al preview es la revisión funcional del resultado. La Factory no espera ni comprueba el despliegue de producción después del merge.
 
 ## 10. Detener y repetir con otra petición
 
@@ -228,13 +220,13 @@ Para probar otro cambio crea otro issue con un resultado diferente, una vez comp
 
 ## Si no avanza
 
-| Lo que ves                      | Qué revisar                                                                                                      |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| No aparece ningún issue         | Repo correcto, etiqueta, permiso de escritura y contenido estable.                                               |
-| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto. |
-| `waiting`                       | Pregunta o permiso del agente. La continuación guiada aún no está disponible.                                    |
-| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                     |
-| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                   |
-| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                   |
-| Producción en intervención      | Marcador del commit integrado, checks públicos, acceso y salidas. No hay reintento ni rollback automático.       |
-| Intervención tras reiniciar     | Inspeccionar procesos y efectos. No borrar datos o reservas para ocultar el trabajo pendiente.                   |
+| Lo que ves                      | Qué revisar                                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| No aparece ningún issue         | Repo correcto, etiqueta, permiso de escritura y contenido estable.                                                             |
+| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.               |
+| `waiting`                       | Pregunta o permiso del agente. La continuación guiada aún no está disponible.                                                  |
+| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                   |
+| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                 |
+| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                 |
+| Cierre en intervención          | Resumen de integración, petición intacta y permiso de comentar/cerrar. La siguiente consulta concilia efectos sin duplicarlos. |
+| Intervención tras reiniciar     | Inspeccionar procesos y efectos. No borrar datos o reservas para ocultar el trabajo pendiente.                                 |
