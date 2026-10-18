@@ -29,15 +29,17 @@ export class GitWorkspace implements WorkspacePort {
       ["-c", "core.hooksPath=/dev/null", ...args],
       this.options(directory),
     );
-    if (result.code !== 0)
+    if (result.code !== 0) {
       throw new Error(`Git inspection failed: ${result.output}`);
+    }
     return result.output.trim();
   }
   async validate(workspace: Workspace, project: ManagedProject) {
     const expected = join(this.root, "workspaces");
     const path = realpathSync(workspace.directory);
-    if (!path.startsWith(expected + sep) || path !== workspace.directory)
+    if (!path.startsWith(expected + sep) || path !== workspace.directory) {
       throw new Error("Workspace path escaped the owned clone root");
+    }
     if (
       (await this.git(path, ["rev-parse", "--show-toplevel"])) !== path ||
       (await this.git(path, ["remote", "get-url", "origin"])) !==
@@ -46,35 +48,39 @@ export class GitWorkspace implements WorkspacePort {
         workspace.branch ||
       (await this.git(path, ["config", "--get", "core.hooksPath"])) !==
         "/dev/null"
-    )
+    ) {
       throw new Error(
         "Owned path, repository, remote, branch or hook policy changed",
       );
+    }
     const push = await this.git(path, [
       "remote",
       "get-url",
       "--push",
       "origin",
     ]);
-    if (push !== "disabled://factory-owned-remote-effects")
+    if (push !== "disabled://factory-owned-remote-effects") {
       throw new Error("Agent push remote must remain disabled");
+    }
   }
   async prepare(
     id: string,
     project: ManagedProject,
     effect: Effect,
   ): Promise<Workspace> {
-    if (!/^[a-f0-9-]{36}$/.test(id))
+    if (!/^[a-f0-9-]{36}$/.test(id)) {
       throw new Error("Invalid Ejecución identity");
+    }
     const clones = join(this.root, "workspaces");
     mkdirSync(clones, { recursive: true, mode: 0o700 });
     const directory = join(clones, id);
     const branch = `codex/execution-${id}`;
     await effect("clone", "Create owned clone and branch", async () => {
-      if (existsSync(directory))
+      if (existsSync(directory)) {
         throw new Error(
           "Clone already exists; inspect uncertain preparation before reuse",
         );
+      }
       // Only clone transport can use the trusted user's GitHub credentials. Candidate commands cannot.
       const env = {
         ...this.options(clones).env,
@@ -101,7 +107,9 @@ export class GitWorkspace implements WorkspacePort {
         ],
         { cwd: clones, env },
       );
-      if (result.code !== 0) throw new Error(`Clone failed: ${result.output}`);
+      if (result.code !== 0) {
+        throw new Error(`Clone failed: ${result.output}`);
+      }
       await this.git(directory, ["config", "core.hooksPath", "/dev/null"]);
       await this.git(directory, [
         "config",
@@ -130,8 +138,9 @@ export class GitWorkspace implements WorkspacePort {
         await this.validate(workspace, project);
         for (const path of project.instructions) {
           const target = realpathSync(resolve(directory, path));
-          if (isAbsolute(path) || !target.startsWith(directory + sep))
+          if (isAbsolute(path) || !target.startsWith(directory + sep)) {
             throw new Error("Instruction path escaped clone");
+          }
           workspace.instructions.push({
             path,
             text: readFileSync(target, "utf8"),
@@ -169,15 +178,17 @@ export class GitWorkspace implements WorkspacePort {
           };
         },
       ).then((result) => {
-        if (result.code !== 0)
+        if (result.code !== 0) {
           throw new Error(
             `Pre-existing base failed: ${command} (exit ${result.code}); agent has not started`,
           );
+        }
       });
     }
     await this.validate(workspace, project);
-    if ((await this.git(directory, ["rev-parse", "HEAD"])) !== baseSha)
+    if ((await this.git(directory, ["rev-parse", "HEAD"])) !== baseSha) {
       throw new Error("Base command changed the committed base");
+    }
     await this.git(directory, ["diff", "--exit-code", "HEAD", "--"]);
     return workspace;
   }

@@ -34,8 +34,9 @@ test("la compilación del agente puede leer su versión y confirmar un candidato
       ["push"],
       ["rev-parse", "--git-dir"],
       ["remote", "set-url", "origin", "https://example.com/other.git"],
-    ])
+    ]) {
       assert.notEqual(command("git", args).status, 0);
+    }
     writeFileSync(join(s.directory, "footer.txt"), "Committed agent footer");
     assert.equal(command("git", ["add", "footer.txt"]).status, 0);
     const commit = command("git", ["commit", "-m", "Agent footer"]);

@@ -40,7 +40,9 @@ export const execute: ProcessPort = (command, args, options) =>
     let forcedStop = false;
     const kill = (signal: NodeJS.Signals) => {
       try {
-        if (child.pid) process.kill(-child.pid, signal);
+        if (child.pid) {
+          process.kill(-child.pid, signal);
+        }
       } catch {
         /* Exit is observed below. */
       }
@@ -56,8 +58,11 @@ export const execute: ProcessPort = (command, args, options) =>
     let output = "";
     let truncated = false;
     const collect = (chunk: Buffer) => {
-      if (output.length < 1_000_000) output += String(chunk);
-      else truncated = true;
+      if (output.length < 1_000_000) {
+        output += String(chunk);
+      } else {
+        truncated = true;
+      }
     };
     child.stdout.on("data", collect);
     child.stderr.on("data", collect);
@@ -77,7 +82,9 @@ export const execute: ProcessPort = (command, args, options) =>
       });
     });
     try {
-      if (child.pid) onStart?.(child.pid);
+      if (child.pid) {
+        onStart?.(child.pid);
+      }
     } catch (error) {
       kill("SIGKILL");
       reject(error);

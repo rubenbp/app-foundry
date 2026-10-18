@@ -33,7 +33,9 @@ export function publicationFixture(
     async inspect() {
       inspections++;
       const observed = onInspect?.(inspections);
-      if (observationError) throw new Error("GitHub unavailable");
+      if (observationError) {
+        throw new Error("GitHub unavailable");
+      }
       return structuredClone(observed ?? facts);
     },
     async push(context) {
@@ -100,8 +102,9 @@ export function publicationFixture(
   let fault = "";
   const production: ProductionPort = {
     async inspect(context, head) {
-      if (fault === "query")
+      if (fault === "query") {
         throw new Error("Production observation unavailable");
+      }
       const deployment: Awaited<ReturnType<ProductionPort["inspect"]>> = ready
         ? {
             id: "production-1",
@@ -118,13 +121,18 @@ export function publicationFixture(
       if (
         deployment &&
         ["head", "repository", "projectId", "environment"].includes(fault)
-      )
+      ) {
         Object.assign(deployment, { [fault]: "wrong" });
-      if (deployment && fault === "failure") deployment.state = "failure";
+      }
+      if (deployment && fault === "failure") {
+        deployment.state = "failure";
+      }
       return deployment;
     },
     async verify(context, head, checks) {
-      if (options.verify) return options.verify(context, head, checks);
+      if (options.verify) {
+        return options.verify(context, head, checks);
+      }
       return {
         origin: context.project.publication.productionOrigin,
         servedHead: fault === "marker" ? "b".repeat(40) : head,
@@ -175,7 +183,9 @@ export function publicationFixture(
     body: facts.request.body,
   });
 
-  if (options.origin) s.project.publication.productionOrigin = options.origin;
+  if (options.origin) {
+    s.project.publication.productionOrigin = options.origin;
+  }
 
   return {
     ...s,

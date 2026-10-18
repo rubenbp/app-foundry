@@ -305,10 +305,15 @@ test("una petición modificada, un permiso revocado o una corrección revocan el
       s.comment();
       await s.workflow.poll();
       assert.equal(s.facts.status?.state, "success");
-      if (change === "request") s.facts.request.body += "Changed criteria";
-      if (change === "permission") s.writer(false);
-      if (change === "correction")
+      if (change === "request") {
+        s.facts.request.body += "Changed criteria";
+      }
+      if (change === "permission") {
+        s.writer(false);
+      }
+      if (change === "correction") {
         s.comment("Corrige el pie antes de integrar.");
+      }
       await s.workflow.poll();
       assert.notEqual(s.facts.status?.state, "success");
       assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);

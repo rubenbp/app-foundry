@@ -56,14 +56,16 @@ for (const scenario of ["passed", "occupied", "cancelled"] as const) {
         server.listen(port, "127.0.0.1");
         await once(server, "listening");
       }
-      if (scenario === "cancelled")
+      if (scenario === "cancelled") {
         s.commit("cancel.flag", "cancel", "Observe cancellation");
+      }
       s.finish();
       const verification = s.workflow.verifyCandidate();
       if (scenario === "cancelled") {
         const path = join(s.directory, "running.pid");
-        for (let count = 0; count < 500 && !existsSync(path); count++)
+        for (let count = 0; count < 500 && !existsSync(path); count++) {
           await delay(10);
+        }
         expect(existsSync(path), "Real candidate browser test started").toBe(
           true,
         );
@@ -124,8 +126,9 @@ for (const scenario of ["passed", "occupied", "cancelled"] as const) {
       }
     } finally {
       server.closeAllConnections();
-      if (server.listening)
+      if (server.listening) {
         await new Promise<void>((resolve) => server.close(() => resolve()));
+      }
       s.close();
     }
   });

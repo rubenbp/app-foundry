@@ -51,16 +51,19 @@ export class PublicationRuntime {
     perform: () => Promise<T>,
   ): Promise<T> {
     this.factory.assertRunning(run.id);
-    if (this.stopping)
+    if (this.stopping) {
       throw new Error("Publication stopping; no new remote effects allowed");
+    }
     // Query before every retry, including a lost confirmation after remote success.
     const found = await observe();
     this.factory.assertRunning(run.id);
     let result: T;
-    if (found !== undefined) result = found;
-    else {
-      if (this.stopping)
+    if (found !== undefined) {
+      result = found;
+    } else {
+      if (this.stopping) {
         throw new Error("Publication stopping; no new remote effects allowed");
+      }
       run.publication!.operations[key] = {
         state: "intent",
         at: this.factory.now(),
@@ -88,8 +91,9 @@ export class PublicationRuntime {
       facts.pull?.merged &&
       !run.publication!.integratedAcceptance &&
       !run.publication!.recoveryRequired
-    )
+    ) {
       throw new ObservedMerge(facts);
+    }
     return facts;
   }
   async setStatus(
@@ -103,11 +107,14 @@ export class PublicationRuntime {
         `status:${context.head}:${state}`,
         async () => {
           const facts = await this.facts(run, state === "success");
-          if (facts.pull?.merged) throw new StatusSkippedAfterMerge();
-          if (state === "success" && !(await canMerge(run, facts, this.port)))
+          if (facts.pull?.merged) {
+            throw new StatusSkippedAfterMerge();
+          }
+          if (state === "success" && !(await canMerge(run, facts, this.port))) {
             throw new Error(
               "Candidate changed before favorable merge status; acceptance revoked",
             );
+          }
           const status = facts.status;
 
           return status?.head === context.head && status.state === state
@@ -120,7 +127,9 @@ export class PublicationRuntime {
         },
       );
     } catch (error) {
-      if (!(error instanceof StatusSkippedAfterMerge)) throw error;
+      if (!(error instanceof StatusSkippedAfterMerge)) {
+        throw error;
+      }
       this.factory.record(
         run,
         "status-skipped",
@@ -135,8 +144,9 @@ export class PublicationRuntime {
       `${origin}\n${text}`,
       Number.MAX_SAFE_INTEGER,
     ).text;
-    if (body.length > 60_000)
+    if (body.length > 60_000) {
       throw new Error("Publication comment exceeds GitHub limit");
+    }
     const result = await this.effect(
       run,
       key,
@@ -149,17 +159,19 @@ export class PublicationRuntime {
           facts.pull?.head !== run.publication!.head ||
           !facts.pull.open ||
           facts.pull.merged
-        )
+        ) {
           throw new Error(
             "Request or PR changed before publishing review guidance",
           );
+        }
 
         return facts.comments.find((comment) => comment.body === body);
       },
       () => this.port.comment(this.context(run), body),
     );
-    if (!run.publication!.ownComments.includes(result.id))
+    if (!run.publication!.ownComments.includes(result.id)) {
       run.publication!.ownComments.push(result.id);
+    }
     this.save(run);
     return result;
   }

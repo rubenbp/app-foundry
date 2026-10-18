@@ -1,7 +1,9 @@
 import type { Run } from "../src/domain/run.ts";
 
 export function RequestDetails({ run }: { run: Run }) {
-  if (!run.request) return null;
+  if (!run.request) {
+    return null;
+  }
   const request = run.request;
   const current =
     run.status === "completed"

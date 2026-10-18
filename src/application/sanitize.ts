@@ -22,7 +22,9 @@ export function sanitizer(secrets: string[] = []) {
 
   return (input: string, limit = 65_536) => {
     let text = input;
-    for (const secret of known) text = text.split(secret).join("[REDACTED]");
+    for (const secret of known) {
+      text = text.split(secret).join("[REDACTED]");
+    }
     text = text
       .replace(privateKeyPattern, "[REDACTED PRIVATE KEY]")
       .replace(tokenPattern, "[REDACTED]")
@@ -43,16 +45,19 @@ export function sanitizedRecord<T>(
   value: T,
   clean: ReturnType<typeof sanitizer>,
 ): T {
-  if (typeof value === "string")
+  if (typeof value === "string") {
     return clean(value, Number.MAX_SAFE_INTEGER).text as T;
-  if (Array.isArray(value))
+  }
+  if (Array.isArray(value)) {
     return value.map((item) => sanitizedRecord(item, clean)) as T;
-  if (value && typeof value === "object")
+  }
+  if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [
         key,
         sanitizedRecord(item, clean),
       ]),
     ) as T;
+  }
   return value;
 }

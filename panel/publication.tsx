@@ -10,7 +10,9 @@ const deploymentLabels = {
 
 export function PublicationDetails({ run }: { run: Run }) {
   const publication = run.publication;
-  if (!publication) return null;
+  if (!publication) {
+    return null;
+  }
   const preview = publication.preview;
 
   return (

@@ -18,8 +18,11 @@ export const remoteCommand: RemoteCommand = (
       args,
       { timeout: 30_000, maxBuffer: 16_000_000, ...options },
       (error, stdout) => {
-        if (error) reject(error);
-        else resolve(stdout);
+        if (error) {
+          reject(error);
+        } else {
+          resolve(stdout);
+        }
       },
     );
     child.stdin?.end(input === undefined ? undefined : JSON.stringify(input));

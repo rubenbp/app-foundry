@@ -19,6 +19,7 @@ export default tseslint.config(
       globals: globals.node,
     },
     rules: {
+      curly: ["error", "all"],
       "max-len": [
         "error",
         {

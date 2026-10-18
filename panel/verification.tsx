@@ -16,7 +16,9 @@ const cleanupLabels = {
 
 export function VerificationDetails({ run }: { run: Run }) {
   const report = run.verification;
-  if (!report) return null;
+  if (!report) {
+    return null;
+  }
   const repository = run.request?.repository;
 
   return (

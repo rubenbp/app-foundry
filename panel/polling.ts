@@ -14,17 +14,24 @@ export function poll<T>(
         signal: controller.signal,
         cache: "no-store",
       });
-      if (!response.ok) throw new Error("Local observation unavailable");
+      if (!response.ok) {
+        throw new Error("Local observation unavailable");
+      }
       const value: T = await response.json();
-      if (!closed) receive(value);
+      if (!closed) {
+        receive(value);
+      }
     } catch {
-      if (!closed) failed();
+      if (!closed) {
+        failed();
+      }
     } finally {
       clearTimeout(timeout);
-      if (!closed)
+      if (!closed) {
         timer = setTimeout(() => {
           void tick();
         }, 2000);
+      }
     }
   };
   void tick();

@@ -42,12 +42,14 @@ export class CandidateVerifier implements CandidateVerification {
         ["-c", "core.hooksPath=/dev/null", ...args],
         options,
       );
-      if (result.code !== 0)
+      if (result.code !== 0) {
         throw new Error(`Candidate inspection failed: ${result.output}`);
-      if (result.output.endsWith("\n[TRUNCATED]"))
+      }
+      if (result.output.endsWith("\n[TRUNCATED]")) {
         throw new Error(
           "Candidate inspection truncated; complete diff/control evidence unavailable",
         );
+      }
       return result.output;
     };
     report.headSha = (await git("rev-parse", "HEAD")).trim();
@@ -65,12 +67,14 @@ export class CandidateVerifier implements CandidateVerification {
         label: "Candidate tree integrity",
         text: `Expected head ${report.headSha}\nObserved head ${head}\n${status || "Clean worktree"}`,
       });
-      if (status)
+      if (status) {
         throw new Error(
           "Candidate has uncommitted changes; incorporate all edits before verification",
         );
-      if (head !== report.headSha)
+      }
+      if (head !== report.headSha) {
         throw new Error("Candidate head changed during verification");
+      }
     };
     await unchanged();
     const diff = await git(
@@ -126,17 +130,20 @@ export class CandidateVerifier implements CandidateVerification {
         path,
       );
       const concern = controlChange(path, patch, project.verification);
-      if (concern) report.controls.push(concern);
+      if (concern) {
+        report.controls.push(concern);
+      }
     }
     progress(report, {
       id: "verification-controls",
       label: "Verification control comparison",
       text: `Base ${report.baseSha}\nHead ${report.headSha}\n${report.controls.join("\n") || "No suspicious control changes found by conservative comparison."}\nThis comparison cannot detect every semantic weakening.`,
     });
-    if (report.controls.length)
+    if (report.controls.length) {
       throw new Error(
         "Verification controls changed; human intervention required",
       );
+    }
     for (const check of report.checks) {
       check.status = "running";
       check.startedAt = Date.now();
@@ -184,7 +191,9 @@ export class CandidateVerifier implements CandidateVerification {
       } catch (error) {
         check.status = "failed";
         check.cleanup = check.pid ? "uncertain" : "confirmed";
-        if (check.pid) report.effectsUncertain = true;
+        if (check.pid) {
+          report.effectsUncertain = true;
+        }
         check.endedAt = Date.now();
         progress(report, {
           id: check.partId,
@@ -193,12 +202,15 @@ export class CandidateVerifier implements CandidateVerification {
         });
         throw error;
       } finally {
-        if (runtime) rmSync(runtime, { recursive: true, force: true });
+        if (runtime) {
+          rmSync(runtime, { recursive: true, force: true });
+        }
       }
       check.code = result.code;
       check.endedAt = Date.now();
-      for (const criterion of report.criteria)
+      for (const criterion of report.criteria) {
         criterion.evidence.push(check.partId);
+      }
       progress(report, {
         id: check.partId,
         label: `${check.command} · exit ${result.code}`,
@@ -309,7 +321,9 @@ export default {
 async function serverStopped(origin: string) {
   for (let attempt = 0; attempt < 20; attempt++) {
     const listening = await serverListening(origin);
-    if (!listening) return true;
+    if (!listening) {
+      return true;
+    }
     await delay(100);
   }
   return false;
@@ -338,10 +352,11 @@ function e2eEvidence(
 ): NonNullable<Verification["e2e"]> {
   const metadata = output.match(/^FACTORY_E2E_METADATA=(.+)$/m)?.[1];
   const start = output.indexOf('{\n  "config":');
-  if (!metadata || start < 0)
+  if (!metadata || start < 0) {
     throw new Error(
       "E2E evidence absent: browser and executed-test report required",
     );
+  }
   const browsers: unknown = JSON.parse(metadata);
   const result = JSON.parse(output.slice(start));
   if (
@@ -362,10 +377,11 @@ function e2eEvidence(
     result.stats.flaky !== 0 ||
     !Array.isArray(result.errors) ||
     result.errors.length
-  )
+  ) {
     throw new Error(
       "E2E evidence invalid: empty, skipped, flaky or failed tests cannot approve a candidate",
     );
+  }
   return {
     origin: e2e.origin,
     serves: e2e.serves,
@@ -383,17 +399,22 @@ function e2eEvidence(
 
 function withoutNativeAttachments(output: string) {
   const start = output.indexOf('{\n  "config":');
-  if (start < 0) return output;
+  if (start < 0) {
+    return output;
+  }
   try {
     const report = JSON.parse(output.slice(start), (key, value) => {
-      if (key === "attachments" && Array.isArray(value))
+      if (key === "attachments" && Array.isArray(value)) {
         return value.map((attachment) => ({
           name: attachment.name,
           contentType: attachment.contentType,
           omitted:
             "Native attachment removed; only sanitized textual evidence retained",
         }));
-      if (key === "buffer" || key === "metadata") return "[OMITTED]";
+      }
+      if (key === "buffer" || key === "metadata") {
+        return "[OMITTED]";
+      }
       return value;
     });
 

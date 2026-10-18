@@ -53,30 +53,34 @@ export class Workflow {
     this.workspace = options.workspace;
     this.createAgent = options.createAgent;
     this.verifier = options.verifier;
-    if (!config.managedProject)
+    if (!config.managedProject) {
       throw new Error("Trusted Managed project configuration required");
+    }
     validateProject(config.managedProject);
     this.ownership = options.acquireOwnership(config);
     try {
       this.factory = options.createFactory(config, options.createAgent(config));
-      if (options.publication)
+      if (options.publication) {
         this.publication = new CandidatePublication(
           this.factory,
           options.publication,
           options.production,
         );
+      }
       const reserved = this.ownership.reservation();
-      if (!reserved && this.factory.active)
+      if (!reserved && this.factory.active) {
         this.ownership.reserve(this.factory.active);
+      }
       if (reserved) {
         const run = this.view(reserved);
-        if (!run)
+        if (!run) {
           throw new Error(
             "Reserved Ejecución missing from this data root; inspect ownership manually",
           );
-        if (run.status === "stopped" || run.status === "completed")
+        }
+        if (run.status === "stopped" || run.status === "completed") {
           this.ownership.releaseRun(reserved);
-        else if (run.status === "queued") {
+        } else if (run.status === "queued") {
           run.status = "intervention";
           run.phase = "preparation";
           run.error =
@@ -97,19 +101,26 @@ export class Workflow {
   }
 
   async poll() {
-    if (this.polling || this.halted) return;
-    if (!this.github) throw new Error("GitHub adapter required");
+    if (this.polling || this.halted) {
+      return;
+    }
+    if (!this.github) {
+      throw new Error("GitHub adapter required");
+    }
     this.polling = true;
     try {
       await this.verifyCandidate();
       const publishing = this.factory.active;
       await this.publication?.poll();
-      if (publishing && this.view(publishing)?.status === "completed")
+      if (publishing && this.view(publishing)?.status === "completed") {
         this.ownership.releaseRun(publishing);
+      }
       const issues = await this.github.ready(
         this.factory.config.managedProject!.repository,
       );
-      if (this.halted) return;
+      if (this.halted) {
+        return;
+      }
       await this.observe(issues);
       await this.startNext();
     } catch (error) {
@@ -136,8 +147,9 @@ export class Workflow {
               r.request?.repository === issue.repository &&
               r.request.number === issue.number,
           )
-      )
+      ) {
         continue;
+      }
       try {
         const request = authorize(
           issue,
@@ -165,11 +177,16 @@ export class Workflow {
     });
   }
   async startNext() {
-    if (this.halted || this.factory.active) return null;
+    if (this.halted || this.factory.active) {
+      return null;
+    }
     const next = this.queue()[0];
-    if (!next) return null;
-    if (!this.workspace)
+    if (!next) {
+      return null;
+    }
+    if (!this.workspace) {
       throw new Error("Workspace preparation adapter required");
+    }
     this.ownership.reserve(next.id);
     return this.factory.start(next.id, async (run) => {
       const effect: Effect = async (id, description, action) => {
@@ -188,11 +205,12 @@ export class Workflow {
           text: result.output,
         });
         const after = this.view(run.id)!;
-        if (result.workspace)
+        if (result.workspace) {
           after.workspace = sanitizedRecord(
             result.workspace,
             this.factory.clean,
           );
+        }
         this.factory.record(after, "confirmed", description);
         this.factory.persist(after);
         return result;
@@ -227,8 +245,9 @@ export class Workflow {
       this.halted ||
       this.verifying ||
       run?.status !== "awaiting_verification"
-    )
+    ) {
       return null;
+    }
     this.verifying = true;
     this.verificationAbort = new AbortController();
     let done!: () => void;
@@ -237,8 +256,9 @@ export class Workflow {
     });
     try {
       this.factory.assertRunning(run.id);
-      if (!run.workspace || !run.request || !this.workspace)
+      if (!run.workspace || !run.request || !this.workspace) {
         throw new Error("Prepared candidate context required");
+      }
       run.phase = "verification";
       run.status = "verifying";
       run.endedAt = null;
@@ -256,13 +276,16 @@ export class Workflow {
       const stopped = await this.factory.agent.stop(run.sessionId);
       this.factory.assertRunning(run.id);
       const latest = this.view(run.id)!;
-      if (latest.process) latest.process.exited = stopped.exited;
+      if (latest.process) {
+        latest.process.exited = stopped.exited;
+      }
       this.factory.record(latest, "agent-stop", stopped.detail);
       this.factory.persist(latest);
-      if (!stopped.exited)
+      if (!stopped.exited) {
         throw new Error(
           "Agent editing stop unconfirmed; candidate cannot be fixed",
         );
+      }
       await this.workspace.validate(run.workspace, run.request.configuration);
       await this.verifier.verify(
         run.workspace,
@@ -270,7 +293,7 @@ export class Workflow {
         run.verification,
         (report, output) => {
           this.factory.assertRunning(run.id);
-          if (output)
+          if (output) {
             this.factory.ingest(
               run.id,
               {
@@ -281,14 +304,16 @@ export class Workflow {
               },
               1_100_000,
             );
+          }
           if (
             output &&
             this.view(run.id)!.parts.find((part) => part.id === output.id)
               ?.truncated
-          )
+          ) {
             throw new Error(
               "Verification evidence truncated; complete evidence required before approval",
             );
+          }
           const current = this.view(run.id)!;
           current.verification = sanitizedRecord(report, this.factory.clean);
           this.factory.persist(current);
@@ -352,20 +377,27 @@ export class Workflow {
       );
       await this.verificationDone;
     }
-    if (this.view(id)?.verification?.effectsUncertain) return this.view(id)!;
+    if (this.view(id)?.verification?.effectsUncertain) {
+      return this.view(id)!;
+    }
     const result = await this.factory.stop(id);
-    if (result.status === "stopped") this.ownership.releaseRun(id);
+    if (result.status === "stopped") {
+      this.ownership.releaseRun(id);
+    }
     return result;
   }
   close() {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.halt();
     const reserved = this.ownership.reservation();
     if (
       reserved &&
       ["stopped", "completed"].includes(this.view(reserved)?.status ?? "")
-    )
+    ) {
       this.ownership.releaseRun(reserved);
+    }
     this.factory.close();
     this.ownership.close();
     this.closed = true;

@@ -35,8 +35,9 @@ export async function verifyPublicProduction(
       typeof markerPath !== "string" ||
       !/^\/[\w./-]+$/.test(markerPath) ||
       markerPath.includes("..")
-    )
+    ) {
       throw new Error("Invalid trusted production version path");
+    }
     const markerPage = await session.newPage();
     const marker = async () => {
       const response = await markerPage.goto(`${origin}${markerPath}`, {
@@ -48,13 +49,15 @@ export async function verifyPublicProduction(
         response.status() !== 200 ||
         markerPage.url() !== `${origin}${markerPath}` ||
         response.request().redirectedFrom()
-      )
+      ) {
         throw new Error(
           `Public version HTTP ${response?.status() ?? "unavailable"} or redirect; publication unverified`,
         );
+      }
       const raw = await response.body();
-      if (raw.length > 65_536)
+      if (raw.length > 65_536) {
         throw new Error("Public version response too large");
+      }
       const value: unknown = JSON.parse(raw.toString());
       if (
         !value ||
@@ -62,10 +65,11 @@ export async function verifyPublicProduction(
         !("sha" in value) ||
         value.sha !== integratedSha ||
         ("dirty" in value && value.dirty === true)
-      )
+      ) {
         throw new Error(
           "Public version does not match integrated SHA or serves a dirty build",
         );
+      }
       return integratedSha;
     };
     const evidence: PublicEvidence = {
@@ -94,10 +98,11 @@ export async function verifyPublicProduction(
           response.status() !== 200 ||
           page.url() !== `${origin}${check.path}` ||
           response.request().redirectedFrom() !== null
-        )
+        ) {
           throw new Error(
             `Public page ${check.path} unavailable or redirected to ${page.url()}`,
           );
+        }
         const element = page.locator(check.selector);
         const count = await element.count();
         const visible = count === 1 && (await element.isVisible());

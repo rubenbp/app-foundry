@@ -43,9 +43,11 @@ export class OpenCode implements AgentPort {
   runtime: string | null = null;
   emit: (fact: Fact) => void = () => {};
   stopping = false;
+
   constructor(config: FactoryConfig) {
     this.config = config;
   }
+
   async start(
     emit: (fact: Fact) => void,
     protect: (secrets: string[]) => void = () => {},
@@ -56,10 +58,11 @@ export class OpenCode implements AgentPort {
       this.config.provider !== "openai" ||
       this.config.model !== "gpt-6-luna" ||
       !this.config.opencodeCli
-    )
+    ) {
       throw new Error(
         "Requires openai/gpt-6-luna with an opencodeCli supporting OAuth export",
       );
+    }
     const binary = new URL(
       "../../../node_modules/@opencode/cli/bin/opencode.exe",
       import.meta.url,
@@ -71,17 +74,19 @@ export class OpenCode implements AgentPort {
     if (
       version.status !== 0 ||
       !version.stdout.includes(`v${OPENCODE_VERSION}`)
-    )
+    ) {
       throw new Error(
         "OpenCode OAuth export unavailable or version mismatch; requires 2.0.32",
       );
+    }
     const exported = spawnSync(
       this.config.opencodeCli,
       ["auth", "export", "openai"],
       { encoding: "utf8", timeout: 5000, maxBuffer: 1_000_000 },
     );
-    if (exported.status !== 0)
+    if (exported.status !== 0) {
       throw new Error("OpenCode OAuth export unavailable; log in first");
+    }
     const credentials = JSON.parse(exported.stdout) as CredentialEntry[];
     const selected = credentials.find((c) => c.active);
     if (
@@ -89,8 +94,9 @@ export class OpenCode implements AgentPort {
       selected.value.type !== "oauth" ||
       !selected.value.access ||
       !selected.value.refresh
-    )
+    ) {
       throw new Error("No active OpenAI OAuth credential in OpenCode");
+    }
     protect([selected.value.access, selected.value.refresh]);
     this.runtime = mkdtempSync(join(this.config.dataDir, "opencode-runtime-"));
     mkdirSync(join(this.runtime, "config", "opencode"), {
@@ -128,12 +134,13 @@ export class OpenCode implements AgentPort {
           })),
         ]
       : policy;
-    if (project)
+    if (project) {
       installLocalGitGuard(
         this.runtime,
         this.config.projectDir,
         project.repository,
       );
+    }
     const effective = {
       model: "openai/gpt-6-luna",
       default_agent: "factory",
@@ -189,7 +196,9 @@ export class OpenCode implements AgentPort {
       { cwd: this.config.projectDir, detached: true, stdio: "ignore", env },
     );
     this.process = child;
-    if (child.pid) emit({ type: "process-started", pid: child.pid });
+    if (child.pid) {
+      emit({ type: "process-started", pid: child.pid });
+    }
     child.on("error", () => {});
     child.on("exit", () => {
       if (!this.stopping) {
@@ -231,20 +240,24 @@ export class OpenCode implements AgentPort {
     });
     let info: Awaited<ReturnType<OpenCodeClient["server"]["info"]>> | undefined;
     for (let i = 0; i < 80; i++) {
-      if (child.exitCode !== null)
+      if (child.exitCode !== null) {
         throw new Error("Owned OpenCode server exited during startup");
+      }
       try {
         info = await this.client.server.info({
           signal: AbortSignal.timeout(500),
         });
-        if (info.version) break;
+        if (info.version) {
+          break;
+        }
       } catch {
         /* Startup reads only; no model effect retried. */
       }
       await delay(250);
     }
-    if (info?.version !== OPENCODE_VERSION || info.pid !== child.pid)
+    if (info?.version !== OPENCODE_VERSION || info.pid !== child.pid) {
       throw new Error("Owned OpenCode identity/version not confirmed");
+    }
     await this.client.credential.create({
       integrationID: selected.integrationID,
       value: selected.value,
@@ -312,20 +325,26 @@ export class OpenCode implements AgentPort {
     };
   }
   async create() {
-    if (!this.client) throw new Error("OpenCode not started");
+    if (!this.client) {
+      throw new Error("OpenCode not started");
+    }
     const session = await this.client.session.create({
       agent: "factory",
       model: { providerID: "openai", id: "gpt-6-luna", variant: "low" },
       location: { directory: this.config.projectDir },
     });
     const id = session.id;
-    if (!id) throw new Error("Session creation uncertain");
+    if (!id) {
+      throw new Error("Session creation uncertain");
+    }
     this.observer = new Observer(this.client, id, this.emit);
     await this.observer.start();
     return id;
   }
   async send(sessionId: string, task: string) {
-    if (!this.client) throw new Error("OpenCode not started");
+    if (!this.client) {
+      throw new Error("OpenCode not started");
+    }
     await this.client.session.prompt({ sessionID: sessionId, text: task });
     this.observer!.watch();
   }
@@ -333,12 +352,13 @@ export class OpenCode implements AgentPort {
     this.stopping = true;
     this.observer?.close();
     let detail = "";
-    if (!this.process?.pid)
+    if (!this.process?.pid) {
       return {
         exited: false,
         detail:
           "No live owned process handle; inspect the recorded PID manually. State uncertain.",
       };
+    }
     if (sessionId && this.client) {
       try {
         await this.client.session.interrupt({ sessionID: sessionId });
@@ -361,7 +381,9 @@ export class OpenCode implements AgentPort {
     } catch {
       /* Checked below. */
     }
-    for (let i = 0; i < 20 && alive(); i++) await delay(100);
+    for (let i = 0; i < 20 && alive(); i++) {
+      await delay(100);
+    }
     if (alive()) {
       try {
         process.kill(-pid, "SIGKILL");
@@ -369,13 +391,16 @@ export class OpenCode implements AgentPort {
         /* Checked below. */
       }
     }
-    for (let i = 0; i < 30 && alive(); i++) await delay(100);
+    for (let i = 0; i < 30 && alive(); i++) {
+      await delay(100);
+    }
     const exited = !alive();
     detail += exited
       ? `Owned process group ${pid} absent. Provider-side work/effects cannot be proven stopped or reverted.`
       : `Owned process group ${pid} still observable; manual inspection required.`;
-    if (exited && this.runtime)
+    if (exited && this.runtime) {
       rmSync(this.runtime, { recursive: true, force: true });
+    }
     this.process = null;
     return { exited, detail };
   }

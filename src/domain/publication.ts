@@ -104,8 +104,9 @@ export function interpretComment(
         "revoco|retiro|revoke|stop|detén)\\b",
       "i",
     ).test(text)
-  )
+  ) {
     return { kind: "invalidate" };
+  }
   const accepted =
     text.match(
       new RegExp(
@@ -121,14 +122,16 @@ export function interpretComment(
         "i",
       ),
     );
-  if (accepted)
+  if (accepted) {
     return {
       kind: "accept",
       head: accepted[1].toLowerCase(),
       preview: accepted[2],
     };
-  if (/^(?:acepto|apruebo|i accept)\b/i.test(text) && !/[?¿]/.test(text))
+  }
+  if (/^(?:acepto|apruebo|i accept)\b/i.test(text) && !/[?¿]/.test(text)) {
     return { kind: "clarify" };
+  }
   return { kind: "query" };
 }
 
@@ -139,7 +142,9 @@ export function validPreview(
   projectId: string,
   environment: string,
 ): preview is Preview & { url: string } {
-  if (!preview?.url) return false;
+  if (!preview?.url) {
+    return false;
+  }
   const url = new URL(preview.url);
 
   return (
@@ -159,8 +164,9 @@ export function validPreview(
 
 export function fenced(text: string) {
   let longest = 2;
-  for (const match of text.matchAll(/`+/g))
+  for (const match of text.matchAll(/`+/g)) {
     longest = Math.max(longest, match[0].length);
+  }
   const fence = "`".repeat(longest + 1);
 
   return `${fence}text\n${text}\n${fence}`;

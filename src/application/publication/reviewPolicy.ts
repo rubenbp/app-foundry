@@ -39,7 +39,9 @@ export async function canMerge(
   const publication = run.publication!;
   const report = publication.report;
   const acceptance = publication.acceptance;
-  if (!report || !acceptance || publication.blocked) return false;
+  if (!report || !acceptance || publication.blocked) {
+    return false;
+  }
   const context = {
     repository: run.request!.repository,
     project: run.request!.configuration,

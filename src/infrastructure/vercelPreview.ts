@@ -59,8 +59,9 @@ export class VercelPreviewAccess implements PreviewAccess {
         ? deployment.target !== "production"
         : deployment.target !== null && deployment.target !== "preview") ||
       deployment.readyState !== "READY"
-    )
+    ) {
       throw new Error("Vercel deployment URL or environment mismatch");
+    }
     return {
       projectId: text(deployment.projectId),
       repository: `${text(meta.githubCommitOrg)}/${text(meta.githubCommitRepo)}`,
@@ -69,8 +70,9 @@ export class VercelPreviewAccess implements PreviewAccess {
   }
   async servedHead(origin: string, context: PublicationContext) {
     const team = context.project.publication.teamId;
-    if (typeof team !== "string" || !team)
+    if (typeof team !== "string" || !team) {
       throw new Error("Trusted Vercel teamId required for preview access");
+    }
     // A dedicated local CLI link prevents implicit project selection. These are
     // public resource identifiers, not credentials; no Vercel settings change.
     const directory = join(
@@ -89,16 +91,23 @@ export class VercelPreviewAccess implements PreviewAccess {
     };
     if (existsSync(pathToLink)) {
       const previous = record(JSON.parse(readFileSync(pathToLink, "utf8")));
-      if (previous.projectId !== identity.projectId || previous.orgId !== team)
+      if (
+        previous.projectId !== identity.projectId ||
+        previous.orgId !== team
+      ) {
         throw new Error("Trusted preview CLI link identity changed");
-    } else writeFileSync(pathToLink, JSON.stringify(identity), { mode: 0o600 });
+      }
+    } else {
+      writeFileSync(pathToLink, JSON.stringify(identity), { mode: 0o600 });
+    }
     const path = context.project.publication.versionPath ?? "/version.json";
     if (
       typeof path !== "string" ||
       !/^\/[\w./-]+$/.test(path) ||
       path.includes("..")
-    )
+    ) {
       throw new Error("Trusted version path required");
+    }
     // curl writes the status after the body. No redirects: never forward
     // authentication to a login or an origin supplied by candidate content.
     const output = await this.command(
@@ -121,13 +130,16 @@ export class VercelPreviewAccess implements PreviewAccess {
     );
     const split = output.lastIndexOf("\n");
     const status = output.slice(split + 1).trim();
-    if (["401", "403", "302", "307", "308"].includes(status))
+    if (["401", "403", "302", "307", "308"].includes(status)) {
       return { access: "protected" as const, head: null };
-    if (status !== "200")
+    }
+    if (status !== "200") {
       throw new Error(`Preview version observation HTTP ${status}`);
+    }
     const marker = record(JSON.parse(output.slice(0, split)));
-    if (marker.dirty === true)
+    if (marker.dirty === true) {
       throw new Error("Preview serves a dirty build marker");
+    }
 
     return { access: "verified" as const, head: sha(marker.sha) };
   }

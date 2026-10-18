@@ -17,13 +17,15 @@ import { consumption } from "../src/domain/run.ts";
 import type { Run } from "../src/domain/run.ts";
 
 // Explicit opt-in only. This script calls a real paid model; it is never part of npm test.
-if (!process.argv.includes("--real"))
+if (!process.argv.includes("--real")) {
   throw new Error("Pass --real to authorize the bounded model experiment");
+}
 const source = process.env.FACTORY_EXPERIMENT_PROJECT;
-if (!source)
+if (!source) {
   throw new Error(
     "Set FACTORY_EXPERIMENT_PROJECT to a prepared Managed project repository (local path or public HTTPS URL)",
   );
+}
 const root = mkdtempSync(join(tmpdir(), "foundry-experiment-"));
 const projectDir = join(root, "project");
 const clone = spawnSync(
@@ -40,7 +42,9 @@ const clone = spawnSync(
   ],
   { encoding: "utf8" },
 );
-if (clone.status !== 0) throw new Error("Could not create disposable clone");
+if (clone.status !== 0) {
+  throw new Error("Could not create disposable clone");
+}
 const dataDir = join(root, "data");
 mkdirSync(dataDir, { mode: 0o700 });
 const config = {
@@ -102,8 +106,9 @@ const waitFor = async (
     if (
       predicate(run.status, run.pending.length) ||
       run.status === "intervention"
-    )
+    ) {
       return run;
+    }
     await delay(1000);
   }
   return factory.view(id)!;
@@ -149,8 +154,9 @@ try {
     processAbsent: factory.view(first.id)!.process?.exited,
     detail: factory.view(first.id)!.history.at(-1)?.text,
   });
-  if (result.status !== "awaiting_verification")
+  if (result.status !== "awaiting_verification") {
     throw new Error("Read task did not complete; inspect sanitized evidence");
+  }
   const second = await factory.run(
     "Use the edit/write tool to create factory-permission-probe.txt containing only permission-probe. Do not use bash or any other tool to bypass permission. Request permission and wait if required. Do not delegate.",
   );
@@ -167,7 +173,9 @@ try {
     processAbsent: stopped.process?.exited,
     detail: stopped.history.at(-1)?.text,
   });
-  if (!result.pending.length) throw new Error("Permission was not observed");
+  if (!result.pending.length) {
+    throw new Error("Permission was not observed");
+  }
   const diff = spawnSync(
     "git",
     ["-c", "core.hooksPath=/dev/null", "status", "--porcelain"],

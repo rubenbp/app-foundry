@@ -43,7 +43,9 @@ test("la CLI rechaza una segunda instancia, conserva el trabajo incierto tras re
         const match = output.match(
           /Factory panel: (http:\/\/127\.0\.0\.1:\d+)/,
         );
-        if (match) resolve(match[1]);
+        if (match) {
+          resolve(match[1]);
+        }
       });
       child.once("exit", () =>
         reject(new Error("Factory exited before readiness")),
@@ -146,7 +148,9 @@ process.stdout.write("[[]]");
               const match = output.match(
                 /Factory panel: (http:\/\/127\.0\.0\.1:\d+)/,
               );
-              if (match) resolve(match[1]);
+              if (match) {
+                resolve(match[1]);
+              }
             });
             child.once("error", reject);
             child.once("exit", () =>
@@ -163,8 +167,9 @@ process.stdout.write("[[]]");
           assert.deepEqual(snapshot.runs, []);
           assert.equal(snapshot.fault, null);
         } finally {
-          if (child.exitCode === null && child.signalCode === null)
+          if (child.exitCode === null && child.signalCode === null) {
             child.kill("SIGTERM");
+          }
           await exited;
         }
       },

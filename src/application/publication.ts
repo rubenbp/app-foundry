@@ -27,7 +27,9 @@ export class CandidatePublication {
     this.integration = new IntegratedPublication(this.runtime, production);
   }
   async poll() {
-    if (this.busy) return this.busy;
+    if (this.busy) {
+      return this.busy;
+    }
     this.busy = this.advance().finally(() => {
       this.busy = undefined;
     });
@@ -43,8 +45,9 @@ export class CandidatePublication {
       run.status === "stopped" ||
       run.status === "completed" ||
       (!run.publication && run.status !== "awaiting_preview")
-    )
+    ) {
       return;
+    }
     run.publication ??= publicationPlan(run.verification.headSha);
     run.phase = "publication";
     const publication = run.publication;
@@ -58,7 +61,9 @@ export class CandidatePublication {
       publication.observedAt = this.runtime.factory.now();
       publication.observationError = null;
       run.error = null;
-      if (facts.pull) publication.pull = facts.pull;
+      if (facts.pull) {
+        publication.pull = facts.pull;
+      }
       if (facts.preview) {
         publication.preview = facts.preview;
         if (
@@ -66,11 +71,12 @@ export class CandidatePublication {
             (preview) =>
               JSON.stringify(preview.preview) === JSON.stringify(facts.preview),
           )
-        )
+        ) {
           publication.deployments.push({
             at: this.runtime.factory.now(),
             preview: facts.preview,
           });
+        }
       }
       if (publication.recoveryRequired) {
         run.status = "intervention";
@@ -93,8 +99,9 @@ export class CandidatePublication {
           }
         }
         this.runtime.save(run);
-        if (facts.remoteHead === publication.head)
+        if (facts.remoteHead === publication.head) {
           await this.runtime.setStatus(run, "pending");
+        }
         return;
       }
       if (facts.pull?.merged) {
@@ -104,12 +111,14 @@ export class CandidatePublication {
       const intact =
         facts.request.title === run.request.title &&
         facts.request.body === run.request.body;
-      if (!intact)
+      if (!intact) {
         publication.blocked =
           "Petición alterada o cerrada; se requiere intervención y una nueva autorización.";
-      if (facts.pull && !facts.pull.open)
+      }
+      if (facts.pull && !facts.pull.open) {
         publication.blocked =
           "PR cerrada sin integrar; se requiere intervención.";
+      }
       const changedHead = facts.pull?.head ?? facts.remoteHead;
       if (changedHead && changedHead !== publication.head) {
         delete publication.acceptance;
@@ -118,7 +127,9 @@ export class CandidatePublication {
         publication.head = changedHead;
         this.runtime.save(run);
         await this.runtime.setStatus(run, "pending");
-        if (publication.blocked) throw new Error(publication.blocked);
+        if (publication.blocked) {
+          throw new Error(publication.blocked);
+        }
         await this.runtime.effect(
           run,
           `prepare:${changedHead}`,
@@ -154,8 +165,9 @@ export class CandidatePublication {
         `push:${publication.head}`,
         async () => {
           const head = (await this.runtime.facts(run)).remoteHead;
-          if (head && head !== publication.head)
+          if (head && head !== publication.head) {
             throw new Error("Remote head changed during publication");
+          }
           return head === publication.head ? true : undefined;
         },
         async () => {
@@ -170,17 +182,20 @@ export class CandidatePublication {
         () => this.runtime.port.openPull(this.runtime.context(run)),
       );
       this.runtime.save(run);
-      if (!publication.acceptance) await this.runtime.setStatus(run, "pending");
+      if (!publication.acceptance) {
+        await this.runtime.setStatus(run, "pending");
+      }
       facts = await this.runtime.facts(run);
       if (
         facts.pull?.head !== publication.head ||
         facts.request.title !== run.request.title ||
         facts.request.body !== run.request.body ||
         !facts.request.open
-      )
+      ) {
         throw new Error(
           "Candidate or request changed during observation; acceptance blocked",
         );
+      }
       publication.preview = facts.preview ?? undefined;
       const previewValid = validPreview(
         facts.preview,
@@ -214,19 +229,23 @@ export class CandidatePublication {
         delete publication.report;
         delete publication.acceptance;
       }
-      if (!publication.report) await this.report.publish(run);
+      if (!publication.report) {
+        await this.report.publish(run);
+      }
       run.status = "awaiting_review";
       this.runtime.save(run);
       facts = await this.runtime.facts(run);
       for (const comment of facts.comments.toSorted(
         (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id),
       )) {
-        if (publication.consumed.some((entry) => entry.id === comment.id))
+        if (publication.consumed.some((entry) => entry.id === comment.id)) {
           continue;
+        }
         let reason = "Consulta sin aceptación";
         const own = isOwn(run, comment);
-        if (own) reason = "Publicación propia o de bot";
-        else {
+        if (own) {
+          reason = "Publicación propia o de bot";
+        } else {
           const intent = interpretComment(comment.body);
           if (
             intent.kind === "invalidate" &&
@@ -241,23 +260,23 @@ export class CandidatePublication {
             reason = publication.blocked;
           } else if (intent.kind === "accept") {
             const report = publication.report!;
-            if (comment.createdAt <= report.at)
+            if (comment.createdAt <= report.at) {
               reason = "Aceptación anterior al informe";
-            else if (comment.updatedAt !== comment.createdAt)
+            } else if (comment.updatedAt !== comment.createdAt) {
               reason = "Comentario editado; publica una instrucción nueva";
-            else if (
+            } else if (
               intent.head !== publication.head ||
               intent.preview !== report.preview
-            )
+            ) {
               reason = "Aceptación de una versión o preview obsoleta";
-            else if (
+            } else if (
               !(await this.runtime.port.canWrite(
                 context.repository,
                 comment.author,
               ))
-            )
+            ) {
               reason = "Permiso de escritura no acreditado";
-            else {
+            } else {
               publication.acceptance = {
                 commentId: comment.id,
                 author: comment.author,
@@ -292,7 +311,9 @@ export class CandidatePublication {
         run,
         valid ? "success" : publication.blocked ? "failure" : "pending",
       );
-      if (!valid) delete publication.acceptance;
+      if (!valid) {
+        delete publication.acceptance;
+      }
       run.status = publication.blocked
         ? "intervention"
         : valid
@@ -354,7 +375,9 @@ export class CandidatePublication {
     try {
       await this.busy;
       const run = this.runtime.factory.view(id);
-      if (!run?.publication) return;
+      if (!run?.publication) {
+        return;
+      }
       delete run.publication.acceptance;
       run.publication.blocked =
         "Detención local solicitada; aceptación revocada.";

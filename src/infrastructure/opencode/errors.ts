@@ -1,5 +1,7 @@
 export function errorText(error: unknown): string {
-  if (!error || typeof error !== "object") return String(error);
+  if (!error || typeof error !== "object") {
+    return String(error);
+  }
   const value = error as {
     name?: string;
     _tag?: string;

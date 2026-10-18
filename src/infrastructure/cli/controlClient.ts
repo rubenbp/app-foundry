@@ -17,7 +17,9 @@ export function sendControlCommand(
       res.on("data", (chunk) => process.stdout.write(chunk));
       res.on("end", () => {
         process.stdout.write("\n");
-        if (res.statusCode !== 200) process.exitCode = 1;
+        if (res.statusCode !== 200) {
+          process.exitCode = 1;
+        }
       });
     },
   );

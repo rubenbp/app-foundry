@@ -3,10 +3,11 @@ import { validateProject } from "../src/domain/configuration.ts";
 import { configureMergeProtection } from "../src/infrastructure/mergeProtection.ts";
 
 const path = process.argv[2];
-if (!path)
+if (!path) {
   throw new Error(
     "Usage: node --experimental-strip-types scripts/configureMergeProtection.ts MANAGED_PROJECT_JSON",
   );
+}
 const project: unknown = JSON.parse(readFileSync(path, "utf8"));
 validateProject(project);
 await configureMergeProtection(project);

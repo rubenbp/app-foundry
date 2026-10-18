@@ -39,20 +39,24 @@ export class Observer {
         for await (const event of stream) {
           connected();
           clearTimeout(timeout);
-          if (this.abort.signal.aborted) break;
+          if (this.abort.signal.aborted) {
+            break;
+          }
           this.event(event);
         }
-        if (!this.abort.signal.aborted)
+        if (!this.abort.signal.aborted) {
           this.emit({
             type: "gap",
             text: "OpenCode event stream ended; short transitions may be missing. Poll reconciliation continues without resending work.",
           });
+        }
       } catch {
-        if (!this.abort.signal.aborted)
+        if (!this.abort.signal.aborted) {
           this.emit({
             type: "gap",
             text: "OpenCode event stream interrupted. Poll reconciliation continues; replay is not assumed.",
           });
+        }
       } finally {
         clearTimeout(timeout);
         connected();
@@ -62,7 +66,9 @@ export class Observer {
     this.abort.signal.throwIfAborted();
   }
   message(message: SessionMessageInfo) {
-    if (message.type !== "assistant") return;
+    if (message.type !== "assistant") {
+      return;
+    }
     const t = message.tokens;
     const counters = t
       ? [t.input, t.output, t.reasoning, t.cache?.read, t.cache?.write]
@@ -95,10 +101,11 @@ export class Observer {
         completed: Boolean(message.time.completed),
       },
     });
-    if (message.error)
+    if (message.error) {
       this.emit({ type: "error", text: errorText(message.error) });
+    }
     for (const [index, part] of message.content.entries()) {
-      if (part.type === "text")
+      if (part.type === "text") {
         this.emit({
           type: "part",
           id: `${message.id}-text-${index}`,
@@ -106,6 +113,7 @@ export class Observer {
           kind: "text",
           text: part.text,
         });
+      }
       if (part.type === "tool") {
         const state = part.state;
         const content =
@@ -138,16 +146,18 @@ export class Observer {
   }
   event(event: V2Event) {
     const data = event.data;
-    if (!("sessionID" in data) || data.sessionID !== this.sessionId) return;
-    if (event.type === "session.status")
+    if (!("sessionID" in data) || data.sessionID !== this.sessionId) {
+      return;
+    }
+    if (event.type === "session.status") {
       this.emit({ type: "status", status: event.data.status.type });
-    else if (event.type === "session.step.started")
+    } else if (event.type === "session.step.started") {
       this.emit({ type: "status", status: "busy" });
-    else if (event.type === "session.step.failed")
+    } else if (event.type === "session.step.failed") {
       this.emit({ type: "error", text: errorText(event.data.error) });
-    else if (event.type === "session.execution.failed")
+    } else if (event.type === "session.execution.failed") {
       this.emit({ type: "error", text: errorText(event.data.error) });
-    else if (event.type === "permission.asked") {
+    } else if (event.type === "permission.asked") {
       const p = event.data;
       this.pending.set(p.id, {
         id: p.id,
@@ -166,7 +176,9 @@ export class Observer {
     }
   }
   async poll() {
-    if (this.polling || this.abort.signal.aborted) return;
+    if (this.polling || this.abort.signal.aborted) {
+      return;
+    }
     this.polling = true;
     try {
       const signal = AbortSignal.any([
@@ -183,7 +195,9 @@ export class Observer {
         this.client.permission.request.list({}, options),
         this.client.form.list({}, options),
       ]);
-      if (this.abort.signal.aborted) return;
+      if (this.abort.signal.aborted) {
+        return;
+      }
       let page = messages;
       let last: SessionMessageInfo | undefined;
       const cursors = new Set<string>();
@@ -192,14 +206,19 @@ export class Observer {
         const rows = page.data ?? [];
         for (const row of rows) {
           this.message(row);
-          if (row.type === "assistant") last = row;
+          if (row.type === "assistant") {
+            last = row;
+          }
         }
         const next = page.cursor.next;
-        if (!rows.length || !next) break;
-        if (cursors.has(next))
+        if (!rows.length || !next) {
+          break;
+        }
+        if (cursors.has(next)) {
           throw new Error(
             "OpenCode repeated a message cursor; coverage partial",
           );
+        }
         cursors.add(next);
         page = await this.client.message.list(
           { sessionID: this.sessionId, limit: 200, cursor: next },
@@ -248,11 +267,12 @@ export class Observer {
         });
       }
     } catch (error) {
-      if (!this.abort.signal.aborted)
+      if (!this.abort.signal.aborted) {
         this.emit({
           type: "gap",
           text: `OpenCode observation failed: ${errorText(error)}. No task retry.`,
         });
+      }
     } finally {
       this.polling = false;
     }
@@ -260,10 +280,11 @@ export class Observer {
   watch() {
     const tick = async () => {
       await this.poll();
-      if (!this.abort.signal.aborted)
+      if (!this.abort.signal.aborted) {
         this.timer = setTimeout(() => {
           void tick().catch(() => this.close());
         }, 2000);
+      }
     };
     void tick().catch(() => this.close());
   }

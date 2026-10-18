@@ -230,11 +230,12 @@ test("un fallo al guardar artefactos bloquea nuevos efectos y ningún secreto si
     readFileSync(join(s.root, "factory.sqlite")).toString(),
     /fictional-secret-123/,
   );
-  for (const name of readdirSync(join(s.root, "artifacts")))
+  for (const name of readdirSync(join(s.root, "artifacts"))) {
     assert.doesNotMatch(
       readFileSync(join(s.root, "artifacts", name), "utf8"),
       /fictional-secret-123/,
     );
+  }
   renameSync(join(s.root, "artifacts"), join(s.root, "old-artifacts"));
   writeFileSync(join(s.root, "artifacts"), "unwritable directory");
   assert.throws(() =>

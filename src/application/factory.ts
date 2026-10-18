@@ -50,12 +50,13 @@ export class Factory {
           );
           run.verification.status = "intervention";
           run.verification.error = run.error;
-          for (const check of run.verification.checks)
+          for (const check of run.verification.checks) {
             if (check.status === "running" || check.cleanup === "pending") {
               check.status = "uncertain";
               check.cleanup = "uncertain";
               run.error += ` Verification command process group ${check.pid ?? "unavailable"} requires manual inspection.`;
             }
+          }
           run.verification.error = run.error;
         }
         run.gaps.push("Observation interrupted by Factory restart");
@@ -82,8 +83,9 @@ export class Factory {
     }
   }
   assertWritable() {
-    if (this.store.failed || this.fault)
+    if (this.store.failed || this.fault) {
       throw new Error("Persistence unavailable: effects blocked");
+    }
   }
   assertRunning(id: string) {
     this.assertWritable();
@@ -91,14 +93,17 @@ export class Factory {
       this.stopping.has(id) ||
       this.active !== id ||
       this.view(id)?.status === "stopped"
-    )
+    ) {
       throw new Error(
         "Ejecución stopped while effect was in flight; no further task will be sent",
       );
+    }
   }
   enqueue(task: string, request?: AuthorizedRequest) {
     this.assertWritable();
-    if (!task.trim()) throw new Error("Task required");
+    if (!task.trim()) {
+      throw new Error("Task required");
+    }
     const run: Run = {
       id: randomUUID(),
       attempt: 1,
@@ -128,8 +133,9 @@ export class Factory {
     return run;
   }
   async run(task: string) {
-    if (this.active)
+    if (this.active) {
       throw new Error("One Ejecución already occupies the Factory");
+    }
     return this.start(this.enqueue(task).id);
   }
   async start(
@@ -139,11 +145,13 @@ export class Factory {
     ) => Promise<{ workspace: Workspace; task: string; agent: AgentPort }>,
   ) {
     this.assertWritable();
-    if (this.active)
+    if (this.active) {
       throw new Error("One Ejecución already occupies the Factory");
+    }
     const run = this.view(id);
-    if (!run || run.status !== "queued")
+    if (!run || run.status !== "queued") {
       throw new Error("Queued request required");
+    }
     this.active = run.id;
     run.status = prepare ? "preparing" : "starting";
     run.phase = prepare ? "preparation" : "implementation";
@@ -199,27 +207,33 @@ export class Factory {
       this.record(sent, "confirmed", "Task delivered to OpenCode");
       this.persist(sent);
     } catch (error) {
-      if (this.store.failed) throw error;
-      if (this.view(run.id)?.status !== "stopped")
+      if (this.store.failed) {
+        throw error;
+      }
+      if (this.view(run.id)?.status !== "stopped") {
         this.ingest(run.id, {
           type: "error",
           text: `Effect uncertain: ${String(error)}`,
         });
+      }
     }
     return this.view(run.id)!;
   }
   ingest(id: string, fact: Fact, outputLimit = 65_536) {
     this.assertWritable();
     const run = this.view(id);
-    if (!run || run.status === "stopped" || run.status === "completed") return;
+    if (!run || run.status === "stopped" || run.status === "completed") {
+      return;
+    }
     // Late agent observations cannot move an independently verified candidate back into editing.
     if (
       (run.phase === "verification" || run.phase === "publication") &&
       fact.type !== "part" &&
       fact.type !== "usage" &&
       fact.type !== "gap"
-    )
+    ) {
       return;
+    }
     const at = this.now();
     const text = "text" in fact ? this.clean(fact.text, outputLimit) : null;
     if (fact.type === "status" && run.agentStatus !== fact.status) {
@@ -244,11 +258,15 @@ export class Factory {
           truncated: text!.truncated,
         };
         const labelChanged = previous && previous.label !== part.label;
-        if (previous) Object.assign(previous, part);
-        else run.parts.push(part);
+        if (previous) {
+          Object.assign(previous, part);
+        } else {
+          run.parts.push(part);
+        }
         run.lastActivity = at;
-        if (!previous || labelChanged)
+        if (!previous || labelChanged) {
           this.record(run, "part", `${part.kind}: ${part.label}`);
+        }
       }
     } else if (fact.type === "usage") {
       const safe = {
@@ -257,9 +275,11 @@ export class Factory {
         model: this.clean(fact.usage.model, 200).text,
       };
       const index = run.usage.findIndex((u) => u.id === safe.id);
-      if (index < 0) run.usage.push(safe);
-      else if (!run.usage[index].completed || safe.completed)
+      if (index < 0) {
+        run.usage.push(safe);
+      } else if (!run.usage[index].completed || safe.completed) {
         run.usage[index] = safe;
+      }
     } else if (fact.type === "pending") {
       const pending = fact.pending.map((p) => ({
         id: p.id,
@@ -269,9 +289,11 @@ export class Factory {
       if (JSON.stringify(run.pending) !== JSON.stringify(pending)) {
         run.pending = pending;
         run.lastActivity = at;
-        if (pending.length && run.status !== "intervention")
+        if (pending.length && run.status !== "intervention") {
           run.status = "waiting";
-        else if (run.status === "waiting") run.status = "running";
+        } else if (run.status === "waiting") {
+          run.status = "running";
+        }
         this.record(
           run,
           "pending",
@@ -301,12 +323,16 @@ export class Factory {
         this.record(run, "gap", text!.text);
       }
     } else if (fact.type === "process-exit") {
-      if (run.process) run.process.exited = true;
+      if (run.process) {
+        run.process.exited = true;
+      }
       run.status = "intervention";
       run.error = this.clean(fact.detail).text;
       this.record(run, "process-exit", run.error);
     }
-    if (fact.type === "observed") run.lastObservation = at;
+    if (fact.type === "observed") {
+      run.lastObservation = at;
+    }
     if (fact.type === "process-started") {
       run.process = {
         pid: fact.pid,
@@ -324,7 +350,9 @@ export class Factory {
   async stop(id: string) {
     this.assertWritable();
     const run = this.view(id);
-    if (!run || this.active !== id) throw new Error("Ejecución is not active");
+    if (!run || this.active !== id) {
+      throw new Error("Ejecución is not active");
+    }
     this.stopping.add(id);
     this.record(run, "intent", "Abort session and stop owned process group");
     this.persist(run);
@@ -344,11 +372,15 @@ export class Factory {
     const latest = this.view(id)!;
     latest.status = result.exited ? "stopped" : "intervention";
     latest.endedAt ??= this.now();
-    if (latest.process) latest.process.exited = result.exited;
+    if (latest.process) {
+      latest.process.exited = result.exited;
+    }
     latest.pending = [];
     this.record(latest, "stop", result.detail);
     this.persist(latest);
-    if (result.exited) this.active = null;
+    if (result.exited) {
+      this.active = null;
+    }
     return latest;
   }
   view(id: string) {

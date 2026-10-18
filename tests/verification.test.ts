@@ -77,7 +77,7 @@ test("el diff acumulado y la salida extensos se conservan íntegros tras el sane
         command === "/bin/sh" &&
         args[1] === "node check.mjs" &&
         ++checks === 2
-      )
+      ) {
         return {
           code: 0,
           output:
@@ -85,6 +85,7 @@ test("el diff acumulado y la salida extensos se conservan íntegros tras el sane
             "x".repeat(70_000) +
             "\nFINAL EVIDENCE password=private-pretend-value",
         };
+      }
       return execute(command, args, options);
     },
   });
@@ -128,12 +129,13 @@ test("las evidencias truncadas de un comando no pueden aprobar un candidato, aun
         command === "/bin/sh" &&
         args[1] === "node check.mjs" &&
         ++checks === 2
-      )
+      ) {
         return {
           code: 0,
           output: "Partial evidence\n[TRUNCATED]",
           truncated: true,
         };
+      }
       return execute(command, args, options);
     },
   });
@@ -157,7 +159,9 @@ test("los cambios versionados sin confirmar, preparados y sin seguimiento no pue
       await s.start();
       const path = mode === "tracked" ? "catalogue.txt" : "new.txt";
       writeFileSync(join(s.directory, path), "Unincorporated agent edit");
-      if (mode === "staged") s.git("add", "new.txt");
+      if (mode === "staged") {
+        s.git("add", "new.txt");
+      }
       s.finish();
       const result = (await s.workflow.verifyCandidate())!;
       assert.equal(result.status, "intervention");
@@ -201,12 +205,12 @@ test("quitar comandos o borrar, omitir, aislar o debilitar pruebas requiere inte
     });
     try {
       await s.start();
-      if (change === "command")
+      if (change === "command") {
         s.commit("package.json", '{"scripts":{}}', "Remove command");
-      else if (change === "delete") {
+      } else if (change === "delete") {
         s.git("rm", "tests/catalogue.test.js");
         s.git("commit", "-m", "Delete coverage");
-      } else
+      } else {
         s.commit(
           "tests/catalogue.test.js",
           change === "weaken"
@@ -214,6 +218,7 @@ test("quitar comandos o borrar, omitir, aislar o debilitar pruebas requiere inte
             : `test.${change}('catalogue', () => {});\n`,
           "Alter control",
         );
+      }
       s.finish();
       const result = (await s.workflow.verifyCandidate())!;
       assert.equal(result.status, "intervention", change);
@@ -302,12 +307,13 @@ test("si un comando no está disponible en el candidato, falla con su salida y l
         command === "/bin/sh" &&
         args[1] === "node check.mjs" &&
         ++checks === 2
-      )
+      ) {
         return {
           code: 127,
           output:
             "verification tool: command not found\npassword=pretend-sensitive-value",
         };
+      }
       return execute(command, args, options);
     },
   });
@@ -407,8 +413,9 @@ test("cancelar la verificación termina el comando real antes de liberar la Ejec
     s.finish();
     const verification = s.workflow.verifyCandidate();
     const path = join(s.directory, "verification.pid");
-    for (let count = 0; count < 200 && !existsSync(path); count++)
+    for (let count = 0; count < 200 && !existsSync(path); count++) {
       await delay(10);
+    }
     assert.ok(existsSync(path), "Candidate command started");
     const pid = Number(readFileSync(path, "utf8"));
     const stopped = await s.workflow.stop(s.workflow.factory.active!);
@@ -466,7 +473,9 @@ test("tras reiniciar, se conserva la identidad del proceso verificador y no se l
     void verification.catch(() => {});
     for (let count = 0; count < 200 && !pid; count++) {
       pid = s.workflow.view(run.id)?.verification?.checks[0].pid ?? null;
-      if (!pid) await delay(10);
+      if (!pid) {
+        await delay(10);
+      }
     }
     assert.ok(pid);
     s.reopen();
@@ -543,8 +552,9 @@ test("si se reinicia mientras la limpieza E2E está pendiente, se conserva el tu
       count < 200 &&
       s.workflow.view(run.id)?.verification?.checks[0].code !== 0;
       count++
-    )
+    ) {
       await delay(10);
+    }
     assert.equal(s.workflow.view(run.id)?.verification?.checks[0].code, 0);
     s.reopen();
     const recovered = await s.workflow.stop(run.id);
@@ -552,8 +562,9 @@ test("si se reinicia mientras la limpieza E2E está pendiente, se conserva el tu
     assert.equal(recovered.verification?.effectsUncertain, true);
     assert.equal(s.workflow.factory.active, run.id);
   } finally {
-    if (server.listening)
+    if (server.listening) {
       await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
     await verification?.catch(() => {});
     s.close();
   }

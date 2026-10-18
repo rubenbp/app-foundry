@@ -27,7 +27,9 @@ export class IntegratedPublication {
     }
     publication.mergeSha = pull.mergeSha;
     this.runtime.save(run);
-    if (publication.blocked) throw new Error(publication.blocked);
+    if (publication.blocked) {
+      throw new Error(publication.blocked);
+    }
     // A remote status write cannot be atomic with a human merge. Reconstruct
     // the accepted snapshot at integration from durable history and GitHub's
     // last gate at that time, even if a later local revocation cleared it.
@@ -63,14 +65,16 @@ export class IntegratedPublication {
           interpretComment(comment.body).kind === "invalidate",
       );
       let conflicting = false;
-      for (const comment of invalidations)
+      for (const comment of invalidations) {
         if (
           await this.runtime.port.canWrite(
             run.request!.repository,
             comment.author,
           )
-        )
+        ) {
           conflicting = true;
+        }
+      }
       if (
         !accepted ||
         !pull.mergeSha ||
@@ -125,19 +129,22 @@ export class IntegratedPublication {
       this.runtime.save(run);
     }
     const production = publication.production!;
-    if (production.status === "intervention")
+    if (production.status === "intervention") {
       throw new Error(production.error ?? "Production requires intervention");
+    }
     if (
       facts.request.title !== run.request!.title ||
       facts.request.body !== run.request!.body ||
       pull.head !== publication.integratedAcceptance!.head ||
       !pull.mergeSha
-    )
+    ) {
       throw new Error(
         "Request or integrated candidate changed; production closure blocked",
       );
-    if (!this.production)
+    }
+    if (!this.production) {
       throw new Error("Production adapter required after observed merge");
+    }
     run.status = "checking_production";
     run.error = null;
     publication.observationError = null;
@@ -157,12 +164,14 @@ export class IntegratedPublication {
       !deployment ||
       deployment.state === "pending" ||
       deployment.state === "inactive"
-    )
+    ) {
       return;
-    if (deployment.state !== "success")
+    }
+    if (deployment.state !== "success") {
       throw new Error(
         `Production deployment ${deployment.state}; intervention required`,
       );
+    }
     if (
       deployment.head !== pull.mergeSha ||
       deployment.repository !== run.request!.repository ||
@@ -171,8 +180,9 @@ export class IntegratedPublication {
       deployment.environment !==
         (run.request!.configuration.publication.productionEnvironment ??
           "Production")
-    )
+    ) {
       throw new Error("Production deployment identity mismatch");
+    }
     const checks = publicChecks(
       run.request!.body,
       run.verification!.criteria.length,
@@ -216,10 +226,11 @@ export class IntegratedPublication {
       this.runtime.factory
         .view(run.id)!
         .parts.find((part) => part.id === partId)?.truncated
-    )
+    ) {
       throw new Error(
         "Public version or complete requested behavior unverified; inspect production evidence",
       );
+    }
     production.servedHead = pull.mergeSha;
     production.status = "verified";
     production.verifiedAt = this.runtime.factory.now();
@@ -229,8 +240,9 @@ export class IntegratedPublication {
       `${origin}\n## Producción comprobada\n\nEjecución: ${run.id}\nBase: ${run.workspace!.baseSha}\nCandidato aceptado: ${publication.integratedAcceptance!.head}\nCommit integrado: ${pull.mergeSha}\nPR: ${pull.url}\nDeployment: ${deployment.id} · ${deployment.environment} · ${deployment.projectId}\nDominio público: ${evidence.origin}\nSHA servido: ${evidence.servedHead}\nNavegador: ${evidence.browser}\n\n${evidence.checks.map((result) => `- [x] Criterio ${result.check.criterion}: ${result.check.path} ${result.check.selector} — ${result.observed}`).join("\n")}\n\nEvidencia persistida: ${partId}. La comprobación cubre las aserciones declaradas en la petición y revisadas con el candidato; no acredita comportamientos no expresados en ellas.`,
       55_000,
     );
-    if (body.truncated)
+    if (body.truncated) {
       throw new Error("Production report exceeds evidence limit");
+    }
     const report = await this.runtime.effect(
       run,
       `production-report:${pull.mergeSha}`,
@@ -239,8 +251,9 @@ export class IntegratedPublication {
         if (
           current.request.title !== run.request!.title ||
           current.request.body !== run.request!.body
-        )
+        ) {
           throw new Error("Request changed before production report");
+        }
         return current.comments.find(
           (comment) => comment.source === "issue" && comment.body === body.text,
         );
@@ -248,8 +261,9 @@ export class IntegratedPublication {
       () => this.production!.comment(this.runtime.context(run), body.text),
     );
     production.report = { id: report.id, url: report.url };
-    if (!publication.ownComments.includes(report.id))
+    if (!publication.ownComments.includes(report.id)) {
       publication.ownComments.push(report.id);
+    }
     this.runtime.save(run);
     await this.runtime.effect(
       run,
@@ -262,10 +276,11 @@ export class IntegratedPublication {
           !current.comments.some(
             (comment) => comment.id === report.id && comment.body === body.text,
           )
-        )
+        ) {
           throw new Error(
             "Production evidence or request changed before closure",
           );
+        }
         return current.request.open ? undefined : true;
       },
       async () => {

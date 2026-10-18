@@ -22,8 +22,12 @@ export class ReviewReport {
       // Split by UTF-16 code units without cutting a surrogate pair.
       for (let start = 0, index = 1; start < evidence.length; index++) {
         let end = Math.min(start + 20_000, evidence.length);
-        if (end < evidence.length && /[\uD800-\uDBFF]/.test(evidence[end - 1]))
+        if (
+          end < evidence.length &&
+          /[\uD800-\uDBFF]/.test(evidence[end - 1])
+        ) {
           end--;
+        }
         const comment = await this.runtime.comment(
           run,
           `${key}:evidence:${index}`,

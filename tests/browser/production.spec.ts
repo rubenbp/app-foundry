@@ -122,11 +122,13 @@ for (const scenario of [
       } else {
         expect(result.status).toBe("intervention");
         expect(s.facts.request.open).toBe(true);
-        if (scenario === "wrong text")
+        if (scenario === "wrong text") {
           expect(output.checks[1].observed).toBe("Wrong catalogue");
-        else if (scenario === "page redirects")
+        } else if (scenario === "page redirects") {
           expect(output.error).toContain("redirected");
-        else expect(output.error).toContain("dirty build");
+        } else {
+          expect(output.error).toContain("dirty build");
+        }
       }
     } finally {
       s.close();

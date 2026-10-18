@@ -2,7 +2,9 @@ import type { Run } from "../src/domain/run.ts";
 
 export function ProductionDetails({ run }: { run: Run }) {
   const publication = run.publication;
-  if (!publication?.mergeSha) return null;
+  if (!publication?.mergeSha) {
+    return null;
+  }
   const production = publication.production;
 
   return (

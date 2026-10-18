@@ -30,8 +30,10 @@ test("la autorización de GitHub requiere que quien aplicó la etiqueta tenga pe
     };
     const github = new GitHub(async (args) => {
       const path = args[1];
-      if (path.includes("?state=")) return [[issue]];
-      if (path.includes("/events?"))
+      if (path.includes("?state=")) {
+        return [[issue]];
+      }
+      if (path.includes("/events?")) {
         return [
           [
             {
@@ -49,11 +51,14 @@ test("la autorización de GitHub requiere que quien aplicó la etiqueta tenga pe
               : []),
           ],
         ];
+      }
       if (path.includes("/permission")) {
-        if (scenario === "permission unavailable") throw new Error("HTTP 403");
+        if (scenario === "permission unavailable") {
+          throw new Error("HTTP 403");
+        }
         return { permission: scenario === "reader" ? "read" : "write" };
       }
-      if (path === "graphql")
+      if (path === "graphql") {
         return {
           data: {
             repository: {
@@ -63,6 +68,7 @@ test("la autorización de GitHub requiere que quien aplicó la etiqueta tenga pe
             },
           },
         };
+      }
       return {
         ...issue,
         ...(scenario === "racing edit" ? { body: "Changed in flight" } : {}),
@@ -113,12 +119,14 @@ test("la autorización de GitHub requiere que quien aplicó la etiqueta tenga pe
         scenario === "writer" ? 1 : 0,
         scenario,
       );
-      if (scenario === "writer")
+      if (scenario === "writer") {
         assert.equal(
           workflow.list()[0].request?.authorization.actor,
           "approver",
         );
-      else assert.ok(workflow.observation.error, scenario);
+      } else {
+        assert.ok(workflow.observation.error, scenario);
+      }
     } finally {
       workflow.close();
     }

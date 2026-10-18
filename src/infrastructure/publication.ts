@@ -80,8 +80,9 @@ export class GitHubPublication implements PublicationPort {
       record(base.repo).full_name !== context.repository ||
       head.ref !== context.workspace.branch ||
       base.ref !== context.project.baseBranch
-    )
+    ) {
       throw new Error("PR repository, branch or base mismatch");
+    }
     return {
       number: id,
       url: githubUrl(
@@ -133,8 +134,9 @@ export class GitHubPublication implements PublicationPort {
       target === "production"
         ? (context.project.publication.productionEnvironment ?? "Production")
         : (context.project.publication.previewEnvironment ?? "Preview");
-    if (typeof environment !== "string" || !environment)
+    if (typeof environment !== "string" || !environment) {
       throw new Error("Configured deployment environment required");
+    }
     const deployments = await this.pages(
       `repos/${context.repository}/deployments?sha=${context.head}&environment=${encodeURIComponent(environment)}&per_page=100`,
     );
@@ -149,7 +151,9 @@ export class GitHubPublication implements PublicationPort {
           record(deployment.creator).login === "vercel[bot]",
       );
     const deployment = matching.sort((a, b) => number(b.id) - number(a.id))[0];
-    if (!deployment) return null;
+    if (!deployment) {
+      return null;
+    }
     const id = number(deployment.id);
     const statuses = await this.pages(
       `repos/${context.repository}/deployments/${id}/statuses?per_page=100`,
@@ -167,7 +171,9 @@ export class GitHubPublication implements PublicationPort {
         : ["pending", "queued", "in_progress"].includes(text(raw))
           ? "pending"
           : null;
-    if (!state) throw new Error("Unknown deployment state");
+    if (!state) {
+      throw new Error("Unknown deployment state");
+    }
     const preview: Preview = {
       id: String(id),
       head: context.head,
@@ -181,18 +187,23 @@ export class GitHubPublication implements PublicationPort {
       access: "pending",
       servedHead: null,
     };
-    if (state !== "success" || !preview.url) return preview;
+    if (state !== "success" || !preview.url) {
+      return preview;
+    }
     const identity = await this.access.inspect(preview.url, context, target);
     preview.projectId = identity.projectId;
     if (
       identity.head !== context.head ||
       identity.repository !== context.repository ||
       identity.projectId !== context.project.publication.projectId
-    )
+    ) {
       throw new Error(
         "Vercel preview identity does not match repository, project and candidate",
       );
-    if (target === "production") return preview;
+    }
+    if (target === "production") {
+      return preview;
+    }
     const served = await this.access.servedHead(preview.url, context);
     preview.access = served.access;
     preview.servedHead = served.head;
@@ -216,13 +227,15 @@ export class GitHubPublication implements PublicationPort {
     ]);
     const request = record(requestValue);
     const candidates = pulls.map((value) => this.pull(value, context));
-    if (candidates.length > 1)
+    if (candidates.length > 1) {
       throw new Error(
         "Multiple PRs for the execution branch; inspect manually",
       );
+    }
     let pull = candidates[0] ?? null;
-    if (pull?.merged)
+    if (pull?.merged) {
       pull = this.pull(await this.api(`${path}/pulls/${pull.number}`), context);
+    }
     let preview: Preview | null = null;
     let previewError: unknown;
     if (options.preview && !pull?.merged) {
@@ -245,7 +258,7 @@ export class GitHubPublication implements PublicationPort {
     const comments = issueComments.map((value) =>
       this.conversation(value, context, "issue", context.issue),
     );
-    if (pull)
+    if (pull) {
       comments.push(
         ...(
           await this.pages(
@@ -255,12 +268,17 @@ export class GitHubPublication implements PublicationPort {
           this.conversation(value, context, "pull", pull.number),
         ),
       );
+    }
     // Preview lookup can outlive the human merge. Reconcile the PR after all
     // dependent reads before treating a retired preview as a candidate failure.
-    if (pull && options.preview && !pull.merged)
+    if (pull && options.preview && !pull.merged) {
       pull = this.pull(await this.api(`${path}/pulls/${pull.number}`), context);
-    if (pull?.merged) preview = null;
-    else if (previewError) throw previewError;
+    }
+    if (pull?.merged) {
+      preview = null;
+    } else if (previewError) {
+      throw previewError;
+    }
     const statuses = statusValues
       .map(record)
       .filter((value) => value.context === mergeContext)
@@ -271,8 +289,9 @@ export class GitHubPublication implements PublicationPort {
           state !== "success" &&
           state !== "failure" &&
           state !== "error"
-        )
+        ) {
           throw new Error("Unknown commit status");
+        }
         return { head: context.head, state, at: timestamp(value.created_at) };
       });
     const status = statuses[0] ?? null;
@@ -337,7 +356,7 @@ export class GitHubPublication implements PublicationPort {
     const home = join(this.root, "publication-home");
     mkdirSync(home, { recursive: true, mode: 0o700 });
     const env = reducedEnvironment(home);
-    if (authenticated)
+    if (authenticated) {
       Object.assign(env, {
         HOME: process.env.HOME,
         GH_TOKEN: process.env.GH_TOKEN,
@@ -346,6 +365,7 @@ export class GitHubPublication implements PublicationPort {
         GIT_CONFIG_KEY_2: "credential.helper",
         GIT_CONFIG_VALUE_2: "!gh auth git-credential",
       });
+    }
     const result = await this.process(
       "git",
       ["-c", "core.hooksPath=/dev/null", ...args],
@@ -355,18 +375,20 @@ export class GitHubPublication implements PublicationPort {
         signal: AbortSignal.timeout(30_000),
       },
     );
-    if (result.code !== 0 || result.truncated || result.forcedStop)
+    if (result.code !== 0 || result.truncated || result.forcedStop) {
       throw new Error(
         `Publication Git operation unconfirmed: ${result.output}`,
       );
+    }
     return result.output.trim();
   }
   async push(context: PublicationContext) {
     if (
       (await this.git(context, ["rev-parse", "HEAD"])) !== context.head ||
       (await this.git(context, ["status", "--porcelain"]))
-    )
+    ) {
       throw new Error("Candidate changed after verification");
+    }
     // Use the trusted URL, never the clone's pushurl. A zero-object lease rejects
     // a branch created concurrently. Existing matching refs are reconciled first.
     await this.git(
@@ -383,8 +405,9 @@ export class GitHubPublication implements PublicationPort {
   }
   async prepareHead(context: PublicationContext, head: string) {
     sha(head);
-    if (await this.git(context, ["status", "--porcelain"]))
+    if (await this.git(context, ["status", "--porcelain"])) {
       throw new Error("Uncommitted changes prevent replacing candidate head");
+    }
     await this.git(
       context,
       [
@@ -396,8 +419,9 @@ export class GitHubPublication implements PublicationPort {
       ],
       true,
     );
-    if ((await this.git(context, ["rev-parse", "FETCH_HEAD"])) !== head)
+    if ((await this.git(context, ["rev-parse", "FETCH_HEAD"])) !== head) {
       throw new Error("Remote head changed during fetch");
+    }
     await this.git(context, [
       "merge-base",
       "--is-ancestor",
@@ -418,7 +442,9 @@ export class GitHubPublication implements PublicationPort {
     );
   }
   async comment(context: PublicationContext, body: string) {
-    if (!context.pull) throw new Error("PR required for publication report");
+    if (!context.pull) {
+      throw new Error("PR required for publication report");
+    }
     return this.conversation(
       await this.api(
         `repos/${context.repository}/issues/${context.pull.number}/comments`,

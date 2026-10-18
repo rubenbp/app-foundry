@@ -8,7 +8,9 @@ export function Output({ runId, part }: { runId: string; part: PartView }) {
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     void fetch(
@@ -16,9 +18,13 @@ export function Output({ runId, part }: { runId: string; part: PartView }) {
       { signal: controller.signal },
     )
       .then(async (response) => {
-        if (!response.ok) throw new Error();
+        if (!response.ok) {
+          throw new Error();
+        }
         const value = await response.text();
-        if (!controller.signal.aborted) setText(value);
+        if (!controller.signal.aborted) {
+          setText(value);
+        }
       })
       .catch(() => setError(true))
       .finally(() => clearTimeout(timeout));
@@ -34,7 +40,9 @@ export function Output({ runId, part }: { runId: string; part: PartView }) {
         aria-expanded={open}
         aria-controls={`output-${part.id}`}
         onClick={() => {
-          if (!open) setError(false);
+          if (!open) {
+            setError(false);
+          }
           setOpen((value) => !value);
         }}
       >

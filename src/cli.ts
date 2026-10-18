@@ -25,7 +25,8 @@ if (command === "serve") {
         }
       : { command, id: option("--id") };
   sendControlCommand(socket, data);
-} else
+} else {
   throw new Error(
     "Commands: serve, run --task-file PATH, stop --id ID; all accept --config PATH",
   );
+}

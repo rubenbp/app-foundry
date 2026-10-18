@@ -11,10 +11,11 @@ test("el observador del SDK conserva las transiciones recibidas y concilia los m
     const path = req.url!.split("?")[0];
     if (path === "/api/event") {
       res.writeHead(200, { "Content-Type": "text/event-stream" });
-      for (const status of ["busy", "idle"])
+      for (const status of ["busy", "idle"]) {
         res.write(
           `data: ${JSON.stringify({ type: "session.status", data: { sessionID: "s1", status: { type: status } } })}\n\n`,
         );
+      }
       return;
     }
     res.setHeader("Content-Type", "application/json");
@@ -137,12 +138,13 @@ test("la conciliación del SDK alcanza mensajes posteriores a la página 200 y a
               : { data: [], cursor: {} },
         ),
       );
-    } else
+    } else {
       res.end(
         JSON.stringify(
           url.pathname === "/api/session/active" ? { data: {} } : { data: [] },
         ),
       );
+    }
   });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");

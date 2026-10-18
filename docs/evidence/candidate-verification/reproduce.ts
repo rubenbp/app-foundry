@@ -81,7 +81,9 @@ try {
       entry.status = "observed";
       entry.endedAt = new Date().toISOString();
       entry.label = result.label;
-      if ("code" in result) entry.code = result.code;
+      if ("code" in result) {
+        entry.code = result.code;
+      }
       const file = `base-${id}.log`;
       writeFileSync(join(evidence, file), clean(result.output).text);
       entry.output = file;
@@ -104,8 +106,9 @@ try {
   };
   const command = async (binary: string, args: string[]) => {
     const result = await execute(binary, args, options);
-    if (result.code !== 0)
+    if (result.code !== 0) {
       throw new Error(`${binary} ${args.join(" ")}: ${result.output}`);
+    }
     return result.output.trim();
   };
   manifest.observedToolchain = {
@@ -151,13 +154,16 @@ try {
     report,
     (current, output) => {
       manifest.verification = current;
-      if (output)
+      if (output) {
         writeFileSync(
           join(evidence, `${output.id}.log`),
           clean(output.text).text,
         );
+      }
       save();
-      if (output) console.log(`${output.id}: ${output.label}`);
+      if (output) {
+        console.log(`${output.id}: ${output.label}`);
+      }
     },
     new AbortController().signal,
   );
@@ -168,10 +174,11 @@ try {
   ]);
   manifest.finishedAt = new Date().toISOString();
   save();
-  if (report.status !== "passed")
+  if (report.status !== "passed") {
     throw new Error(
       report.error ?? "Independent candidate verification did not pass",
     );
+  }
   console.log(
     `Verified ${report.baseSha} -> ${report.headSha}; ${report.e2e?.executedTests} E2E tests`,
   );

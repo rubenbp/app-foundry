@@ -73,29 +73,34 @@ export function authorize(
     issue.repository !== config.repository ||
     !Number.isSafeInteger(issue.number) ||
     issue.number < 1
-  )
+  ) {
     throw new Error("Issue does not belong to the configured Managed project");
+  }
   if (
     !issue.authorization.id ||
     !issue.authorization.actor ||
     issue.authorization.canWrite !== true
-  )
+  ) {
     throw new Error("Effective write permission could not be confirmed");
+  }
   if (
     !issue.authorization.contentUnchanged ||
     !Number.isFinite(Date.parse(issue.authorization.at)) ||
     issue.updatedAt !== issue.authorization.at
-  )
+  ) {
     throw new Error(
       "Authorization cannot be linked unambiguously to captured content",
     );
+  }
   if (
     issue.url !==
     `https://github.com/${config.repository}/issues/${issue.number}`
-  )
+  ) {
     throw new Error("Untrusted issue link");
-  if (!issue.title.trim() || !issue.body.trim())
+  }
+  if (!issue.title.trim() || !issue.body.trim()) {
     throw new Error("Complete request and acceptance criteria required");
+  }
   return structuredClone({
     ...issue,
     capturedAt: at,

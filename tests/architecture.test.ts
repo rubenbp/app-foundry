@@ -25,15 +25,18 @@ test("las capas hexagonales dependen hacia dentro y los adaptadores nunca import
   for (const file of sources) {
     const name = relative(sourceRoot, file);
     const layer = name.split(sep)[0];
-    if (name === "cli.ts") continue;
+    if (name === "cli.ts") {
+      continue;
+    }
     assert.ok(allowedLayers[layer], `Production module has no layer: ${name}`);
     for (const entry of imports(file)) {
       if (!entry.fileName.startsWith(".")) {
-        if (layer === "domain" || layer === "application")
+        if (layer === "domain" || layer === "application") {
           assert.ok(
             entry.fileName.startsWith("node:"),
             `${name} imports an external provider: ${entry.fileName}`,
           );
+        }
         continue;
       }
       const target = resolve(dirname(file), entry.fileName);
@@ -51,12 +54,15 @@ test("el dominio y la aplicación no acceden al sistema de archivos, la red ni l
     /^node:(?:fs|sqlite|http|https|net|child_process|worker_threads)(?:\/|$)/;
   for (const file of sources) {
     const name = relative(sourceRoot, file);
-    if (!["domain", "application"].includes(name.split(sep)[0])) continue;
-    for (const entry of imports(file))
+    if (!["domain", "application"].includes(name.split(sep)[0])) {
+      continue;
+    }
+    for (const entry of imports(file)) {
       assert.ok(
         !effectModules.test(entry.fileName),
         `${name} must acquire effects through an application port`,
       );
+    }
   }
 });
 
@@ -66,11 +72,15 @@ test("el navegador usa contratos de lectura compartidos sin importar efectos del
     recursive: true,
     encoding: "utf8",
   })) {
-    if (!/\.tsx?$/.test(name)) continue;
+    if (!/\.tsx?$/.test(name)) {
+      continue;
+    }
     const file = resolve(panelRoot, name);
     for (const entry of imports(file)) {
       assert.ok(!entry.fileName.startsWith("node:"), `${name} imports Node`);
-      if (!entry.fileName.startsWith(".")) continue;
+      if (!entry.fileName.startsWith(".")) {
+        continue;
+      }
       const target = relative(
         sourceRoot,
         resolve(dirname(file), entry.fileName),

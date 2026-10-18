@@ -6,8 +6,9 @@ export function candidateEvidence(factory: Factory, run: Run) {
   const output = (id: string) => {
     const part = run.parts.find((part) => part.id === id);
     const text = factory.output(run.id, id);
-    if (!part || part.truncated || text === null)
+    if (!part || part.truncated || text === null) {
       throw new Error(`Complete evidence missing: ${id}`);
+    }
     return text;
   };
   if (
@@ -22,10 +23,11 @@ export function candidateEvidence(factory: Factory, run: Run) {
         check.code !== 0 ||
         check.cleanup !== "confirmed",
     )
-  )
+  ) {
     throw new Error(
       "Valid complete technical evidence for the current head required",
     );
+  }
   return [
     `Petición: ${run.request!.title}\n${run.request!.body}`,
     `Diff acumulado completo ${verification.baseSha}..${verification.headSha}\n${output(verification.diffPartId)}`,

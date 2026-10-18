@@ -30,15 +30,18 @@ export function acquireWorkflowOwnership(
     releaseProject = acquireLock(root + ".lock");
     const reservationPath = root + ".reservation.json";
     const reservation = () => {
-      if (!existsSync(reservationPath)) return null;
+      if (!existsSync(reservationPath)) {
+        return null;
+      }
       const value = JSON.parse(readFileSync(reservationPath, "utf8")) as {
         dataDir: string;
         runId: string;
       };
-      if (value.dataDir !== dataDir || typeof value.runId !== "string")
+      if (value.dataDir !== dataDir || typeof value.runId !== "string") {
         throw new Error(
           "Managed project reserved by uncertain work in another data root; inspect the reservation and owned processes",
         );
+      }
       return value.runId;
     };
     reservation();
@@ -46,16 +49,20 @@ export function acquireWorkflowOwnership(
       reservation,
       reserve(runId) {
         const previous = reservation();
-        if (previous && previous !== runId)
+        if (previous && previous !== runId) {
           throw new Error("Managed project reserved by another Ejecución");
-        if (!previous)
+        }
+        if (!previous) {
           writeFileSync(reservationPath, JSON.stringify({ dataDir, runId }), {
             flag: "wx",
             mode: 0o600,
           });
+        }
       },
       releaseRun(runId) {
-        if (reservation() === runId) unlinkSync(reservationPath);
+        if (reservation() === runId) {
+          unlinkSync(reservationPath);
+        }
       },
       close() {
         releaseProject!();

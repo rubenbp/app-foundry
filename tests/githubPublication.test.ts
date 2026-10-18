@@ -111,15 +111,20 @@ for (const gate of [
         assert.fail(`Unexpected mutation ${path}`);
       }
       const paged = (values: unknown[]) => JSON.stringify([values]);
-      if (path === `${prefix}/issues/1`)
+      if (path === `${prefix}/issues/1`) {
         return JSON.stringify({
           title: context.request!.title,
           body: context.request!.body,
           state: requestOpen ? "open" : "closed",
         });
-      if (path === `${prefix}/pulls/2`) return JSON.stringify(pull);
-      if (path.includes("/pulls?")) return paged(pull ? [pull] : []);
-      if (path.includes("/git/matching-refs/"))
+      }
+      if (path === `${prefix}/pulls/2`) {
+        return JSON.stringify(pull);
+      }
+      if (path.includes("/pulls?")) {
+        return paged(pull ? [pull] : []);
+      }
+      if (path.includes("/git/matching-refs/")) {
         return paged(
           remoteHead
             ? [
@@ -130,8 +135,13 @@ for (const gate of [
               ]
             : [],
         );
-      if (path.includes("/issues/1/comments?")) return paged(issueComments);
-      if (path.includes("/issues/2/comments?")) return paged(comments);
+      }
+      if (path.includes("/issues/1/comments?")) {
+        return paged(issueComments);
+      }
+      if (path.includes("/issues/2/comments?")) {
+        return paged(comments);
+      }
       if (path.includes("/commits/")) {
         assert.ok(remoteHead, "unpublished commit must not be queried");
         return paged(statuses);
@@ -152,7 +162,7 @@ for (const gate of [
         });
         return paged([]);
       }
-      if (path.includes("/deployments?"))
+      if (path.includes("/deployments?")) {
         return paged(
           deployment
             ? [
@@ -167,10 +177,13 @@ for (const gate of [
               ]
             : [],
         );
-      if (path.includes("/deployments/9/statuses?"))
+      }
+      if (path.includes("/deployments/9/statuses?")) {
         return paged([{ id: 10, state: "success", environment_url: origin }]);
-      if (path.includes("/permission"))
+      }
+      if (path.includes("/permission")) {
         return JSON.stringify({ permission: "write" });
+      }
       assert.fail(`Unexpected read ${path}`);
     };
     // The filesystem and local Git remain real. Only remote transport is replaced.
@@ -275,7 +288,7 @@ for (const gate of [
           merge_commit_sha: integrationSha,
         });
       }
-      if (gate === "revoked after merge" || gate === "revoked before merge")
+      if (gate === "revoked after merge" || gate === "revoked before merge") {
         statuses.unshift({
           ...statuses[0],
           state: "pending",
@@ -283,10 +296,14 @@ for (const gate of [
             time + (gate === "revoked after merge" ? 2000 : 500),
           ).toISOString(),
         });
-      if (gate === "success only after merge")
-        for (const status of statuses)
-          if (status.state === "success")
+      }
+      if (gate === "success only after merge") {
+        for (const status of statuses) {
+          if (status.state === "success") {
             status.created_at = new Date(time + 2000).toISOString();
+          }
+        }
+      }
       await s.workflow.poll();
       if (
         gate === "success only after merge" ||

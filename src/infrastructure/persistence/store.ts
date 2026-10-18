@@ -21,8 +21,9 @@ export class Store implements RunRepository {
   }
   observation(value?: { at: number; error: string | null }) {
     if (value) {
-      if (this.failed)
+      if (this.failed) {
         throw new Error("Persistence unavailable: effects blocked");
+      }
       try {
         const previous = this.observation();
         this.db
@@ -53,8 +54,9 @@ export class Store implements RunRepository {
       : { at: 0, error: null, lastSuccess: null };
   }
   save(run: Run) {
-    if (this.failed)
+    if (this.failed) {
       throw new Error("Persistence unavailable: effects blocked");
+    }
     try {
       this.db
         .prepare(
@@ -82,8 +84,9 @@ export class Store implements RunRepository {
     );
   }
   write(runId: string, partId: string, text: string) {
-    if (this.failed)
+    if (this.failed) {
       throw new Error("Persistence unavailable: effects blocked");
+    }
     try {
       const path = this.artifact(runId, partId);
       writeFileSync(path + ".tmp", text, { mode: 0o600 });

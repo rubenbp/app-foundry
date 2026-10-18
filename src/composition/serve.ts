@@ -49,14 +49,18 @@ export async function serveFactory(
         secrets,
       })
     : null;
-  if (existsSync(socket)) unlinkSync(socket);
+  if (existsSync(socket)) {
+    unlinkSync(socket);
+  }
   const factory =
     workflow?.factory ?? createFactory(config, agent, { secrets });
   let pollTimer: ReturnType<typeof setTimeout> | undefined;
   let closing = false;
   let polling: Promise<void> | undefined;
   const tick = () => {
-    if (!workflow || closing) return;
+    if (!workflow || closing) {
+      return;
+    }
     polling = workflow
       .poll()
       .catch(() => {
@@ -65,7 +69,9 @@ export async function serveFactory(
         );
       })
       .finally(() => {
-        if (!closing) pollTimer = setTimeout(tick, 15_000);
+        if (!closing) {
+          pollTimer = setTimeout(tick, 15_000);
+        }
       });
   };
   const panel = panelServer(factory);
@@ -81,15 +87,18 @@ export async function serveFactory(
   console.log(`Factory PID ${process.pid}; local control socket ${socket}`);
   tick();
   const close = async () => {
-    if (closing) return;
+    if (closing) {
+      return;
+    }
     closing = true;
     workflow?.halt();
     clearTimeout(pollTimer);
     try {
-      if (factory.active)
+      if (factory.active) {
         await (workflow
           ? workflow.stop(factory.active)
           : factory.stop(factory.active));
+      }
       await polling;
     } catch {
       console.error(
@@ -100,8 +109,11 @@ export async function serveFactory(
     panel.close();
     control.closeAllConnections();
     control.close();
-    if (workflow) workflow.close();
-    else factory.close();
+    if (workflow) {
+      workflow.close();
+    } else {
+      factory.close();
+    }
     releaseProject();
     releaseData();
   };
