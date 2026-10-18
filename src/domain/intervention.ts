@@ -17,6 +17,7 @@ export interface AgentIntervention {
   comment?: IssueComment;
   response?: IssueComment;
   deliveredAt?: number;
+  supersededAt?: number;
 }
 
 // Un protocolo explícito evita clasificar lenguaje natural o confundir dudas con un resultado terminado.
@@ -38,7 +39,9 @@ export function interventionQuestions(result: string): string | null {
 
 export function pendingIntervention(interventions: AgentIntervention[] = []) {
   return interventions.find(
-    (intervention) => intervention.deliveredAt === undefined,
+    (intervention) =>
+      intervention.deliveredAt === undefined &&
+      intervention.supersededAt === undefined,
   );
 }
 

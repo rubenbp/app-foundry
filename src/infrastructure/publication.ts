@@ -387,14 +387,14 @@ export class GitHubPublication implements PublicationPort {
     ) {
       throw new Error("Candidate changed after verification");
     }
-    // Usa la URL de confianza, nunca el pushurl del clon. Una concesión sin objetos rechaza
-    // una rama creada en paralelo. Primero se reconcilian las referencias coincidentes existentes.
+    // La concesión espera una rama ausente al publicar por primera vez, o el SHA
+    // anterior al publicar una corrección sobre la misma rama.
     await this.git(
       context,
       [
         "push",
 
-        `--force-with-lease=refs/heads/${context.workspace.branch}:`,
+        `--force-with-lease=refs/heads/${context.workspace.branch}:${context.previousHead ?? ""}`,
         "--",
         `https://github.com/${context.repository}.git`,
         `${context.head}:refs/heads/${context.workspace.branch}`,

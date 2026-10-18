@@ -6,6 +6,7 @@ import { type RemoteCommand } from "../src/infrastructure/remoteCommand.ts";
 import { configureMergeProtection } from "../src/infrastructure/mergeProtection.ts";
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/process.ts";
+import { join } from "node:path";
 
 for (const gate of [
   "unchanged",
@@ -402,4 +403,70 @@ test("el transporte autorizado de la vista previa rechaza URLs con credenciales 
     access.inspect("https://user:password@example.vercel.app", {} as never),
     /Untrusted/,
   );
+});
+
+test("una corrección actualiza la misma rama con el SHA anterior y rechaza sobrescribir una versión inesperada", async () => {
+  const s = verificationFixture();
+  try {
+    const run = await s.start();
+    const remote = join(s.root, "publication.git");
+    s.git("init", "--bare", remote);
+    const adapter = new GitHubPublication(s.config.dataDir, {
+      process: async (command, args, options) =>
+        execute(
+          command,
+          args.includes("push")
+            ? args.map((arg) =>
+                arg === `https://github.com/${s.project.repository}.git`
+                  ? remote
+                  : arg,
+              )
+            : args,
+          options,
+        ),
+    });
+    s.commit("footer.txt", "First footer", "First candidate");
+    const first = s.git("rev-parse", "HEAD");
+    const context = {
+      repository: s.project.repository,
+      issue: 1,
+      runId: run.id,
+      head: first,
+      project: s.project,
+      workspace: run.workspace!,
+    };
+    await adapter.push(context);
+    s.commit("footer.txt", "Corrected footer", "Correct candidate");
+    const second = s.git("rev-parse", "HEAD");
+    await adapter.push({ ...context, head: second, previousHead: first });
+    assert.equal(
+      s.git(
+        "--git-dir",
+        remote,
+        "rev-parse",
+        `refs/heads/${run.workspace!.branch}`,
+      ),
+      second,
+    );
+    s.commit("footer.txt", "Third footer", "Another candidate");
+    await assert.rejects(
+      adapter.push({
+        ...context,
+        head: s.git("rev-parse", "HEAD"),
+        previousHead: first,
+      }),
+      /Publication Git operation unconfirmed/,
+    );
+    assert.equal(
+      s.git(
+        "--git-dir",
+        remote,
+        "rev-parse",
+        `refs/heads/${run.workspace!.branch}`,
+      ),
+      second,
+    );
+  } finally {
+    s.close();
+  }
 });

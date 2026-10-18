@@ -44,6 +44,9 @@ export function publicationFixture(
     async push(context) {
       writes.push({ kind: "push" });
       facts.remoteHead = context.head;
+      if (facts.pull) {
+        facts.pull.head = context.head;
+      }
       if (uncertain === "push") {
         uncertain = null;
         throw new Error("Lost push response");

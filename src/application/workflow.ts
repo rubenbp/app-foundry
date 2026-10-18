@@ -20,6 +20,9 @@ import type { PublicationPort } from "./publication/ports.ts";
 import type { IssueConversation } from "./issueConversation.ts";
 import { IssueInterventions } from "./issueInterventions.ts";
 import { pendingIntervention } from "../domain/intervention.ts";
+import type { RecoveryCommand } from "../domain/recovery.ts";
+import { IssueRecovery } from "./issueRecovery.ts";
+import type { Run } from "../domain/run.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -46,6 +49,7 @@ export class Workflow {
   private verifier: CandidateVerification;
   private publication?: CandidatePublication;
   private interventions?: IssueInterventions;
+  private recovery?: IssueRecovery;
   private conversationAttached = true;
 
   get observation() {
@@ -67,6 +71,12 @@ export class Workflow {
       this.conversationAttached =
         this.factory.view(this.factory.active ?? "")?.status !== "waiting";
       if (options.issueConversation) {
+        this.recovery = new IssueRecovery(
+          this.factory,
+          options.issueConversation,
+          (id, command) =>
+            this.recover(id, command, options.issueConversation!),
+        );
         this.interventions = new IssueInterventions(
           this.factory,
           options.issueConversation,
@@ -123,6 +133,8 @@ export class Workflow {
     }
     this.polling = true;
     try {
+      await this.recovery?.notify();
+      await this.recovery?.poll();
       await this.interventions?.poll();
       if (this.halted) {
         return;
@@ -141,6 +153,12 @@ export class Workflow {
       }
       await this.observe(issues);
       await this.startNext();
+      const current = this.view(this.factory.active ?? "");
+      if (current?.recovery?.notice && current.status !== "intervention") {
+        delete current.recovery.notice;
+        this.factory.persist(current);
+      }
+      await this.recovery?.notify();
     } catch (error) {
       this.factory.assertWritable();
       this.factory.store.observation({
@@ -208,7 +226,11 @@ export class Workflow {
       throw new Error("Workspace preparation adapter required");
     }
     this.ownership.reserve(next.id);
-    return this.factory.start(next.id, async (run) => {
+    return this.startPrepared(next.id);
+  }
+
+  private startPrepared(id: string, retry = false) {
+    return this.factory.start(id, async (run) => {
       const effect: Effect = async (id, description, action) => {
         this.factory.assertRunning(run.id);
         const before = this.view(run.id)!;
@@ -239,6 +261,7 @@ export class Workflow {
         run.id,
         run.request!.configuration,
         effect,
+        retry,
       );
       await this.workspace!.validate(prepared, run.request!.configuration);
       const workspace = sanitizedRecord(prepared, this.factory.clean);
@@ -255,6 +278,111 @@ export class Workflow {
         }),
       };
     });
+  }
+
+  private async stopEditing(run: Run) {
+    if (!run.process || run.process.exited) {
+      return;
+    }
+    const stopped = await this.factory.agent.stop(run.sessionId);
+    this.factory.assertRunning(run.id);
+    const current = this.view(run.id)!;
+    current.process!.exited = stopped.exited;
+    this.factory.record(current, "agent-stop", stopped.detail);
+    this.factory.persist(current);
+    if (!stopped.exited) {
+      throw new Error(stopped.detail);
+    }
+    this.conversationAttached = false;
+  }
+
+  private async recover(
+    id: string,
+    command: RecoveryCommand,
+    conversation: IssueConversation,
+  ) {
+    let run = this.view(id)!;
+    const merged = await this.publication?.isMerged(id);
+    if (merged && command.kind !== "retry") {
+      return "El cambio ya está integrado. Solo se puede reintentar el resumen y el cierre; para cambios adicionales, crea otro issue.";
+    }
+    if (command.kind === "cancel") {
+      const stopped = await this.stop(id);
+      if (stopped.status !== "stopped") {
+        throw new Error(
+          "La parada no está confirmada; el issue sigue abierto.",
+        );
+      }
+      await conversation.close(run.request!.repository, run.request!.number);
+      return "Ejecución cancelada. El issue se ha cerrado como no implementado.";
+    }
+    if (run.verification?.effectsUncertain) {
+      throw new Error(
+        "La parada de los comandos requiere inspección local antes de continuar.",
+      );
+    }
+    if (command.kind === "retry" && (merged || run.phase === "publication")) {
+      await this.publication!.retry(id);
+      return "Reintento de publicación solicitado; la Factory comprobará los efectos existentes y continuará el paso pendiente.";
+    }
+    await this.publication?.invalidate(id);
+    await this.stopEditing(this.view(id)!);
+    run = this.view(id)!;
+    const cause = run.error;
+    run.error = null;
+    run.endedAt = null;
+    run.pending = [];
+    if (command.kind === "retry" && run.phase === "verification") {
+      run.status = "awaiting_verification";
+      this.factory.persist(run);
+      return "Se repetirá la verificación completa del Commit candidato.";
+    }
+    if (run.phase === "preparation" || !run.sessionId) {
+      run.status = "queued";
+      this.factory.persist(run);
+      this.factory.active = null;
+      await this.startPrepared(id, true);
+      return "Preparación reintentada sobre el mismo puesto de trabajo.";
+    }
+    run.status = "intervention";
+    run.phase = "implementation";
+    delete run.verification;
+    run.result = null;
+    run.attempt++;
+    for (const intervention of run.interventions ?? []) {
+      if (!intervention.deliveredAt) {
+        intervention.supersededAt = this.factory.now();
+      }
+    }
+    this.factory.persist(run);
+    await this.workspace!.validate(run.workspace!, run.request!.configuration);
+    const agent = this.createAgent({
+      ...this.factory.config,
+      ...run.request!.runtime,
+      projectDir: run.workspace!.directory,
+      managedProject: run.request!.configuration,
+      conversationId: run.id,
+    });
+    await this.factory.restoreConversation(id, agent);
+    this.conversationAttached = true;
+    run = this.view(id)!;
+    run.status = "running";
+    this.factory.record(
+      run,
+      "attempt-started",
+      `Explicit ${command.kind}; attempt ${run.attempt}; same thread and branch`,
+    );
+    this.factory.persist(run);
+    const instructions =
+      command.kind === "correct"
+        ? command.instructions
+        : `Reintenta el trabajo pendiente tras este fallo: ${cause ?? "Intento interrumpido"}.`;
+    await this.factory.agent.send(
+      run.sessionId!,
+      `Continúa el mismo encargo y conserva el trabajo acumulado.\n\n${instructions}`,
+    );
+    this.factory.assertRunning(id);
+    return `Intento ${run.attempt} iniciado en la misma conversación y rama. El resultado necesitará verificación y una nueva aceptación.`;
   }
 
   queue() {
@@ -332,7 +460,12 @@ export class Workflow {
         "Stop agent editing before fixing candidate head",
       );
       this.factory.persist(run);
-      const stopped = await this.factory.agent.stop(run.sessionId);
+      const stopped = run.process?.exited
+        ? {
+            exited: true,
+            detail: "Agent editing was already confirmed stopped",
+          }
+        : await this.factory.agent.stop(run.sessionId);
       this.factory.assertRunning(run.id);
       const latest = this.view(run.id)!;
       if (latest.process) {

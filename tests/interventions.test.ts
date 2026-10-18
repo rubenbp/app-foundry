@@ -23,6 +23,7 @@ function conversationFixture() {
     return comment;
   };
   const port: IssueConversation = {
+    async close() {},
     async comments() {
       return structuredClone(comments);
     },

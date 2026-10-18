@@ -177,7 +177,7 @@ El dashboard debería pasar por cola, preparación, trabajo del agente, verifica
 
 La Factory captura el título y cuerpo que observe al admitir. No comprueba permisos del etiquetador ni estabilidad del contenido. Las ediciones posteriores no actualizan el encargo ni bloquean la Ejecución; volver a etiquetar no reejecuta el issue. Si el agente pide una aclaración, la Factory publica sus dudas en el issue. El primer comentario humano nuevo posterior a esa pregunta vuelve al mismo thread. Puede responder cualquiera, sin comandos ni comprobación de permisos para la aclaración. Los comentarios publicados mientras trabaja quedan sin procesar.
 
-La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, abre la causa y las salidas del dashboard antes de seguir; no aceptes para intentar desbloquear una verificación fallida.
+La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, lee el comentario de la Factory en el issue y consulta las salidas del Dashboard. Publica una orden nueva de las ofrecidas: `Reintentar`, `Corregir: instrucciones` o `Cancelar`. No aceptes para intentar desbloquear una verificación fallida.
 
 ### Si el agente pide una aclaración
 
@@ -220,19 +220,19 @@ cd /Users/rubenbp/dev/jakala-tfm/app-foundry
 npm start -- stop --config /private/tmp/app-foundry-prueba-local.json --id ID_DE_EJECUCION
 ```
 
-Usa el ID del dashboard. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Reiniciar mientras espera una respuesta humana conserva el mismo thread y permite continuar al recibirla. Un reinicio en otros trabajos iniciados deja intervención; no reanuda esos trabajos automáticamente.
+Usa el ID del dashboard para una parada operativa local. Para cancelar desde GitHub, publica exactamente `Cancelar` en el issue: antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`), sin comprobar permisos del autor. La CLI `stop` no cierra el issue. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Reiniciar mientras espera una respuesta humana conserva el mismo thread y permite continuar al recibirla. Un reinicio en otros trabajos iniciados deja intervención; no reanuda esos trabajos automáticamente.
 
 Para probar otro cambio crea otro issue con un resultado diferente, una vez completado o detenido el anterior. El mismo issue no se consume dos veces dentro de ese historial.
 
 ## Si no avanza
 
-| Lo que ves                      | Qué revisar                                                                                                                                                                                     |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                                              |
-| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.                                                                                |
-| `waiting`                       | Si hay dudas publicadas por la Factory, responder con un comentario nuevo en el issue. La primera respuesta humana continúa el mismo thread. Los permisos técnicos mantienen sus restricciones. |
-| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                                                    |
-| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                                                  |
-| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                                                                                  |
-| Cierre en intervención          | Resumen de integración vigente y permiso de comentar/cerrar. La siguiente consulta concilia efectos sin duplicarlos.                                                                            |
-| Intervención tras reiniciar     | Si esperaba respuesta humana, responder en el issue para recuperar el mismo thread. En otros estados, inspeccionar procesos y efectos. No borrar datos o reservas.                              |
+| Lo que ves                      | Qué revisar                                                                                                                                                                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                                                                                        |
+| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.                                                                                                                          |
+| `waiting`                       | Si hay dudas publicadas por la Factory, responder con un comentario nuevo en el issue. La primera respuesta humana continúa el mismo thread. Los permisos técnicos mantienen sus restricciones.                                           |
+| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                                                                                              |
+| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                                                                                            |
+| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                                                                                                                            |
+| Cierre en intervención          | Resumen de integración vigente y permiso de comentar/cerrar. Comentar `Reintentar` permite continuar el resumen y el cierre pendientes; después del merge no se admite corregir ni cancelar.                                              |
+| Intervención tras reiniciar     | Si esperaba respuesta humana, responder en el issue para recuperar el mismo thread. En otros estados, leer el aviso, inspeccionar procesos y efectos y solicitar `Reintentar` cuando la causa esté corregida. No borrar datos o reservas. |

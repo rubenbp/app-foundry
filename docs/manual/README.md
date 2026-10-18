@@ -6,6 +6,8 @@ La **Factory** organiza el trabajo. El **Managed project** es el producto que de
 
 Si el agente necesita información, la Factory publica sus dudas en el issue. Cualquier persona puede responder con un comentario nuevo para que continúe en el mismo thread. Esta aclaración no sustituye la aceptación posterior del Commit candidato, que conserva sus requisitos de SHA, preview y permisos.
 
+Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disponibles: `Reintentar`, `Corregir: instrucciones` y `Cancelar`. Basta un comentario humano, sin comprobar permisos. La corrección conserva conversación, rama y PR; vuelve a pasar por verificación y aceptación. Cancelar cierra como no implementado tras confirmar la parada. Después del merge solo cabe reintentar el resumen y el cierre pendientes.
+
 ## Índice y orden de lectura
 
 | Capítulo                                                                   | Qué permite entender                                                   |
@@ -43,6 +45,7 @@ Cada paso responde a una pregunta diferente: «¿queremos este cambio?», «¿fu
 | [Workflow](../../src/application/workflow.ts) y [Factory](../../src/application/factory.ts)                                              | Admisión, cola, preparación, coordinación, parada y reinicio.                  |
 | [Admisión GitHub](../../src/infrastructure/github.ts) y [Issue](../../src/domain/request.ts)                                             | Admisión mediante `factory:ready` y captura del contenido.                     |
 | [Intervenciones](../../src/application/issueInterventions.ts) y [conversación GitHub](../../src/infrastructure/issueConversation.ts)     | Publicación de dudas y entrega de la primera respuesta humana al mismo thread. |
+| [Recuperación por issue](../../src/application/issueRecovery.ts)                                                                         | Avisos de fallos y órdenes explícitas sin comprobación de permisos.            |
 | [Verificación](../../src/infrastructure/verification.ts)                                                                                 | Comprobaciones independientes y protección de controles.                       |
 | [Publicación](../../src/application/candidatePublication.ts) y [política de revisión](../../src/application/publication/reviewPolicy.ts) | Preview, informe, aceptación y revocación.                                     |
 | [Integración](../../src/application/publication/integration.ts)                                                                          | Merge autorizado, resumen de integración y cierre.                             |

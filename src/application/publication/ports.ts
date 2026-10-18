@@ -9,6 +9,7 @@ export interface PublicationContext {
   issue: number;
   runId: string;
   head: string;
+  previousHead?: string;
   project: ManagedProject;
   workspace: Workspace;
   pull?: PullCandidate;

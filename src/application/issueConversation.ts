@@ -7,4 +7,5 @@ export interface IssueConversation {
     issue: number,
     body: string,
   ): Promise<IssueComment>;
+  close(repository: string, issue: number): Promise<void>;
 }

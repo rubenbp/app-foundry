@@ -45,6 +45,7 @@ export class PublicationRuntime {
       issue: run.request!.number,
       runId: run.id,
       head: run.publication!.head,
+      previousHead: run.publication!.previousHead,
       project: run.request!.configuration,
 
       workspace: run.workspace!,

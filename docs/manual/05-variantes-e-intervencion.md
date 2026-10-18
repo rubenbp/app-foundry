@@ -10,15 +10,32 @@ flowchart TD
     D -->|"Puesto libre, deployment pendiente<br/>o decisión humana"| E["Espera normal<br/>Mantener Ejecución y puesto"]
     D -->|"Información actual del proveedor"| O["Falta de observación<br/>Mostrar incertidumbre"]
     D -->|"Garantía técnica o de negocio<br/>o resolución de efectos inciertos"| I["Intervención<br/>Inspeccionar evidencia y efectos"]
-    I --> P{"¿Se solicita parada local?"}
-    P -->|"No"| R["Mantener reserva<br/>Sin recuperación guiada disponible"]
-    P -->|"Sí"| C["Revocar aceptación cuando exista<br/>y detener procesos propios"]
+    I --> N["Publicar causa y acciones en el issue"]
+    N -->|"Reintentar"| R["Repetir fase fallida<br/>Mantener Ejecución y reserva"]
+    N -->|"Corregir: instrucciones<br/>Antes del merge"| A["Otro Intento en el mismo thread y rama<br/>Nueva verificación y aceptación"]
+    N -->|"Cancelar<br/>Antes del merge"| C["Revocar aceptación y detener procesos propios"]
     C --> V{"¿Parada y limpieza confirmadas?"}
-    V -->|"Sí"| F["stopped<br/>Liberar puesto"]
+    V -->|"Sí"| F["stopped<br/>Cerrar issue como no implementado y liberar puesto"]
     V -->|"No"| I
 ```
 
 `intervention` no significa que todos los componentes dejen de observar. Antes del merge, algunas consultas de publicación siguen conciliando hechos y pueden recuperar una condición transitoria. Eso no autoriza a repetir el trabajo del agente o la preparación.
+
+## Recuperar desde el issue
+
+La Factory publica un comentario por incidencia con la causa, la fase, el trabajo conservado y las acciones disponibles. La persona responde con una orden completa en un comentario nuevo del **issue**, no de la PR. No se comprueban permisos del autor; se excluyen bots y comentarios propios de la Factory. Las consultas y los comentarios ordinarios no activan operaciones.
+
+| Orden                     | Comportamiento                                                                                                                                                                                                                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Reintentar`              | Repite la fase fallida dentro de la misma Ejecución. En preparación reutiliza el clon existente y repite las comprobaciones de base. En verificación repite el contrato completo. Si el fallo pertenece al agente y ya existe thread, abre otro Intento en ese thread. En publicación continúa el paso pendiente. |
+| `Corregir: instrucciones` | Durante intervención o revisión, antes del merge y con thread y workspace disponibles, abre otro Intento conservando conversación, rama y PR. Revoca aceptación y exige nueva verificación, preview, informe y aceptación.                                                                                        |
+| `Cancelar`                | Antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`). Si no confirma la parada, mantiene intervención, issue abierto y reserva. No elimina rama ni PR.                                                                                                                      |
+
+`Reintentar` necesita el aviso de intervención vigente. No se reejecuta una orden ya consumida. Durante una espera de dudas, una respuesta libre sigue siendo aclaración; `Cancelar` permite cancelar esa espera.
+
+Después del merge solo se permite `Reintentar` para terminar el resumen y el cierre pendientes. No revierte lo integrado ni encarga cambios nuevos. Las incidencias de un merge fuera del contrato siguen requiriendo inspección; reintentar no convierte una integración inválida en aceptada.
+
+Si hay que arreglar credenciales o procesos locales, lo hace el operador antes de reintentar. El MVP no añade colas de avisos ni un protocolo adicional de recuperación de comunicaciones con GitHub.
 
 ## Variantes antes de publicar
 
@@ -27,35 +44,35 @@ flowchart TD
 | Issue sin etiqueta, cerrado o de otro repositorio                 | No entra como petición admisible.                                           | Prepararlo en el Managed project y autorizarlo.                                                                                     |
 | Issue ya admitido, reabierto o etiquetado otra vez                | No se crea otra Ejecución en ese historial.                                 | Revisar la Ejecución existente; no usar la etiqueta como botón de reintento.                                                        |
 | Hay una Ejecución activa                                          | Las nuevas peticiones válidas permanecen en cola.                           | Resolver o detener de forma confirmada la activa.                                                                                   |
-| Fallan clonación, instalación o comprobaciones de base            | Intervención de preparación; no empieza el agente.                          | Corregir la causa y revisar los efectos ya realizados. No hay recuperación guiada actual.                                           |
+| Fallan clonación, instalación o comprobaciones de base            | Intervención de preparación; no empieza el agente.                          | Corregir la causa y comentar `Reintentar`; se reutiliza el clon y se repiten las comprobaciones de preparación.                     |
 | El agente pide información o una confirmación de producto         | `waiting`, con las dudas publicadas en el issue y el puesto ocupado.        | Responder con un comentario nuevo en el issue. El primer comentario humano vuelve al mismo thread sin comprobar permisos del autor. |
 | Hay una solicitud técnica de permiso pendiente                    | Se mantienen los controles técnicos existentes.                             | Un comentario de aclaración no concede permisos adicionales.                                                                        |
-| Falla el agente, la autenticación o su proceso                    | Intervención, sin reenvío ni cambio automático de modelo.                   | Revisar el error y el estado del proceso.                                                                                           |
+| Falla el agente, la autenticación o su proceso                    | Intervención, sin reenvío ni cambio automático de modelo.                   | Revisar el error, corregir la causa local si procede y comentar `Reintentar` o `Corregir: instrucciones`.                           |
 | Quedan cambios sin commit o no se confirma la parada del agente   | No se fija un Commit candidato acreditado.                                  | Resolver la incertidumbre; no aceptar el resultado como verificado.                                                                 |
-| Cambian controles protegidos o fallan comandos                    | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el Commit candidato. No se encarga una corrección automática.                                                               |
+| Cambian controles protegidos o fallan comandos                    | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el Commit candidato y pedir `Corregir: instrucciones`, o `Reintentar` tras corregir la causa. No hay corrección automática. |
 | Evidencia truncada, informe E2E ausente, cero pruebas u omisiones | No se aprueba técnicamente aunque el comando devuelva cero.                 | Obtener evidencia suficiente mediante una recuperación deliberada.                                                                  |
 
 ## Variantes de PR, preview y revisión
 
-| Situación                                                                                 | Resultado y continuación                                                                                                                   |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Deployment aún no observado, `pending` o `inactive`                                       | Esperar; no declarar build fallida.                                                                                                        |
-| Preview protegida o con acceso sin acreditar                                              | No habilitar aceptación efectiva ni merge; resolver el acceso conservando la protección.                                                   |
-| Deployment declara `failure` o `error`                                                    | Intervención. La observación posterior puede detectar nuevos hechos antes del merge; no hay reparación automática de código.               |
-| Error al consultar GitHub o Vercel                                                        | Registrar falta de observación. Si había aceptación, intentar retirar el control favorable y mostrar si la revocación no se confirmó.      |
-| Push, PR o comentario ocurrió, pero se perdió su confirmación                             | Consultar si el efecto ya existe antes de repetirlo para evitar duplicados. Un reinicio impone además recuperación autorizada.             |
-| Cambia el SHA publicado                                                                   | Invalidar evidencia y aceptación anteriores; obtener el nuevo head y repetir verificación, preview e informe.                              |
-| Se edita o elimina informe o fragmento                                                    | Retirar aceptación; volver a publicar informe vigente y exigir otra aceptación posterior.                                                  |
-| Aceptación temprana, editada, ambigua, antigua o sin permiso                              | No aceptar. Si es ambigua, pedir un comentario nuevo que identifique SHA y preview.                                                        |
-| Comentario propio, de bot o ya consumido                                                  | No genera una aceptación nueva. Una cuenta compartida no acredita separación técnica entre persona y Factory.                              |
-| Una persona hace una consulta                                                             | No acepta ni inicia otro Intento.                                                                                                          |
-| Se retira el permiso de quien aceptó o se altera su comentario                            | Revocar la aceptación vigente al observarlo; hace falta otra aceptación válida.                                                            |
-| Una persona con escritura da una orden reconocida de corrección, revocación o cancelación | Retirar aceptación y bloquear el avance en intervención. No aplicar automáticamente la corrección ni dar por detenidos todos los procesos. |
-| Cambia título o cuerpo de la petición                                                     | No bloquea el avance, la aceptación ni el cierre. El encargo capturado no cambia y el issue no se readmite.                                |
-| Se cierra la PR sin merge                                                                 | Intervención; no completar ni asumir que se publicó.                                                                                       |
-| Se retira `factory:ready` después de la admisión                                          | El trabajo ya admitido no se cancela.                                                                                                      |
+| Situación                                                              | Resultado y continuación                                                                                                                                            |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deployment aún no observado, `pending` o `inactive`                    | Esperar; no declarar build fallida.                                                                                                                                 |
+| Preview protegida o con acceso sin acreditar                           | No habilitar aceptación efectiva ni merge; resolver el acceso conservando la protección.                                                                            |
+| Deployment declara `failure` o `error`                                 | Intervención. La observación posterior puede detectar nuevos hechos antes del merge; no hay reparación automática de código.                                        |
+| Error al consultar GitHub o Vercel                                     | Registrar falta de observación. Si había aceptación, intentar retirar el control favorable y mostrar si la revocación no se confirmó.                               |
+| Push, PR o comentario ocurrió, pero se perdió su confirmación          | Consultar si el efecto ya existe antes de repetirlo para evitar duplicados. Un reinicio impone además recuperación autorizada.                                      |
+| Cambia el SHA publicado                                                | Invalidar evidencia y aceptación anteriores; obtener el nuevo head y repetir verificación, preview e informe.                                                       |
+| Se edita o elimina informe o fragmento                                 | Retirar aceptación; volver a publicar informe vigente y exigir otra aceptación posterior.                                                                           |
+| Aceptación temprana, editada, ambigua, antigua o sin permiso           | No aceptar. Si es ambigua, pedir un comentario nuevo que identifique SHA y preview.                                                                                 |
+| Comentario propio, de bot o ya consumido                               | No genera una aceptación nueva. Una cuenta compartida no acredita separación técnica entre persona y Factory.                                                       |
+| Una persona hace una consulta                                          | No acepta ni inicia otro Intento.                                                                                                                                   |
+| Se retira el permiso de quien aceptó o se altera su comentario         | Revocar la aceptación vigente al observarlo; hace falta otra aceptación válida.                                                                                     |
+| Una persona comenta `Corregir: instrucciones` o `Cancelar` en el issue | Sin comprobar permisos: revocar aceptación y ejecutar la corrección o la cancelación solicitada. Cancelar requiere parada confirmada y cierra como no implementado. |
+| Cambia título o cuerpo de la petición                                  | No bloquea el avance, la aceptación ni el cierre. El encargo capturado no cambia y el issue no se readmite.                                                         |
+| Se cierra la PR sin merge                                              | Intervención; no completar ni asumir que se publicó.                                                                                                                |
+| Se retira `factory:ready` después de la admisión                       | El trabajo ya admitido no se cancela.                                                                                                                               |
 
-Para encargar un cambio adicional, crea otro issue con `factory:ready`. Editar el issue admitido no reemplaza el encargo capturado. Los comentarios se envían al agente únicamente cuando está esperando una respuesta a sus dudas; mientras trabaja o después de publicar la PR y la preview no inician otro turno de implementación.
+Para encargar un cambio adicional, crea otro issue con `factory:ready`. Editar el issue admitido no reemplaza el encargo capturado. Los comentarios ordinarios se envían al agente únicamente cuando espera una respuesta a sus dudas. `Corregir: instrucciones` es una orden explícita que puede iniciar otro Intento durante intervención o revisión, incluso con PR y preview publicadas.
 
 Cerrar manualmente el issue antes del merge impide mantener una aceptación efectiva para integrar y puede dejar la publicación en intervención. No equivale a detener la Ejecución ni libera su puesto. El caso de cierre manual después del merge se trata a continuación.
 
@@ -82,7 +99,7 @@ La Factory intenta revocar la aceptación, interrumpir la sesión y detener el g
 
 Solo libera el puesto si confirma la parada necesaria. Si hay procesos o efectos inciertos, o la limpieza de la verificación requiere una terminación forzada, mantiene intervención y reserva. Un fallo de revocación remota puede impedir completar la parada normal de publicación; hay que inspeccionar el estado real.
 
-Una parada confirmada no borra commits, elimina PR, revierte un merge ni retira producción. Un comentario `Cancela` en GitHub revoca y bloquea, pero no equivale a ejecutar la parada operativa de la CLI.
+Una parada confirmada no borra commits, elimina PR, revierte un merge ni retira producción. La orden completa `Cancelar` en el issue ejecuta la parada y cierra como no implementado antes del merge. La CLI `stop` sigue siendo una parada operativa: por sí sola no cierra el issue. La fórmula anterior `Cancela` conserva el bloqueo de revisión; usa `Cancelar` para cancelar la Ejecución.
 
 ## Reinicio y pérdida de evidencia
 
@@ -96,7 +113,7 @@ flowchart TD
     I --> P{"¿Había publicación iniciada?"}
     P -->|"Sí"| O["Observar efectos remotos ya ocurridos<br/>Revocar aceptación activa y exigir recuperación"]
     P -->|"No"| C["Inspeccionar procesos y efectos locales"]
-    O --> H["Sin reanudar push, PR, informes<br/>ni cierre automáticamente"]
+    O --> H["Sin reanudar automáticamente<br/>Publicar aviso y esperar Reintentar"]
 ```
 
 Cerrar la Factory mientras espera una respuesta humana conserva la solicitud, el puesto y la conversación. El comando operativo `stop` sigue cancelando la Ejecución. Si no se confirma la entrega de una respuesta al agente, se registra una incidencia y no se reenvía automáticamente.
@@ -128,4 +145,4 @@ Los tokens y costes mostrados son observaciones o estimaciones de OpenCode. Un c
 
 ## Capacidades que todavía no existen
 
-No hay reintento automático de Intentos, reparación automática tras verificaciones fallidas, recuperación operativa completa, rollback automático ni merge automático. El modo manual `run` sin Managed project es una herramienta de preparación de lectura; en el workflow de issues se rechaza y nunca sustituye a la autorización de GitHub.
+Hay recuperación explícita por comentarios para el flujo del MVP. No hay reintento automático de Intentos, reparación automática tras verificaciones fallidas, recuperación operativa completa, rollback automático ni merge automático. El modo manual `run` sin Managed project es una herramienta de preparación de lectura; en el workflow de issues se rechaza y nunca sustituye a la autorización de GitHub.

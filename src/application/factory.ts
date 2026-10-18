@@ -438,12 +438,13 @@ export class Factory {
     this.persist(run);
     let result;
     try {
-      result = run.process?.exited
-        ? {
-            exited: true,
-            detail: "Owned agent was already confirmed absent",
-          }
-        : await this.agent.stop(run.sessionId);
+      result =
+        (run.request && !run.process) || run.process?.exited
+          ? {
+              exited: true,
+              detail: "Owned agent was already confirmed absent",
+            }
+          : await this.agent.stop(run.sessionId);
     } catch (error) {
       result = { exited: false, detail: `Stop unconfirmed: ${String(error)}` };
     }
@@ -459,6 +460,8 @@ export class Factory {
     this.persist(latest);
     if (result.exited) {
       this.active = null;
+    } else {
+      this.stopping.delete(id);
     }
     return latest;
   }
@@ -466,12 +469,10 @@ export class Factory {
   async restoreConversation(id: string, agent: AgentPort) {
     this.assertRunning(id);
     const run = this.view(id)!;
-    if (
-      run.status !== "waiting" ||
-      !run.sessionId ||
-      !pendingIntervention(run.interventions)
-    ) {
-      throw new Error("A waiting agent conversation is required");
+    if (!run.sessionId || !["waiting", "intervention"].includes(run.status)) {
+      throw new Error(
+        "A waiting or interrupted agent conversation is required",
+      );
     }
     this.record(
       run,

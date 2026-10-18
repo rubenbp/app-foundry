@@ -1,0 +1,264 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { verificationFixture } from "./support/verification.ts";
+import { publicationFixture } from "./support/publication.ts";
+import { recoveryConversation } from "./support/recovery.ts";
+import { execute } from "../src/infrastructure/process.ts";
+
+test("un fallo se avisa una vez y Reintentar vuelve a verificar sin otro Intento del agente", async () => {
+  const conversation = recoveryConversation();
+  const s = verificationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.start();
+    s.commit("catalogue.txt", "defect", "Introduce defect");
+    s.finish();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.match(
+      conversation.comments[0].body,
+      /La Factory necesita intervención/,
+    );
+    assert.match(conversation.comments[0].body, /Corregir: instrucciones/);
+    conversation.add("Reintentar", false);
+    await s.workflow.poll();
+    assert.equal(
+      conversation.comments.filter((c) => c.body.includes("## La Factory"))
+        .length,
+      1,
+    );
+    s.commit("catalogue.txt", "Fixed catalogue", "Fix defect");
+    const retry = conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.verification?.status,
+      "passed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.tasks.length, 1);
+    assert.equal(s.workflow.view(run.id)?.attempt, 1);
+    assert.ok(s.workflow.view(run.id)?.recovery?.consumed.includes(retry.id));
+    await s.workflow.poll();
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptación", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    const branch = run.workspace!.branch;
+    const oldHead = s.facts.remoteHead;
+    s.writer(false);
+    const correction = conversation.add("Corregir: Cambia el texto del pie.");
+    s.facts.comments.push({
+      ...correction,
+      updatedAt: correction.createdAt,
+      source: "issue",
+    });
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "running",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.workflow.view(run.id)?.attempt, 2);
+    assert.equal(s.sessions, 1);
+    assert.deepEqual(s.resumed, [run.sessionId]);
+    assert.equal(s.tasks.at(-1)?.sessionId, run.sessionId);
+    assert.match(s.tasks.at(-1)!.text, /Cambia el texto del pie/);
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+    assert.equal(s.facts.status?.state, "pending");
+    s.commit("footer.txt", "New footer", "Correct footer");
+    s.finish();
+    await s.workflow.poll();
+    const head = s.git("rev-parse", "HEAD");
+    assert.notEqual(head, oldHead);
+    assert.equal(s.facts.remoteHead, head);
+    assert.equal(s.workflow.view(run.id)?.workspace?.branch, branch);
+    assert.equal(s.writes.filter((w) => w.kind === "pull").length, 1);
+    assert.equal(s.workflow.view(run.id)?.verification?.status, "passed");
+    s.facts.preview = {
+      ...s.facts.preview!,
+      head,
+      servedHead: head,
+      id: "preview-2",
+      url: "https://catalogue-correction.vercel.app",
+    };
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    s.writer(true);
+    s.comment();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "completed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("Cancelar desde un comentario sin permisos confirma parada y cierra como no implementado", async () => {
+  const conversation = recoveryConversation();
+  const s = verificationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.start();
+    conversation.add("Cancelar");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "stopped");
+    assert.equal(s.workflow.factory.active, null);
+    assert.deepEqual(conversation.closures, [
+      { repository: s.project.repository, issue: 1 },
+    ]);
+    await s.workflow.poll();
+    assert.equal(conversation.closures.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("Cancelar mantiene el issue abierto y el puesto si la parada no se confirma", async () => {
+  const conversation = recoveryConversation();
+  const s = verificationFixture({
+    issueConversation: conversation.port,
+    stopConfirmed: false,
+  });
+  try {
+    const run = await s.start();
+    conversation.add("Cancelar");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(s.workflow.factory.active, run.id);
+    assert.deepEqual(conversation.closures, []);
+    assert.match(conversation.comments.at(-1)!.body, /parada/i);
+  } finally {
+    s.close();
+  }
+});
+
+for (const command of ["Cancelar", "Corregir: Otro cambio"]) {
+  test(`${command} después del merge conserva la integración y no cierra como no implementado`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      s.comment();
+      await s.workflow.poll();
+      s.merge();
+      conversation.add(command);
+      await s.workflow.poll();
+      assert.equal(
+        s.workflow.view(run.id)?.status,
+        "completed",
+        s.workflow.view(run.id)?.error ?? "",
+      );
+      assert.deepEqual(conversation.closures, []);
+      assert.equal(s.tasks.length, 1);
+    } finally {
+      s.close();
+    }
+  });
+}
+
+test("Reintentar recupera un fallo de instalación reutilizando el clon y entrega el encargo una sola vez", async () => {
+  const conversation = recoveryConversation();
+  let broken = true;
+  const s = verificationFixture({
+    issueConversation: conversation.port,
+    process: async (command, args, options) => {
+      if (command === "/bin/sh" && args.at(-1) === "node --version" && broken) {
+        return { code: 1, output: "Installation failed" };
+      }
+      return execute(command, args, options);
+    },
+  });
+  try {
+    await s.workflow.observe([
+      {
+        repository: s.project.repository,
+        number: 1,
+        title: "Catalogue",
+        body: "Show catalogue",
+        author: "owner",
+        url: `https://github.com/${s.project.repository}/issues/1`,
+      },
+    ]);
+    const run = (await s.workflow.startNext())!;
+    assert.equal(run.status, "intervention");
+    assert.equal(s.tasks.length, 0);
+    const directory = run.workspace!.directory;
+    await s.workflow.poll();
+    broken = false;
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "running",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.workflow.view(run.id)?.workspace?.directory, directory);
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("Reintentar tras un fallo del agente crea otro Intento en el mismo thread", async () => {
+  const conversation = recoveryConversation();
+  const s = verificationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.start();
+    s.emit({ type: "error", text: "Agent failed" });
+    await s.workflow.poll();
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "running");
+    assert.equal(s.workflow.view(run.id)?.attempt, 2);
+    assert.equal(s.sessions, 1);
+    assert.equal(s.tasks.length, 2);
+    assert.deepEqual(s.resumed, [run.sessionId]);
+    assert.match(s.tasks.at(-1)!.text, /Agent failed/);
+  } finally {
+    s.close();
+  }
+});
+
+test("Reintentar después del merge completa el cierre pendiente sin repetir el trabajo del agente", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.merge();
+    s.uncertainEffect("integration-report");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "completed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.tasks.length, 1);
+    assert.deepEqual(conversation.closures, []);
+    assert.equal(s.writes.filter((w) => w.kind === "close-issue").length, 1);
+  } finally {
+    s.close();
+  }
+});

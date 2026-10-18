@@ -21,7 +21,7 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 - `application/runRepository.ts` define persistencia de Ejecuciones, observaciones y evidencias. `infrastructure/persistence/store.ts` conserva SQLite y artefactos atómicos. Un fallo de escritura sigue bloqueando nuevos efectos.
 - `application/verification.ts` define la verificación independiente del Commit candidato. El adaptador ejecuta comandos y comunica progreso, evidencias y cancelación.
 - `application/ports.ts` define admisión desde GitHub, preparación del workspace y propiedad exclusiva del workflow.
-- `application/issueConversation.ts` define lectura y publicación de comentarios del issue. `application/issueInterventions.ts` publica las dudas y entrega el primer comentario humano nuevo a la conversación del agente, sin comprobar permisos del autor.
+- `application/issueConversation.ts` define lectura y publicación de comentarios del issue y cierre como no implementado. `application/issueInterventions.ts` publica las dudas y entrega el primer comentario humano nuevo a la conversación del agente, sin comprobar permisos del autor.
 - `application/publication/ports.ts` define observación y efectos de publicación, resumen de integración y cierre del issue. No ofrece una operación de merge: la integración sigue siendo humana.
 - `composition/factory.ts` crea el repositorio persistente e inyecta el puerto en la Factory. `composition/workflow.ts` conecta propiedad, persistencia y verificación. Las pruebas de integración usan estas mismas funciones con adaptadores externos controlados.
 
@@ -59,4 +59,12 @@ La política de revisión reconoce por ID las respuestas ya entregadas al agente
 
 El runtime de OpenCode se conserva en un directorio privado por Ejecución dentro de la raíz de datos. La conexión autenticada permite volver a observar un servidor propio todavía vivo; si terminó, se inicia otro con el mismo almacenamiento y se recupera la sesión existente. La Factory no crea una conversación alternativa ni reenvía el encargo inicial al recuperar una espera. Las ejecuciones anteriores sin este protocolo mantienen su tratamiento de reinicio.
 
-La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Factory conserva esa espera; `stop` sigue siendo una cancelación explícita. Los fallos operativos, la aceptación del Commit candidato y la publicación conservan sus contratos.
+La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Factory conserva esa espera; `stop` sigue siendo una cancelación explícita. La aceptación del Commit candidato y el merge conservan sus controles de permisos.
+
+## Recuperación explícita del MVP
+
+`domain/recovery.ts` reconoce únicamente las órdenes completas `Reintentar`, `Corregir: instrucciones` y `Cancelar`, y determina las acciones disponibles según el estado y la integración. `application/issueRecovery.ts` publica el aviso de intervención, consume comentarios humanos del issue sin comprobar permisos y delega la operación en el workflow. Los IDs consumidos quedan persistidos y se excluyen de la revisión posterior de la PR. No hay cola de notificaciones ni protocolo adicional para recuperar comunicaciones con GitHub.
+
+El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y aceptación vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview, informe y aceptación.
+
+Cancelar reutiliza la parada operativa y cierra el issue con `state_reason: not_planned` solo después de confirmar la parada. La CLI `stop` conserva su contrato de parada local. Después del merge, la recuperación queda limitada al resumen y al cierre pendientes; no corrige código ni cancela lo integrado.

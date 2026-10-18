@@ -8,8 +8,12 @@ export type RecoveryCommand =
 // Solo las órdenes completas del contrato activan operaciones. El resto sigue siendo conversación.
 export function recoveryCommand(body: string): RecoveryCommand | null {
   const text = body.trim();
-  if (/^Reintentar$/i.test(text)) {return { kind: "retry" };}
-  if (/^Cancelar$/i.test(text)) {return { kind: "cancel" };}
+  if (/^Reintentar$/i.test(text)) {
+    return { kind: "retry" };
+  }
+  if (/^Cancelar$/i.test(text)) {
+    return { kind: "cancel" };
+  }
   const correction = /^Corregir:\s*([\s\S]+)$/i.exec(text);
 
   return correction?.[1].trim()
@@ -22,15 +26,18 @@ export function recoveryActions(run: Run): RecoveryCommand["kind"][] {
     return run.status === "intervention" ? ["retry"] : [];
   }
   const actions: RecoveryCommand["kind"][] = ["cancel"];
-  if (run.status === "intervention") {actions.unshift("retry");}
+  if (run.status === "intervention") {
+    actions.unshift("retry");
+  }
   if (
     run.sessionId &&
     run.workspace &&
     (run.status === "intervention" ||
       run.status === "awaiting_review" ||
       run.status === "awaiting_merge")
-  )
-    {actions.push("correct");}
+  ) {
+    actions.push("correct");
+  }
   return actions;
 }
 

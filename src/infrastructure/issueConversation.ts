@@ -72,4 +72,22 @@ export class GitHubIssueConversation implements IssueConversation {
 
     return this.decode(value, repository, issue);
   }
+
+  async close(repository: string, issue: number) {
+    await this.command(
+      "gh",
+      [
+        "api",
+        `repos/${repository}/issues/${issue}`,
+        "--method",
+        "PATCH",
+        "--input",
+        "-",
+      ],
+      {
+        state: "closed",
+        state_reason: "not_planned",
+      },
+    );
+  }
 }

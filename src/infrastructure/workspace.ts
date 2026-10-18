@@ -74,6 +74,7 @@ export class GitWorkspace implements WorkspacePort {
     id: string,
     project: ManagedProject,
     effect: Effect,
+    retry = false,
   ): Promise<Workspace> {
     if (!/^[a-f0-9-]{36}$/.test(id)) {
       throw new Error("Invalid Ejecución identity");
@@ -84,6 +85,12 @@ export class GitWorkspace implements WorkspacePort {
     const branch = `codex/execution-${id}`;
     await effect("clone", "Create owned clone and branch", async () => {
       if (existsSync(directory)) {
+        if (retry) {
+          return {
+            label: "Reuse owned clone for explicit retry",
+            output: directory,
+          };
+        }
         throw new Error(
           "Clone already exists; inspect uncertain preparation before reuse",
         );

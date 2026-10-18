@@ -49,6 +49,7 @@ export class CandidatePublication {
       !run.verification?.headSha ||
       run.status === "stopped" ||
       run.status === "completed" ||
+      (run.phase !== "publication" && run.status !== "awaiting_preview") ||
       (!run.publication && run.status !== "awaiting_preview")
     ) {
       return;
@@ -56,6 +57,16 @@ export class CandidatePublication {
     run.publication ??= publicationPlan(run.verification.headSha);
     run.phase = "publication";
     const publication = run.publication;
+    if (
+      run.status === "awaiting_preview" &&
+      run.verification.headSha !== publication.head
+    ) {
+      publication.previousHead = publication.head;
+      publication.head = run.verification.headSha;
+      delete publication.acceptance;
+      delete publication.report;
+      delete publication.preview;
+    }
     try {
       this.runtime.save(run);
       let facts = await this.runtime.facts(
@@ -118,7 +129,11 @@ export class CandidatePublication {
           "PR cerrada sin integrar; se requiere intervención.";
       }
       const changedHead = facts.pull?.head ?? facts.remoteHead;
-      if (changedHead && changedHead !== publication.head) {
+      if (
+        changedHead &&
+        changedHead !== publication.head &&
+        changedHead !== publication.previousHead
+      ) {
         delete publication.acceptance;
         delete publication.report;
         delete publication.preview;
@@ -163,7 +178,11 @@ export class CandidatePublication {
         `push:${publication.head}`,
         async () => {
           const head = (await this.runtime.facts(run)).remoteHead;
-          if (head && head !== publication.head) {
+          if (
+            head &&
+            head !== publication.head &&
+            head !== publication.previousHead
+          ) {
             throw new Error("Remote head changed during publication");
           }
           return head === publication.head ? true : undefined;
@@ -173,6 +192,7 @@ export class CandidatePublication {
           return true;
         },
       );
+      delete publication.previousHead;
       publication.pull = await this.runtime.effect(
         run,
         "pull",
@@ -361,6 +381,55 @@ export class CandidatePublication {
 
       this.runtime.save(run);
     }
+  }
+
+  async isMerged(id: string) {
+    const run = this.runtime.factory.view(id)!;
+    if (!run.publication) {
+      return false;
+    }
+    const facts = await this.runtime.port.inspect(this.runtime.context(run), {
+      preview: false,
+    });
+    this.runtime.factory.assertRunning(id);
+    if (facts.pull) {
+      run.publication.pull = facts.pull;
+    }
+    this.runtime.save(run);
+    return Boolean(facts.pull?.merged || run.publication.mergeSha);
+  }
+
+  async invalidate(id: string) {
+    const run = this.runtime.factory.view(id)!;
+    if (!run.publication) {
+      return;
+    }
+    delete run.publication.acceptance;
+    delete run.publication.report;
+    delete run.publication.preview;
+    delete run.publication.blocked;
+    delete run.publication.recoveryRequired;
+    this.runtime.save(run);
+    await this.runtime.setStatus(run, "pending");
+  }
+
+  async retry(id: string) {
+    let run = this.runtime.factory.view(id)!;
+    if (!run.publication) {
+      throw new Error("Publication context required");
+    }
+    if (!run.publication.pull?.merged && !run.publication.mergeSha) {
+      await this.invalidate(id);
+      run = this.runtime.factory.view(id)!;
+    } else {
+      delete run.publication.recoveryRequired;
+      this.runtime.save(run);
+    }
+    run.status = run.publication!.mergeSha
+      ? "closing_issue"
+      : "awaiting_preview";
+    run.error = null;
+    this.runtime.save(run);
   }
 
   async stop(id: string) {

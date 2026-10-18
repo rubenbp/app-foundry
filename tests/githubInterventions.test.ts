@@ -35,3 +35,22 @@ test("la conversación del issue pagina comentarios y publica texto literal sin 
   assert.deepEqual(calls[1].input, { body: "Pregunta\n`$(literal)`" });
   assert.equal(calls.length, 2);
 });
+
+test("cancelar cierra el issue como no implementado mediante state_reason not_planned", async () => {
+  const github = new GitHubIssueConversation(
+    async (executable, args, input) => {
+      assert.equal(executable, "gh");
+      assert.deepEqual(args, [
+        "api",
+        "repos/team/product/issues/7",
+        "--method",
+        "PATCH",
+        "--input",
+        "-",
+      ]);
+      assert.deepEqual(input, { state: "closed", state_reason: "not_planned" });
+      return "{}";
+    },
+  );
+  await github.close("team/product", 7);
+});

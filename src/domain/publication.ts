@@ -32,6 +32,7 @@ export interface Preview {
 }
 export interface Publication {
   head: string;
+  previousHead?: string;
   pull?: PullCandidate;
   preview?: Preview;
   report?: {

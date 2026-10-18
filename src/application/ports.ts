@@ -22,6 +22,7 @@ export interface WorkspacePort {
     id: string,
     project: ManagedProject,
     effect: Effect,
+    retry?: boolean,
   ): Promise<Workspace>;
   validate(workspace: Workspace, project: ManagedProject): Promise<void>;
 }
