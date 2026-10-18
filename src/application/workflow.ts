@@ -15,7 +15,7 @@ import type { AgentPort } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import { verificationPlan } from "../domain/verification.ts";
 import type { CandidateVerification } from "./verification.ts";
-import { CandidatePublication } from "./publication.ts";
+import { CandidatePublication } from "./candidatePublication.ts";
 import {
   type PublicationPort,
   type ProductionPort,
