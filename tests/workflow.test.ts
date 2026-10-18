@@ -65,7 +65,7 @@ function setup() {
   };
 }
 
-test("an Intento retains brief transitions and growing messages, without crediting idle as success", async () => {
+test("un Intento conserva las transiciones breves y los mensajes crecientes, sin considerar el estado inactivo como éxito", async () => {
   const s = setup();
   const run = await s.factory.run("Read package.json");
   s.emit({ type: "status", status: "busy" });
@@ -96,7 +96,7 @@ test("an Intento retains brief transitions and growing messages, without crediti
   s.factory.close();
 });
 
-test("a SQLite write failure prevents sending the task after server startup", async () => {
+test("un fallo de escritura en SQLite impide enviar la tarea tras iniciar el servidor", async () => {
   const s = setup();
   const blocker = new DatabaseSync(join(s.root, "factory.sqlite"));
   s.agent.start = async () => {
@@ -114,7 +114,7 @@ test("a SQLite write failure prevents sending the task after server startup", as
   }
 });
 
-test("stopping while session creation is in flight never sends the task", async () => {
+test("detener durante la creación de una sesión nunca envía la tarea", async () => {
   const s = setup();
   let release!: (session: string) => void;
   let creating!: () => void;
@@ -137,7 +137,7 @@ test("stopping while session creation is in flight never sends the task", async 
   s.factory.close();
 });
 
-test("late observations cannot revive a stopped Ejecución", async () => {
+test("las observaciones tardías no pueden reactivar una Ejecución detenida", async () => {
   const s = setup();
   const run = await s.factory.run("A bounded task");
   await s.factory.stop(run.id);
@@ -149,7 +149,7 @@ test("late observations cannot revive a stopped Ejecución", async () => {
   s.factory.close();
 });
 
-test("pending requests and completion cannot clear an intervention", async () => {
+test("las peticiones pendientes y la finalización no pueden eliminar una intervención", async () => {
   for (const failure of [
     { type: "error", text: "Provider failure" },
     { type: "process-exit", detail: "Unexpected exit" },
@@ -171,7 +171,7 @@ test("pending requests and completion cannot clear an intervention", async () =>
   }
 });
 
-test("permissions remain pending, stop is explicit, and restart preserves history without resending", async () => {
+test("los permisos siguen pendientes, la parada es explícita y reiniciar conserva el historial sin volver a enviar trabajo", async () => {
   const s = setup();
   const run = await s.factory.run("A bounded task");
   s.emit({
@@ -192,7 +192,7 @@ test("permissions remain pending, stop is explicit, and restart preserves histor
   resumed.close();
 });
 
-test("SDK usage replaces each message and zero without valid basis stays unavailable", async () => {
+test("el SDK reemplaza el uso de cada mensaje y el cero sin una base válida sigue sin estar disponible", async () => {
   const s = setup();
   const run = await s.factory.run("Read a file");
   const usage = {
@@ -216,7 +216,7 @@ test("SDK usage replaces each message and zero without valid basis stays unavail
   s.factory.close();
 });
 
-test("artifact persistence failure blocks new effects and no raw secret reaches disk", async () => {
+test("un fallo al guardar artefactos bloquea nuevos efectos y ningún secreto sin sanear llega al disco", async () => {
   const s = setup();
   const run = await s.factory.run("fictional-secret-123");
   s.emit({

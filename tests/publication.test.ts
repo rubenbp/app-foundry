@@ -9,7 +9,7 @@ import { publicationFixture } from "./support/publication.ts";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 
-test("large reports publish the complete accumulated diff and sanitized outputs in bounded comments", async () => {
+test("los informes extensos publican el diff acumulado completo y las salidas saneadas en comentarios acotados", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate(
@@ -44,7 +44,7 @@ test("large reports publish the complete accumulated diff and sanitized outputs 
   }
 });
 
-test("publication persistence failure prevents any remote effect", async () => {
+test("un fallo al guardar la publicación impide cualquier efecto remoto", async () => {
   const s = publicationFixture();
   let blocker: DatabaseSync | undefined;
   try {
@@ -64,7 +64,7 @@ test("publication persistence failure prevents any remote effect", async () => {
   }
 });
 
-test("restart observes an uncertain PR creation but holds intervention without resuming publication", async () => {
+test("tras reiniciar, se detecta una creación de PR incierta y se mantiene la intervención sin reanudar la publicación", async () => {
   const s = publicationFixture();
   try {
     s.uncertainEffect("pull");
@@ -85,7 +85,7 @@ test("restart observes an uncertain PR creation but holds intervention without r
   }
 });
 
-test("an accepted merge preserves its accepted head and integration SHA across repeated observations", async () => {
+test("una integración aceptada conserva su commit aceptado y el SHA integrado en observaciones repetidas", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -106,7 +106,7 @@ test("an accepted merge preserves its accepted head and integration SHA across r
   }
 });
 
-test("an edited or deleted report invalidates acceptance and local stop revokes the merge check", async () => {
+test("editar o borrar el informe invalida la aceptación y detener localmente revoca la comprobación de integración", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -129,7 +129,7 @@ test("an edited or deleted report invalidates acceptance and local stop revokes 
   }
 });
 
-test("early, ambiguous, edited, unauthorized, own and obsolete instructions never accept the result", async () => {
+test("las instrucciones tempranas, ambiguas, editadas, no autorizadas, propias u obsoletas nunca aceptan el resultado", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -177,7 +177,7 @@ test("early, ambiguous, edited, unauthorized, own and obsolete instructions neve
   }
 });
 
-test("a preview must identify the exact head, environment, repository, project and served version", async () => {
+test("la vista previa debe identificar el commit, entorno, repositorio, proyecto y versión servida exactos", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -219,7 +219,7 @@ test("a preview must identify the exact head, environment, repository, project a
   }
 });
 
-test("a lost remote confirmation is reconciled without duplicate push, PR, report or status", async () => {
+test("una confirmación remota perdida se concilia sin duplicar el envío, la PR, el informe ni el estado", async () => {
   for (const effect of ["push", "pull", "comment", "status"]) {
     const s = publicationFixture();
     try {
@@ -254,7 +254,7 @@ test("a lost remote confirmation is reconciled without duplicate push, PR, repor
   }
 });
 
-test("a new head invalidates acceptance and requires a new complete verification, preview and report", async () => {
+test("un commit nuevo invalida la aceptación y requiere una verificación, una vista previa y un informe completos nuevos", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -296,7 +296,7 @@ test("a new head invalidates acceptance and requires a new complete verification
   }
 });
 
-test("a changed request, revoked permission or correction revokes favorable merge status", async () => {
+test("una petición modificada, un permiso revocado o una corrección revocan el estado favorable de integración", async () => {
   for (const change of ["request", "permission", "correction"]) {
     const s = publicationFixture();
     try {
@@ -318,7 +318,7 @@ test("a changed request, revoked permission or correction revokes favorable merg
   }
 });
 
-test("the Workflow publishes a verified candidate and only enables human merge after a later acceptance of its SHA and preview", async () => {
+test("el Workflow publica un candidato verificado y solo permite la integración humana tras aceptar después su SHA y su vista previa", async () => {
   const writes: string[] = [];
   const facts: PublicationFacts = {
     request: {
@@ -437,7 +437,7 @@ test("the Workflow publishes a verified candidate and only enables human merge a
   }
 });
 
-test("an accepted squash merge waits for production, persists public evidence before issue closure and survives restart as completed", async () => {
+test("una integración squash aceptada espera a producción, guarda las evidencias públicas antes de cerrar el issue y sigue completada tras reiniciar", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -485,7 +485,7 @@ test("an accepted squash merge waits for production, persists public evidence be
   }
 });
 
-test("production failure keeps public evidence and the issue open; later polling cannot silently resume", async () => {
+test("un fallo en producción conserva las evidencias públicas y el issue abierto; las consultas posteriores no reanudan el proceso en silencio", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -519,7 +519,7 @@ test("production failure keeps public evidence and the issue open; later polling
   }
 });
 
-test("merge without current human acceptance is an incident even when the issue was manually closed", async () => {
+test("integrar sin una aceptación humana vigente es un incidente, aunque el issue se haya cerrado manualmente", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();

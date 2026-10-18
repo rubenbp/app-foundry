@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/process.ts";
 
-test("the Workflow stops editing before fixing a complete multi-commit candidate and persists independent evidence", async () => {
+test("el Workflow detiene la edición antes de fijar un candidato completo con varios commits y guarda evidencias independientes", async () => {
   const s = verificationFixture();
   try {
     const run = await s.start();
@@ -46,7 +46,7 @@ test("the Workflow stops editing before fixing a complete multi-commit candidate
   }
 });
 
-test("verification catches a defect from an earlier commit even when the last commit does not touch it", async () => {
+test("la verificación detecta un defecto de un commit anterior aunque el último commit no lo modifique", async () => {
   const s = verificationFixture();
   try {
     const run = await s.start();
@@ -69,7 +69,7 @@ test("verification catches a defect from an earlier commit even when the last co
   }
 });
 
-test("a large accumulated diff and command output are retained completely after sanitation", async () => {
+test("el diff acumulado y la salida extensos se conservan íntegros tras el saneamiento", async () => {
   let checks = 0;
   const s = verificationFixture({
     process: async (command, args, options) => {
@@ -120,7 +120,7 @@ test("a large accumulated diff and command output are retained completely after 
   }
 });
 
-test("truncated command evidence cannot approve a candidate even with exit zero", async () => {
+test("las evidencias truncadas de un comando no pueden aprobar un candidato, aunque termine con código cero", async () => {
   let checks = 0;
   const s = verificationFixture({
     process: async (command, args, options) => {
@@ -150,7 +150,7 @@ test("truncated command evidence cannot approve a candidate even with exit zero"
   }
 });
 
-test("uncommitted tracked, staged and untracked changes cannot become a verified candidate", async () => {
+test("los cambios versionados sin confirmar, preparados y sin seguimiento no pueden formar un candidato verificado", async () => {
   for (const mode of ["tracked", "staged", "untracked"]) {
     const s = verificationFixture();
     try {
@@ -173,7 +173,7 @@ test("uncommitted tracked, staged and untracked changes cannot become a verified
   }
 });
 
-test("an uncertain agent stop never fixes a head or executes candidate checks", async () => {
+test("una parada incierta del agente nunca fija un commit ni ejecuta comprobaciones del candidato", async () => {
   const s = verificationFixture({ stopConfirmed: false });
   try {
     await s.start();
@@ -188,7 +188,7 @@ test("an uncertain agent stop never fixes a head or executes candidate checks", 
   }
 });
 
-test("removed commands and deleted, skipped, exclusive or weakened tests require human intervention", async () => {
+test("quitar comandos o borrar, omitir, aislar o debilitar pruebas requiere intervención humana", async () => {
   for (const change of ["command", "delete", "skip", "only", "weaken"]) {
     const s = verificationFixture({
       files: {
@@ -230,7 +230,7 @@ test("removed commands and deleted, skipped, exclusive or weakened tests require
   }
 });
 
-test("new behavioral tests remain allowed", async () => {
+test("se permiten pruebas de comportamiento nuevas", async () => {
   const s = verificationFixture();
   try {
     await s.start();
@@ -248,7 +248,7 @@ test("new behavioral tests remain allowed", async () => {
   }
 });
 
-test("a newly exclusive test and an edited command source cannot bypass control review", async () => {
+test("una prueba recién aislada y una fuente de comandos editada no pueden eludir la revisión de control", async () => {
   for (const path of ["tests/new.test.js", "check.mjs"]) {
     const s = verificationFixture();
     try {
@@ -272,7 +272,7 @@ test("a newly exclusive test and an edited command source cannot bypass control 
   }
 });
 
-test("polling verifies a finished attempt once and late agent completion cannot reopen editing", async () => {
+test("las consultas verifican una vez el Intento finalizado y una finalización tardía del agente no puede reabrir la edición", async () => {
   const s = verificationFixture();
   try {
     const run = await s.start();
@@ -293,7 +293,7 @@ test("polling verifies a finished attempt once and late agent completion cannot 
   }
 });
 
-test("a command unavailable on the candidate is failed with its output and subsequent commands are not approved", async () => {
+test("si un comando no está disponible en el candidato, falla con su salida y los comandos posteriores no se aprueban", async () => {
   let checks = 0;
   const s = verificationFixture({
     commands: ["node check.mjs", "node --version"],
@@ -329,7 +329,7 @@ test("a command unavailable on the candidate is failed with its output and subse
   }
 });
 
-test("exit zero without an executed E2E report, or with skipped tests, cannot approve the E2E check", async () => {
+test("el código cero sin un informe E2E ejecutado, o con pruebas omitidas, no puede aprobar la comprobación E2E", async () => {
   for (const mode of ["absent", "skipped", "passed"]) {
     const s = verificationFixture({
       commands: ["node e2e.mjs"],
@@ -392,7 +392,7 @@ test("exit zero without an executed E2E report, or with skipped tests, cannot ap
   }
 });
 
-test("cancelling verification kills its real command before releasing the active execution", async () => {
+test("cancelar la verificación termina el comando real antes de liberar la Ejecución activa", async () => {
   const s = verificationFixture({
     commands: ["node wait.mjs"],
     files: {
@@ -423,7 +423,7 @@ test("cancelling verification kills its real command before releasing the active
   }
 });
 
-test("verification records intent before stopping the agent and blocks effects when SQLite is unavailable", async () => {
+test("la verificación registra la intención antes de detener al agente y bloquea efectos si SQLite no está disponible", async () => {
   const s = verificationFixture();
   let stopped = false;
   s.onStop(() => {
@@ -448,7 +448,7 @@ test("verification records intent before stopping the agent and blocks effects w
   }
 });
 
-test("restart retains the verifier process identity and cannot release uncertain command effects", async () => {
+test("tras reiniciar, se conserva la identidad del proceso verificador y no se liberan efectos inciertos del comando", async () => {
   const s = verificationFixture({
     commands: ["node wait.mjs"],
     files: {
@@ -491,7 +491,7 @@ test("restart retains the verifier process identity and cannot release uncertain
   }
 });
 
-test("restart while E2E cleanup is pending retains the slot after the command has exited", async () => {
+test("si se reinicia mientras la limpieza E2E está pendiente, se conserva el turno aunque el comando haya terminado", async () => {
   const server = createServer();
   server.listen(0, "127.0.0.1");
   await once(server, "listening");

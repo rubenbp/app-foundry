@@ -6,8 +6,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { verificationFixture } from "../support/verification.ts";
 
-for (const scenario of ["passed", "occupied", "cancelled"]) {
-  test(`candidate E2E ${scenario}`, async () => {
+for (const scenario of ["passed", "occupied", "cancelled"] as const) {
+  test(`E2E del candidato: ${{ passed: "superado", occupied: "ocupado", cancelled: "cancelado" }[scenario]}`, async () => {
     test.setTimeout(60_000);
     const occupied = scenario === "occupied";
     const server = createServer((_req, response) =>

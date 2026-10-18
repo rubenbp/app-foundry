@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { createWorkflow } from "../src/composition/workflow.ts";
 import { GitHub } from "../src/infrastructure/github.ts";
 
-test("GitHub authorization needs the label actor's effective write permission and unchanged content", async () => {
+test("la autorización de GitHub requiere que quien aplicó la etiqueta tenga permiso efectivo de escritura y que el contenido no haya cambiado", async () => {
   for (const scenario of [
     "writer",
     "reader",

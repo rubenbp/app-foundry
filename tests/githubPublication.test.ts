@@ -13,8 +13,8 @@ for (const gate of [
   "revoked after merge",
   "success only after merge",
   "revoked before merge",
-]) {
-  test(`the Workflow correlates the merge-time gate (${gate}) through the real GitHub/Vercel adapters`, async () => {
+] as const) {
+  test(`el Workflow correlaciona la condición de integración (${({ unchanged: "sin cambios", "merge during preview": "integración durante la vista previa", "revoked after merge": "revocación tras integrar", "success only after merge": "éxito solo tras integrar", "revoked before merge": "revocación antes de integrar" } as const)[gate]}) mediante los adaptadores reales de GitHub y Vercel`, async () => {
     let remoteHead: string | null = null;
     let pull: Record<string, unknown> | null = null;
     let deployment = false;
@@ -311,7 +311,7 @@ for (const gate of [
   });
 }
 
-test("merge protection preserves existing checks and restrictions while requiring a PR, updated branch, Vercel and Factory", async () => {
+test("la protección de integración conserva las comprobaciones y restricciones existentes, y exige una PR, una rama actualizada, Vercel y Factory", async () => {
   const s = verificationFixture();
   try {
     let state: Record<string, unknown> = {
@@ -371,7 +371,7 @@ test("merge protection preserves existing checks and restrictions while requirin
   }
 });
 
-test("the authorized preview transport refuses credentialed URLs and dirty version markers", async () => {
+test("el transporte autorizado de la vista previa rechaza URLs con credenciales y marcadores de versión modificados", async () => {
   const access = new VercelPreviewAccess("/tmp", async () => {
     throw new Error("Transport must not be called");
   });

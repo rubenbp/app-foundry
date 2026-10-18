@@ -3,7 +3,7 @@ import { once } from "node:events";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { publicationFixture } from "../support/publication.ts";
 
-test("panel guides review and human merge with PR, candidate, deployment and report links", async ({
+test("el panel guía la revisión y la integración humana con enlaces a la PR, el candidato, el despliegue y el informe", async ({
   page,
 }) => {
   const s = publicationFixture();
@@ -65,7 +65,7 @@ test("panel guides review and human merge with PR, candidate, deployment and rep
   }
 });
 
-test("panel separates accepted candidate, integration and verified public production in completed history", async ({
+test("el panel distingue el candidato aceptado, la integración y la producción pública verificada en el historial completado", async ({
   page,
 }) => {
   const s = publicationFixture();

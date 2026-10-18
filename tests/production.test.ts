@@ -11,8 +11,8 @@ for (const invalid of [
   "query",
   "marker",
   "coverage",
-]) {
-  test(`production ${invalid} uncertainty cannot close the issue or accredit completion`, async () => {
+] as const) {
+  test(`una incertidumbre de producción (${({ head: "commit", repository: "repositorio", projectId: "identificador del proyecto", environment: "entorno", failure: "fallo", query: "consulta", marker: "marcador", coverage: "cobertura" } as const)[invalid]}) no puede cerrar el issue ni acreditar la finalización`, async () => {
     const s = publicationFixture();
     try {
       const run = await s.candidate();
@@ -48,7 +48,7 @@ for (const invalid of [
   });
 }
 
-test("a manually closed request still requires the complete production proof", async () => {
+test("una Petición cerrada manualmente sigue requiriendo todas las pruebas de producción", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -69,7 +69,7 @@ test("a manually closed request still requires the complete production proof", a
   }
 });
 
-test("an unauthorized correction before merge cannot invalidate a human accepted integration", async () => {
+test("una corrección no autorizada antes de integrar no puede invalidar una integración aceptada por una persona", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -87,7 +87,7 @@ test("an unauthorized correction before merge cannot invalidate a human accepted
 });
 
 for (const inspection of [2, 3, 4, 5, 6, 7]) {
-  test(`a human merge during publication observation ${inspection} preserves acceptance and reaches production`, async () => {
+  test(`una integración humana durante la observación ${inspection} de la publicación conserva la aceptación y llega a producción`, async () => {
     const s = publicationFixture();
     try {
       const run = await s.candidate();
@@ -113,7 +113,7 @@ for (const inspection of [2, 3, 4, 5, 6, 7]) {
   });
 }
 
-test("a stale open PR with a retired preview cannot erase acceptance before observing the merge", async () => {
+test("una PR abierta obsoleta con una vista previa retirada no puede borrar la aceptación antes de observar la integración", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -142,7 +142,7 @@ test("a stale open PR with a retired preview cannot erase acceptance before obse
   }
 });
 
-test("recovery after an observed merge skips status writes without confirming a revocation or resuming", async () => {
+test("tras observar una integración, la recuperación omite cambios de estado sin confirmar una revocación ni reanudar", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -166,7 +166,7 @@ test("recovery after an observed merge skips status writes without confirming a 
   }
 });
 
-test("a revocation written after a concurrent merge preserves the historical accepted report", async () => {
+test("una revocación registrada tras una integración concurrente conserva el informe aceptado histórico", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -199,7 +199,7 @@ test("a revocation written after a concurrent merge preserves the historical acc
   }
 });
 
-test("historical acceptance cannot resume an unresolved operational intervention after a later merge", async () => {
+test("una aceptación histórica no puede reanudar una intervención operativa sin resolver tras una integración posterior", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();

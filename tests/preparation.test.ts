@@ -145,7 +145,7 @@ function fixture(options: { stopConfirmed?: boolean } = {}) {
   };
 }
 
-test("an authorized request verifies its base in an owned branch before delivering every criterion", async () => {
+test("una Petición autorizada verifica su base en una rama propia antes de entregar todos los criterios", async () => {
   const s = fixture();
   try {
     await s.workflow.observe([s.issue]);
@@ -179,7 +179,7 @@ test("an authorized request verifies its base in an owned branch before deliveri
   }
 });
 
-test("a pre-existing base failure requires intervention and never attributes a regression to an agent", async () => {
+test("un fallo previo en la base requiere intervención y nunca atribuye una regresión al agente", async () => {
   const s = fixture();
   s.project.verification.commands = [
     "node -e \"console.log('broken base');process.exit(3)\"",
@@ -199,7 +199,7 @@ test("a pre-existing base failure requires intervention and never attributes a r
   }
 });
 
-test("preparation cannot hand an altered branch to the agent", async () => {
+test("la preparación no puede entregar al agente una rama modificada", async () => {
   const s = fixture();
   s.project.preparation.command = "git checkout -b unexpected";
   try {
@@ -213,7 +213,7 @@ test("preparation cannot hand an altered branch to the agent", async () => {
   }
 });
 
-test("uncertain work reserves its Managed project after the Workflow closes, including another data root", async () => {
+test("el trabajo incierto reserva su Managed project tras cerrar el Workflow, incluso con otra raíz de datos", async () => {
   const s = fixture({ stopConfirmed: false });
   try {
     await s.workflow.observe([s.issue]);
@@ -234,7 +234,7 @@ test("uncertain work reserves its Managed project after the Workflow closes, inc
   }
 });
 
-test("confirmed stop releases the reservation for another data root", async () => {
+test("la parada confirmada libera la reserva para otra raíz de datos", async () => {
   const s = fixture();
   let other: ReturnType<typeof createWorkflow> | undefined;
   try {

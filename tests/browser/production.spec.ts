@@ -18,7 +18,7 @@ for (const scenario of [
   "alias changes",
   "page redirects",
 ] as const) {
-  test(`public production ${scenario}: completion requires visible behavior and a stable integrated version`, async () => {
+  test(`la producción pública (${({ valid: "válida", "wrong text": "texto incorrecto", "dirty marker": "marcador modificado", "alias changes": "cambio de alias", "page redirects": "redirección de página" } as const)[scenario]}): la finalización requiere un comportamiento visible y una versión integrada estable`, async () => {
     const directory = mkdtempSync(join(tmpdir(), "foundry-public-"));
     const key = join(directory, "key.pem");
     const cert = join(directory, "cert.pem");

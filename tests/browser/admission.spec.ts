@@ -8,7 +8,7 @@ import type { Workflow } from "../../src/application/workflow.ts";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import type { Fact } from "../../src/application/agent.ts";
 
-test("panel follows a queued request through base preparation, implementation and GitHub intervention", async ({
+test("el panel sigue una Petición en cola durante la preparación de la base, la implementación y la intervención de GitHub", async ({
   page,
 }) => {
   const root = mkdtempSync(join(tmpdir(), "foundry-queue-panel-"));

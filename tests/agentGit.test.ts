@@ -8,7 +8,7 @@ import { installLocalGitGuard } from "../src/infrastructure/agentGit.ts";
 import { reducedEnvironment } from "../src/infrastructure/process.ts";
 import { verificationFixture } from "./support/verification.ts";
 
-test("an agent build can read its version and commit a candidate while its Git process guard rejects remote effects and changed identity", async () => {
+test("la compilación del agente puede leer su versión y confirmar un candidato, mientras la protección de Git rechaza efectos remotos y cambios de identidad", async () => {
   const s = verificationFixture();
   try {
     const run = await s.start();

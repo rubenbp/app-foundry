@@ -7,7 +7,7 @@ import { createFactory } from "../../src/composition/factory.ts";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
 
-test("panel observes persisted API state, pending work, text outputs and history after restart", async ({
+test("el panel observa el estado persistido de la API, el trabajo pendiente, las salidas de texto y el historial tras reiniciar", async ({
   page,
 }) => {
   const root = mkdtempSync(join(tmpdir(), "foundry-browser-"));
@@ -134,7 +134,7 @@ test("panel observes persisted API state, pending work, text outputs and history
   }
 });
 
-test("local connection and automatic activity warnings use separate clocks and never resend", async ({
+test("la conexión local y los avisos automáticos de actividad usan relojes distintos y nunca vuelven a enviar trabajo", async ({
   page,
 }) => {
   const root = mkdtempSync(join(tmpdir(), "foundry-clock-"));

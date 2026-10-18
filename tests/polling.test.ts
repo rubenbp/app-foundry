@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { setImmediate as flush } from "node:timers/promises";
 import { poll } from "../panel/polling.ts";
 
-test("panel polls immediately, never overlaps, times out, and resumes reads without work submission", async (context) => {
+test("el panel consulta de inmediato, evita solapamientos, agota el plazo y reanuda las lecturas sin enviar trabajo", async (context) => {
   context.mock.timers.enable({ apis: ["setTimeout"] });
   let calls = 0;
   let failures = 0;

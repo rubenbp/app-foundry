@@ -6,7 +6,7 @@ import { OpenCode } from "@opencode/client";
 import { Observer } from "../src/infrastructure/opencode/observer.ts";
 import type { Fact } from "../src/application/agent.ts";
 
-test("SDK observer preserves streamed transitions and reconciles messages and pending requests", async () => {
+test("el observador del SDK conserva las transiciones recibidas y concilia los mensajes y las peticiones pendientes", async () => {
   const server = createServer((req, res) => {
     const path = req.url!.split("?")[0];
     if (path === "/api/event") {
@@ -88,7 +88,7 @@ test("SDK observer preserves streamed transitions and reconciles messages and pe
   }
 });
 
-test("SDK reconciliation reaches messages beyond page 200 and refreshes existing messages", async () => {
+test("la conciliación del SDK alcanza mensajes posteriores a la página 200 y actualiza los mensajes existentes", async () => {
   let updated = false;
   const cursors: (string | null)[] = [];
   const server = createServer((req, res) => {

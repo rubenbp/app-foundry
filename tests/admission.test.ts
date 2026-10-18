@@ -68,7 +68,7 @@ export function setup() {
   return { root, config, agent, tasks };
 }
 
-test("a writer authorizes a fixed request once, even after removing the label or restarting", async () => {
+test("una persona con permiso de escritura autoriza una Petición fija una sola vez, incluso si se quita la etiqueta o se reinicia", async () => {
   const s = setup();
   let workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
@@ -93,7 +93,7 @@ test("a writer authorizes a fixed request once, even after removing the label or
   }
 });
 
-test("ambiguous authorization and missing effective write permission never admit work", async () => {
+test("una autorización ambigua y la falta de permiso efectivo de escritura nunca admiten trabajo", async () => {
   for (const authorization of [
     { ...ready().authorization, canWrite: false },
     { ...ready().authorization, canWrite: null },
@@ -112,7 +112,7 @@ test("ambiguous authorization and missing effective write permission never admit
   }
 });
 
-test("one Managed project excludes a second Workflow even with another data root", () => {
+test("un Managed project excluye un segundo Workflow, incluso con otra raíz de datos", () => {
   const s = setup();
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
@@ -129,7 +129,7 @@ test("one Managed project excludes a second Workflow even with another data root
   }
 });
 
-test("the queue follows observed authorization order with a stable issue tie break", async () => {
+test("la cola sigue el orden observado de autorización y desempata de forma estable por issue", async () => {
   const s = setup();
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
@@ -144,7 +144,7 @@ test("the queue follows observed authorization order with a stable issue tie bre
   }
 });
 
-test("untrusted or incomplete project configuration is rejected before creating an agent", () => {
+test("la configuración del proyecto incompleta o no confiable se rechaza antes de crear un agente", () => {
   const s = setup();
   let started = false;
   assert.throws(
@@ -170,7 +170,7 @@ test("untrusted or incomplete project configuration is rejected before creating 
   assert.equal(started, false);
 });
 
-test("the fixed request retains the selected agent configuration while it waits in the queue", async () => {
+test("la Petición fija conserva la configuración de agente elegida mientras espera en la cola", async () => {
   const s = setup();
   const workflow = createWorkflow(
     { ...s.config, opencodeCli: "/trusted/opencode" },
@@ -189,7 +189,7 @@ test("the fixed request retains the selected agent configuration while it waits 
   }
 });
 
-test("an unauthorized issue cannot block other authorized requests in the same observation", async () => {
+test("un issue no autorizado no puede bloquear otras peticiones autorizadas en la misma observación", async () => {
   const s = setup();
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {

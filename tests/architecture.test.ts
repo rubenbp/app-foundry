@@ -21,7 +21,7 @@ function imports(file: string) {
 }
 
 // Includes erased type imports: contracts must point inward too.
-test("hexagonal layers depend inward and adapters never import composition", () => {
+test("las capas hexagonales dependen hacia dentro y los adaptadores nunca importan composición", () => {
   for (const file of sources) {
     const name = relative(sourceRoot, file);
     const layer = name.split(sep)[0];
@@ -46,7 +46,7 @@ test("hexagonal layers depend inward and adapters never import composition", () 
   }
 });
 
-test("domain and application do not acquire filesystem, network or process effects", () => {
+test("el dominio y la aplicación no acceden al sistema de archivos, la red ni los procesos", () => {
   const effectModules =
     /^node:(?:fs|sqlite|http|https|net|child_process|worker_threads)(?:\/|$)/;
   for (const file of sources) {
@@ -60,7 +60,7 @@ test("domain and application do not acquire filesystem, network or process effec
   }
 });
 
-test("the browser uses shared read contracts without importing backend effects", () => {
+test("el navegador usa contratos de lectura compartidos sin importar efectos del backend", () => {
   const panelRoot = resolve(root, "panel");
   for (const name of readdirSync(panelRoot, {
     recursive: true,
