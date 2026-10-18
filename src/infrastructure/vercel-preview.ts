@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { PublicationContext } from "../application/publication.ts";
+import type { PublicationContext } from "../application/publication/ports.ts";
 import type { Preview } from "../domain/publication.ts";
 import { remoteCommand, type RemoteCommand } from "./remote-command.ts";
 import { record, text, sha, previewOrigin } from "./remote-values.ts";

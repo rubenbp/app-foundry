@@ -11,7 +11,7 @@ import type { ManagedProject } from "../../src/domain/request.ts";
 import type {
   PublicationPort,
   ProductionPort,
-} from "../../src/application/publication.ts";
+} from "../../src/application/publication/ports.ts";
 
 export function verificationFixture(
   options: {

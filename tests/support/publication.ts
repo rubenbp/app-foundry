@@ -3,7 +3,7 @@ import type {
   PublicationPort,
   PublicationFacts,
   ProductionPort,
-} from "../../src/application/publication.ts";
+} from "../../src/application/publication/ports.ts";
 import { verificationFixture } from "./verification.ts";
 
 export function publicationFixture(

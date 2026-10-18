@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "@playwright/test";
-import type { PublicationContext } from "../application/publication.ts";
+import type { PublicationContext } from "../application/publication/ports.ts";
 import type { PublicCheck, PublicEvidence } from "../domain/production.ts";
 
 // A fresh browser has no user credentials. Only public, read-only requests to

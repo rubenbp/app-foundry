@@ -15,11 +15,11 @@ import type { AgentPort } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import { verificationPlan } from "../domain/verification.ts";
 import type { CandidateVerification } from "./verification.ts";
+import { CandidatePublication } from "./publication.ts";
 import {
-  CandidatePublication,
   type PublicationPort,
   type ProductionPort,
-} from "./publication.ts";
+} from "./publication/ports.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;

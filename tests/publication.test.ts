@@ -4,7 +4,7 @@ import { verificationFixture } from "./support/verification.ts";
 import type {
   PublicationPort,
   PublicationFacts,
-} from "../src/application/publication.ts";
+} from "../src/application/publication/ports.ts";
 import { publicationFixture } from "./support/publication.ts";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";

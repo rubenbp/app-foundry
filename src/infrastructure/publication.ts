@@ -5,7 +5,7 @@ import type {
   PublicationFacts,
   PublicationPort,
   ProductionPort,
-} from "../application/publication.ts";
+} from "../application/publication/ports.ts";
 import { verifyPublicProduction } from "./public-production.ts";
 import { mergeContext } from "../domain/publication.ts";
 import type {
