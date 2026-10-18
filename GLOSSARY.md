@@ -21,7 +21,7 @@ Registro de una solicitud de cambio en GitHub. Su contenido puede cambiar y, por
 _Avoid_: Petición autorizada
 
 **Issue autorizado**:
-Issue de GitHub cuyo contenido y autorización se han comprobado y capturado para iniciar una Ejecución. La captura fija el objetivo y los criterios de aceptación; esta autorización permite empezar el trabajo, pero no acepta su resultado.
+Issue de GitHub admitido para iniciar una Ejecución al observar la etiqueta `factory:ready`. Conserva el contenido observado como encargo inicial; permite empezar el trabajo, pero no acepta su resultado.
 _Avoid_: Petición autorizada, cambio aceptado, resultado aprobado
 
 **Ejecución**:

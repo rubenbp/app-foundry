@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 export interface ManagedProject {
   id: string;
   repository: string;
@@ -27,6 +25,7 @@ export interface ManagedProject {
     [key: string]: unknown;
   };
 }
+/** Open issue returned by GitHub's factory:ready query; no actor accreditation is required. */
 export interface ReadyIssue {
   repository: string;
   number: number;
@@ -34,14 +33,6 @@ export interface ReadyIssue {
   body: string;
   author: string;
   url: string;
-  updatedAt: string;
-  authorization: {
-    id: string;
-    actor: string;
-    at: string;
-    canWrite: boolean | null;
-    contentUnchanged: boolean;
-  };
 }
 export interface AgentConfiguration {
   provider: string;
@@ -51,7 +42,6 @@ export interface AgentConfiguration {
 }
 export interface AuthorizedIssue extends ReadyIssue {
   capturedAt: number;
-  contentHash: string;
   configuration: ManagedProject;
   runtime: AgentConfiguration;
 }
@@ -62,7 +52,7 @@ export interface Workspace {
   instructions: { path: string; text: string }[];
 }
 
-export function authorize(
+export function captureIssue(
   issue: ReadyIssue,
   config: ManagedProject,
   at: number,
@@ -76,36 +66,19 @@ export function authorize(
     throw new Error("Issue does not belong to the configured Managed project");
   }
   if (
-    !issue.authorization.id ||
-    !issue.authorization.actor ||
-    issue.authorization.canWrite !== true
-  ) {
-    throw new Error("Effective write permission could not be confirmed");
-  }
-  if (
-    !issue.authorization.contentUnchanged ||
-    !Number.isFinite(Date.parse(issue.authorization.at)) ||
-    issue.updatedAt !== issue.authorization.at
-  ) {
-    throw new Error(
-      "Authorization cannot be linked unambiguously to captured content",
-    );
-  }
-  if (
     issue.url !==
     `https://github.com/${config.repository}/issues/${issue.number}`
   ) {
     throw new Error("Untrusted issue link");
   }
-  if (!issue.title.trim() || !issue.body.trim()) {
-    throw new Error("Complete request and acceptance criteria required");
-  }
   return structuredClone({
-    ...issue,
+    repository: issue.repository,
+    number: issue.number,
+    title: issue.title,
+    body: issue.body,
+    author: issue.author,
+    url: issue.url,
     capturedAt: at,
-    contentHash: createHash("sha256")
-      .update(JSON.stringify([issue.title, issue.body]))
-      .digest("hex"),
     configuration: config,
     runtime,
   });

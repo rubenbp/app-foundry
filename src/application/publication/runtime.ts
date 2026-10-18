@@ -166,8 +166,6 @@ export class PublicationRuntime {
         const facts = await this.facts(run, false);
         if (
           !facts.request.open ||
-          facts.request.title !== run.request!.title ||
-          facts.request.body !== run.request!.body ||
           facts.pull?.head !== run.publication!.head ||
           !facts.pull.open ||
           facts.pull.merged

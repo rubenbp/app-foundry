@@ -296,8 +296,43 @@ test("un commit nuevo invalida la aceptación y requiere una verificación, una 
   }
 });
 
-test("una petición modificada, un permiso revocado o una corrección revocan el estado favorable de integración", async () => {
-  for (const change of ["request", "permission", "correction"]) {
+test("editar título y descripción no bloquea publicación, aclaración ni aceptación del candidato capturado", async () => {
+  const s = publicationFixture();
+  try {
+    s.onInspect(() => {
+      s.issue.title = "Otro título";
+      s.issue.body = "Otros criterios";
+    });
+    const run = await s.candidate();
+    const capturedBody = run.request!.body;
+    s.onInspect(() => {});
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    s.comment("Acepto esta versión.");
+    await s.workflow.poll();
+    assert.ok(
+      s.writes.some((write) =>
+        write.body?.includes("La referencia no identifica"),
+      ),
+    );
+    s.comment();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    s.issue.body = "Otra edición después de aceptar";
+    await s.workflow.poll();
+    assert.equal(s.facts.status?.state, "success");
+    assert.ok(s.workflow.view(run.id)?.publication?.acceptance);
+    assert.equal(s.workflow.view(run.id)?.request?.body, capturedBody);
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+  } finally {
+    s.close();
+  }
+});
+
+test("un permiso revocado o una corrección revocan el estado favorable de integración", async () => {
+  for (const change of ["permission", "correction"]) {
     const s = publicationFixture();
     try {
       const run = await s.candidate();
@@ -305,9 +340,6 @@ test("una petición modificada, un permiso revocado o una corrección revocan el
       s.comment();
       await s.workflow.poll();
       assert.equal(s.facts.status?.state, "success");
-      if (change === "request") {
-        s.facts.request.body += "Changed criteria";
-      }
       if (change === "permission") {
         s.writer(false);
       }
@@ -327,8 +359,6 @@ test("el Workflow publica un Commit candidato verificado y solo permite la integ
   const writes: string[] = [];
   const facts: PublicationFacts = {
     request: {
-      title: "Accessible catalogue",
-      body: "## Acceptance criteria\n- Keep keyboard navigation.\n- Show the catalogue.",
       open: true,
     },
     remoteHead: null,

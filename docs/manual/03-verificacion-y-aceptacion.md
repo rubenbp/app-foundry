@@ -108,9 +108,9 @@ flowchart TD
     C -->|"Preview deja de ser válida"| P["Retirar aceptación y esperar preview válida"]
     C -->|"Informe o fragmento editado o eliminado"| I["Invalidar informe y aceptación<br/>Publicar informe vigente y pedir nueva aceptación"]
     C -->|"Permiso retirado o aceptación alterada"| H["Revocar aceptación<br/>Requerir una aceptación válida"]
-    C -->|"Petición cambia, PR se cierra sin merge<br/>o llega orden de corrección o cancelación"| X["Intervención"]
+    C -->|"PR se cierra sin merge<br/>o llega orden de corrección o cancelación"| X["Intervención"]
 ```
 
-Un nuevo SHA provoca reverificación automática del Commit candidato publicado; no crea otro Intento del agente. Una petición modificada necesita revisión y nueva autorización, pero el issue ya consumido no vuelve a entrar por quitar y poner la etiqueta.
+Un nuevo SHA provoca reverificación automática del Commit candidato publicado; no crea otro Intento del agente. Editar el título o el cuerpo del issue no actualiza el encargo capturado ni invalida la aceptación. El issue ya consumido no vuelve a entrar por quitar y poner la etiqueta.
 
 La Factory observa por consultas periódicas. La revocación no es instantánea y un fallo de red puede impedir confirmar su escritura en GitHub. El dashboard conserva esa incertidumbre. El control favorable debe combinarse con las protecciones de la rama y el merge humano.

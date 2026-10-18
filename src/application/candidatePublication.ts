@@ -108,13 +108,6 @@ export class CandidatePublication {
         await this.integration.advance(run, facts);
         return;
       }
-      const intact =
-        facts.request.title === run.request.title &&
-        facts.request.body === run.request.body;
-      if (!intact) {
-        publication.blocked =
-          "Issue autorizado alterado o cerrado; se requiere intervención y una nueva autorización.";
-      }
       if (facts.pull && !facts.pull.open) {
         publication.blocked =
           "PR cerrada sin integrar; se requiere intervención.";
@@ -186,12 +179,7 @@ export class CandidatePublication {
         await this.runtime.setStatus(run, "pending");
       }
       facts = await this.runtime.facts(run);
-      if (
-        facts.pull?.head !== publication.head ||
-        facts.request.title !== run.request.title ||
-        facts.request.body !== run.request.body ||
-        !facts.request.open
-      ) {
+      if (facts.pull?.head !== publication.head || !facts.request.open) {
         throw new Error(
           "Candidate or request changed during observation; acceptance blocked",
         );

@@ -120,14 +120,6 @@ function fixture(options: { stopConfirmed?: boolean } = {}) {
       "Keep every criterion verbatim.\n".repeat(3000),
     author: "product-owner",
     url: `https://github.com/${project.repository}/issues/17`,
-    updatedAt: "2026-10-17T10:00:00Z",
-    authorization: {
-      id: "event17",
-      actor: "writer",
-      at: "2026-10-17T10:00:00Z",
-      canWrite: true,
-      contentUnchanged: true,
-    },
   };
 
   return {
@@ -173,6 +165,21 @@ test("un Issue autorizado verifica su base en una rama propia antes de entregar 
     ]);
     assert.equal(await s.workflow.startNext(), null);
     assert.equal(s.workflow.queue().length, 1);
+  } finally {
+    s.workflow.close();
+  }
+});
+
+test("un issue sin descripción llega al agente con su título como encargo inicial", async () => {
+  const s = fixture();
+  s.issue.body = "";
+  try {
+    await s.workflow.observe([s.issue]);
+    const run = await s.workflow.startNext();
+    assert.equal(run?.status, "running", run?.error ?? "");
+    assert.equal(run.request?.body, "");
+    assert.equal(s.tasks.length, 1);
+    assert.ok(s.tasks[0].includes(s.issue.title));
   } finally {
     s.workflow.close();
   }

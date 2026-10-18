@@ -14,9 +14,9 @@ Los pasos técnicos están en el [README](../../README.md) y la [guía de Vercel
 
 ## Preparar y autorizar la petición
 
-El issue debe explicar el objetivo y los criterios de aceptación en lenguaje natural. Encabezados y listas son opcionales; se acepta texto seguido. El contexto y los límites son opcionales. La persona no necesita preparar pruebas técnicas, selectores ni JSON: la Factory decide las comprobaciones anteriores al merge. Si falta una decisión de producto, el agente pide una aclaración concreta antes de implementar.
+Conviene explicar el objetivo y el resultado esperado en lenguaje natural. Encabezados, listas, contexto y límites son opcionales. La persona no necesita preparar pruebas técnicas, selectores ni JSON: la Factory decide las comprobaciones anteriores al merge. La admisión acepta también contenido vacío o incompleto; el agente decide si falta información relevante y pide una aclaración antes de implementar.
 
-La persona revisa el contenido estable y aplica `factory:ready`. Debe tener permiso efectivo de escritura; ser quien creó el issue no basta. La autorización queda ligada al evento de la etiqueta y al contenido observado.
+Basta con que el issue esté abierto en el repositorio del Managed project y tenga `factory:ready`. La Factory confía en la gestión de etiquetas de GitHub: no comprueba quién la aplicó, sus permisos, si es un bot ni cuándo se editó el contenido. Las PR no son una entrada alternativa.
 
 ```mermaid
 flowchart TD
@@ -24,20 +24,16 @@ flowchart TD
     R -->|"No"| O["No es una entrada admisible"]
     R -->|"Sí"| U{"¿Ya existe una Ejecución para este issue?"}
     U -->|"Sí"| D["No crear otra Ejecución"]
-    U -->|"No"| P{"¿La etiqueta la aplicó una persona<br/>con escritura acreditada?"}
-    P -->|"No o no se puede comprobar"| N["No admitir<br/>Revisar permiso y autorización"]
-    P -->|"Sí"| C{"¿Título y cuerpo completos y estables<br/>vinculados a esa autorización?"}
-    C -->|"No o ambiguo"| E["Estabilizar el contenido<br/>y volver a aplicar la etiqueta"]
-    C -->|"Sí"| A["Capturar Issue autorizado<br/>Crear Ejecución en cola"]
+    U -->|"No"| A["Capturar Issue autorizado<br/>Crear Ejecución en cola"]
 ```
 
-La Factory consulta eventos, permisos, ediciones y una segunda lectura del issue. Una edición simultánea o posterior puede impedir acreditar la autorización; incluso otra actividad que actualice el issue puede exigir autorizar de nuevo. La comprobación es conservadora y no elimina todas las carreras posibles con GitHub.
+La Factory obtiene los issues mediante una consulta paginada de abiertos con `factory:ready` y captura el contenido devuelto. No consulta eventos, permisos ni ediciones para admitirlos.
 
-La admisión comprueba contenido y autorización, sin imponer una plantilla. Si el objetivo o los criterios necesitan una decisión de producto, el agente pregunta antes de implementar. El Dashboard muestra la solicitud pendiente.
+La suficiencia del contenido corresponde al agente, fuera del proceso determinista de admisión. Si pide información o un permiso, el Dashboard muestra la solicitud pendiente. Hoy la Factory no publica esa pregunta en el issue ni devuelve comentarios humanos a la conversación del agente.
 
 ## Qué queda fijado
 
-El Issue autorizado conserva título, cuerpo, autor, evento y persona que autoriza, huella del contenido, configuración del Managed project y selección del agente. La Ejecución trabaja sobre esa captura; editar el issue no actualiza su objetivo automáticamente.
+El Issue autorizado conserva título, cuerpo, autor, momento de captura, configuración del Managed project y selección del agente. La captura sirve como encargo inicial y bitácora. Editar el título o el cuerpo después no actualiza el encargo ni bloquea la Ejecución, su aceptación o su cierre. Los registros históricos con datos antiguos de autorización siguen siendo legibles, pero esos datos ya no condicionan la admisión ni la cola.
 
 Cada issue se consume una sola vez dentro del historial persistido. Retirar y volver a aplicar la etiqueta después de admitirlo no crea otra Ejecución. Reabrirlo tampoco es un mecanismo de reintento. Retirar la etiqueta no cancela el trabajo ya admitido.
 
@@ -59,7 +55,7 @@ flowchart TD
     F --> S["Atender siguiente petición"]
 ```
 
-La prioridad sigue el orden en que se observa la autorización. En una misma consulta, fecha de autorización, número de issue e identidad desempatan de forma estable. No es una cola ordenada solo por antigüedad de creación del issue.
+La prioridad sigue el momento de primera observación. En una misma consulta, el número de issue y la identidad de la Ejecución desempatan de forma estable.
 
 La cola sobrevive a un reinicio. Dos procesos no pueden usar a la vez la misma raíz de datos ni el mismo Managed project.
 
@@ -72,9 +68,9 @@ sequenceDiagram
     participant F as Factory
     participant W as Clon propio
     participant A as Agente OpenCode
-    H->>G: Aplicar factory:ready al issue estable
-    F->>G: Consultar issue, evento, permisos y ediciones
-    G-->>F: Contenido y autorización observados
+    H->>G: Aplicar factory:ready
+    F->>G: Consultar issues abiertos con factory:ready
+    G-->>F: Contenido observado
     F->>F: Capturar petición y reservar turno
     F->>W: Clonar y crear codex/execution-ID
     F->>W: Capturar base e instrucciones
@@ -94,4 +90,4 @@ Comprobar primero la base permite distinguir un problema anterior de una regresi
 
 El agente recibe la petición fijada, las instrucciones de la base y los comandos permitidos. Puede cambiar el producto y crear commits locales. La Factory conserva el control del push, la PR, los informes y los estados remotos. No entrega al agente las credenciales de publicación.
 
-Si el agente pide un permiso o hace una pregunta, la Ejecución queda esperando. El dashboard muestra la solicitud, pero todavía no permite responder o continuar de forma guiada. Hoy se inspecciona y se detiene si hace falta. Un error de autenticación, modelo o proceso exige intervención; no hay cambio automático de proveedor ni reenvío de la tarea.
+Si el agente pide un permiso o hace una pregunta, la Ejecución queda esperando y conserva el puesto. El Dashboard muestra la solicitud. La Factory no publica automáticamente la intervención en el issue ni envía las respuestas humanas a la misma sesión. El enlace para registrar una intervención en GitHub es manual; añadir un comentario no reanuda al agente. Hoy se inspecciona y se detiene si hace falta. La continuación mediante comentarios queda para otro cambio. Un error de autenticación, modelo o proceso exige intervención; no hay cambio automático de proveedor ni reenvío de la tarea.

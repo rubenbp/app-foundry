@@ -108,7 +108,7 @@ export class Factory {
 
   enqueue(task: string, request?: AuthorizedIssue) {
     this.assertWritable();
-    if (!task.trim()) {
+    if (!request && !task.trim()) {
       throw new Error("Task required");
     }
     const run: Run = {

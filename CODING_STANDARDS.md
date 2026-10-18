@@ -69,7 +69,7 @@ La configuración del repositorio define formato y comprobaciones mecánicas. Pa
 ## Seguridad y protección de datos
 
 - Trata como no confiables las entradas de usuarios, archivos, red, herramientas y modelos. Comprueba formato, tamaño y valores permitidos antes de usarlas, y tradúcelas a tipos internos válidos.
-- Comprueba permisos para la acción y el recurso en la frontera que ejecuta el efecto. Aplica mínimo privilegio y vincula las autorizaciones sensibles al objeto y la versión que autorizan.
+- Comprueba permisos para la acción y el recurso en la frontera que ejecuta el efecto. Aplica mínimo privilegio y vincula las autorizaciones sensibles al objeto y la versión que autorizan. En la admisión del MVP, `factory:ready` es autorización suficiente: la Factory confía en la gestión de etiquetas de GitHub y no acredita al actor. La aceptación del resultado y el merge conservan sus controles de permisos.
 - Mantén separados instrucciones, datos y código ejecutable. Usa consultas parametrizadas, argumentos de proceso separados de la shell, codificación de salida según el contexto y rutas resueltas y restringidas al ámbito permitido.
 - Rechaza o aísla entradas capaces de escapar de su ámbito: rutas, comandos, URLs y contenido generado necesitan controles acordes con la operación que habilitan.
 - Obtén credenciales mediante los mecanismos de configuración previstos y expón solo los datos necesarios. Excluye secretos y datos sensibles de código, fixtures, errores, logs y respuestas públicas.

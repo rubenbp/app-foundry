@@ -14,7 +14,7 @@ export interface PublicationContext {
   pull?: PullCandidate;
 }
 export interface PublicationFacts {
-  request: { title: string; body: string; open: boolean };
+  request: { open: boolean };
   remoteHead: string | null;
   pull: PullCandidate | null;
   comments: ConversationComment[];

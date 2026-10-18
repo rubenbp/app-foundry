@@ -12,12 +12,12 @@ Crear el issue en el repositorio del **Managed project**, con un título como «
 Quiero mostrar «Otra partida.» en el pie. La página de inicio debe mostrar ese mensaje y el enlace del pie de la página Sobre debe seguir permitiendo volver al inicio.
 ```
 
-También se pueden usar encabezados de objetivo y criterios, listas o contexto adicional. Son ayudas de escritura, no requisitos del formato. La Factory prepara las comprobaciones técnicas; si falta una decisión de producto, pide una aclaración concreta en lenguaje natural.
+También se pueden usar encabezados de objetivo y criterios, listas o contexto adicional. Son ayudas de escritura, no requisitos del formato. La Factory prepara las comprobaciones técnicas. El agente decide si falta información y pide una aclaración concreta; la solicitud queda en el Dashboard. Hoy no se publica automáticamente en el issue ni se reanuda con una respuesta en GitHub.
 
 ## Pasos de la persona responsable
 
 1. **Revisar la petición.** Confirmar que el objetivo y el resultado esperado se entienden.
-2. **Autorizar en GitHub.** Una persona con escritura aplica `factory:ready` al contenido estable.
+2. **Autorizar en GitHub.** Aplicar `factory:ready` al issue abierto. La Factory no acredita al actor ni exige contenido completo.
 3. **Seguir la Ejecución.** Consultar el Dashboard y cualquier pregunta o intervención. Retirar la etiqueta no cancela un trabajo admitido.
 4. **Revisar la PR y su informe.** Leer diff, resultados y lagunas del Commit candidato vigente.
 5. **Probar la preview.** El creador del issue se responsabiliza de conseguir la revisión de cada criterio en la URL del informe.
@@ -30,7 +30,7 @@ También se pueden usar encabezados de objetivo y criterios, listas o contexto a
 ```mermaid
 flowchart TD
     R["Estoy revisando un issue"] --> A{"¿Se ha admitido ya?"}
-    A -->|"No"| P["Completar petición y autorizar contenido estable"]
+    A -->|"No"| P["Comprobar repositorio e issue abierto<br/>y aplicar factory:ready"]
     A -->|"Sí"| C{"¿Hay informe y preview vigentes?"}
     C -->|"No"| E["Consultar fase y causa en el dashboard"]
     C -->|"Sí"| B{"¿Cumple todos los criterios?"}
@@ -47,7 +47,7 @@ flowchart TD
 
 | Evidencia                                  | Qué demuestra                                                           |
 | ------------------------------------------ | ----------------------------------------------------------------------- |
-| Issue autorizado                           | Qué se autorizó y quién lo autorizó.                                    |
+| Issue autorizado                           | Qué contenido se capturó al observar `factory:ready`.                   |
 | Base comprobada                            | Sobre qué versión empezó el trabajo y si ya tenía problemas.            |
 | Diff y verificaciones del Commit candidato | Qué cambió y qué controles técnicos superó.                             |
 | Preview e informe                          | Qué versión se presentó a revisión y con qué evidencia.                 |

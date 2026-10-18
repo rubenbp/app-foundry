@@ -83,8 +83,6 @@ export class IntegratedPublication {
         pull.head !== accepted.head ||
         accepted.head !== publication.head ||
         accepted.at >= pull.mergedAt ||
-        facts.request.title !== run.request!.title ||
-        facts.request.body !== run.request!.body ||
         !report ||
         !reportIntact(run, facts, report) ||
         !comment ||
@@ -126,14 +124,10 @@ export class IntegratedPublication {
       this.runtime.save(run);
     }
     if (
-      facts.request.title !== run.request!.title ||
-      facts.request.body !== run.request!.body ||
       pull.head !== publication.integratedAcceptance!.head ||
       !pull.mergeSha
     ) {
-      throw new Error(
-        "Request or integrated candidate changed; issue closure blocked",
-      );
+      throw new Error("Integrated candidate changed; issue closure blocked");
     }
     run.status = "closing_issue";
     run.error = null;
@@ -153,12 +147,7 @@ export class IntegratedPublication {
       `integration-report:${pull.mergeSha}`,
       async () => {
         const current = await this.runtime.facts(run, false);
-        if (
-          current.request.title !== run.request!.title ||
-          current.request.body !== run.request!.body
-        ) {
-          throw new Error("Request changed before integration report");
-        }
+
         return current.comments.find(
           (comment) => comment.source === "issue" && comment.body === body.text,
         );
@@ -177,15 +166,11 @@ export class IntegratedPublication {
       async () => {
         const current = await this.runtime.facts(run, false);
         if (
-          current.request.title !== run.request!.title ||
-          current.request.body !== run.request!.body ||
           !current.comments.some(
             (comment) => comment.id === report.id && comment.body === body.text,
           )
         ) {
-          throw new Error(
-            "Integration report or request changed before closure",
-          );
+          throw new Error("Integration report changed before closure");
         }
         return current.request.open ? undefined : true;
       },

@@ -7,14 +7,15 @@ import { verificationFixture } from "./verification.ts";
 
 export function publicationFixture(options: { body?: string } = {}) {
   const writes: { kind: string; body?: string }[] = [];
+  const issue = {
+    title: "Accessible catalogue",
+    body:
+      options.body ??
+      "## Acceptance criteria\n- Keep keyboard navigation.\n- Show the catalogue.",
+    open: true,
+  };
   const facts: PublicationFacts = {
-    request: {
-      title: "Accessible catalogue",
-      body:
-        options.body ??
-        "## Acceptance criteria\n- Keep keyboard navigation.\n- Show the catalogue.",
-      open: true,
-    },
+    request: issue,
     remoteHead: null,
     pull: null,
     comments: [],
@@ -127,7 +128,7 @@ export function publicationFixture(options: { body?: string } = {}) {
   };
   const s = verificationFixture({
     publication: port,
-    body: facts.request.body,
+    body: issue.body,
   });
 
   return {
@@ -140,6 +141,7 @@ export function publicationFixture(options: { body?: string } = {}) {
     },
     writes,
     facts,
+    issue,
     onInspect(callback: (inspection: number) => PublicationFacts | void) {
       onInspect = callback;
     },

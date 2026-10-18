@@ -7,9 +7,6 @@ export function queuedRuns(runs: Run[]) {
       (a, b) =>
         (a.request?.capturedAt ?? a.startedAt) -
           (b.request?.capturedAt ?? b.startedAt) ||
-        (a.request?.authorization.at ?? "").localeCompare(
-          b.request?.authorization.at ?? "",
-        ) ||
         (a.request?.number ?? 0) - (b.request?.number ?? 0) ||
         a.id.localeCompare(b.id),
     );

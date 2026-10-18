@@ -35,7 +35,7 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 
 | Término                      | Significado práctico                                                                                                                                                        |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Issue autorizado**         | Objetivo y criterios aprobados por una persona. Permite empezar, pero no acepta el resultado.                                                                               |
+| **Issue autorizado**         | Issue admitido al observar `factory:ready`, con su contenido capturado como encargo inicial. Permite empezar, pero no acepta el resultado.                                  |
 | **Ejecución**                | Recorrido completo para atender esa petición, incluidas esperas, integración y cierre del issue.                                                                            |
 | **Intento**                  | Trabajo encargado al agente dentro de la Ejecución. El modelo permite varios; hoy no existe continuación guiada ni reintento automático.                                    |
 | **Aceptación del resultado** | Decisión humana sobre un Commit candidato concreto y su preview. Autoriza su integración y publicación.                                                                     |
@@ -51,10 +51,8 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 
 ```mermaid
 flowchart TD
-    I["Issue con objetivo y criterios en lenguaje natural"] --> A["Una persona con escritura aplica factory:ready"]
-    A --> D{"¿Autorización y contenido acreditados?"}
-    D -->|"No"| N["No se admite<br/>Aclarar y volver a autorizar"]
-    D -->|"Sí"| Q["Capturar Issue autorizado y poner en cola"]
+    I["Issue abierto del Managed project"] --> A["Se aplica factory:ready"]
+    A --> Q["Capturar Issue autorizado y poner en cola"]
     Q --> W["Esperar puesto libre"]
     W --> B["Preparar clon y comprobar base"]
     B --> O["Encargar Intento al agente"]

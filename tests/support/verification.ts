@@ -164,14 +164,6 @@ export function verificationFixture(
             "## Acceptance criteria\n- Keep keyboard navigation.\n- Show the catalogue.",
           author: "owner",
           url: `https://github.com/${project.repository}/issues/1`,
-          updatedAt: "2026-10-17T10:00:00Z",
-          authorization: {
-            id: "ready1",
-            actor: "writer",
-            at: "2026-10-17T10:00:00Z",
-            canWrite: true,
-            contentUnchanged: true,
-          },
         },
       ]);
       const run = (await workflow.startNext())!;

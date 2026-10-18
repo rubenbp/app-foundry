@@ -61,8 +61,6 @@ export async function canMerge(
     unchangedReport &&
     !newInstructions &&
     facts.request.open &&
-    facts.request.title === run.request!.title &&
-    facts.request.body === run.request!.body &&
     facts.pull?.open &&
     !facts.pull.merged &&
     facts.pull.head === publication.head &&

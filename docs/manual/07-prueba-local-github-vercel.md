@@ -166,7 +166,7 @@ gh label create factory:ready --repo rubenbp/appfoundry-site-demo \
   --description "Issue revisado y autorizado para la Factory" --color 0E8A16
 ```
 
-Aplica la autorización cuando el título y cuerpo ya estén definitivos:
+Aplica la etiqueta para admitir el issue:
 
 ```sh
 gh issue edit NUMERO_DEL_ISSUE --repo rubenbp/appfoundry-site-demo \
@@ -175,7 +175,7 @@ gh issue edit NUMERO_DEL_ISSUE --repo rubenbp/appfoundry-site-demo \
 
 El dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
 
-No edites el issue ni añadas comentarios de prueba inmediatamente después de aplicar la etiqueta. La admisión relaciona la autorización con el contenido estable; otras actualizaciones pueden hacerla ambigua. Si aún no se admitió, estabiliza y vuelve a aplicar la etiqueta. Si ya se admitió, volver a etiquetar no reejecuta el issue.
+La Factory captura el título y cuerpo que observe al admitir. No comprueba permisos del etiquetador ni estabilidad del contenido. Las ediciones posteriores no actualizan el encargo ni bloquean la Ejecución; volver a etiquetar no reejecuta el issue. Los comentarios tampoco se envían al agente para continuar una pregunta pendiente.
 
 La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, abre la causa y las salidas del dashboard antes de seguir; no aceptes para intentar desbloquear una verificación fallida.
 
@@ -222,7 +222,7 @@ Para probar otro cambio crea otro issue con un resultado diferente, una vez comp
 
 | Lo que ves                      | Qué revisar                                                                                                                    |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| No aparece ningún issue         | Repo correcto, etiqueta, permiso de escritura y contenido estable.                                                             |
+| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                             |
 | Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.               |
 | `waiting`                       | Pregunta o permiso del agente. La continuación guiada aún no está disponible.                                                  |
 | Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                   |

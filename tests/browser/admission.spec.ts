@@ -80,14 +80,6 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
     body: "## Acceptance criteria\nMostrar todos los juegos y conservar el teclado.",
     author: "owner",
     url: `https://github.com/${project.repository}/issues/${number}`,
-    updatedAt: "2026-10-17T10:00:00Z",
-    authorization: {
-      id: `label-${number}`,
-      actor: "writer",
-      at: "2026-10-17T10:00:00Z",
-      canWrite: true,
-      contentUnchanged: true,
-    },
   });
   await workflow.observe([issue(1), issue(2)]);
   const server = panelServer(workflow.factory);
@@ -112,9 +104,7 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
         exact: false,
       }),
     ).toBeVisible();
-    await expect(
-      page.getByText("writer", { exact: false }).first(),
-    ).toBeVisible();
+    await expect(page.getByText("owner", { exact: true })).toBeVisible();
     started = workflow.startNext();
     await expect(page.locator(".badge.preparing")).toHaveText(
       "Preparando base",

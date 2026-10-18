@@ -28,14 +28,6 @@ export function ready(number = 1): ReadyIssue {
     body: "## Acceptance criteria\n- Show every game.\n- Keep keyboard navigation.",
     author: "requester",
     url: `https://github.com/${project.repository}/issues/${number}`,
-    updatedAt: "2026-10-17T10:00:00Z",
-    authorization: {
-      id: `label-${number}`,
-      actor: "maintainer",
-      at: "2026-10-17T10:00:00Z",
-      contentUnchanged: true,
-      canWrite: true,
-    },
   };
 }
 export function setup() {
@@ -67,7 +59,7 @@ export function setup() {
   return { root, config, agent, tasks };
 }
 
-test("una persona con permiso de escritura autoriza una Petición fija una sola vez, incluso si se quita la etiqueta o se reinicia", async () => {
+test("un issue con factory:ready se captura una sola vez, incluso si cambia, se quita la etiqueta o se reinicia", async () => {
   const s = setup();
   let workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
@@ -76,7 +68,6 @@ test("una persona con permiso de escritura autoriza una Petición fija una sola 
     const admitted = workflow.list()[0];
     assert.equal(admitted.status, "queued");
     assert.equal(admitted.request?.body, request.body);
-    assert.equal(admitted.request?.authorization.actor, "maintainer");
     request.body = "Changed after admission";
     await workflow.observe([request]);
     await workflow.observe([]);
@@ -92,22 +83,21 @@ test("una persona con permiso de escritura autoriza una Petición fija una sola 
   }
 });
 
-test("una autorización ambigua y la falta de permiso efectivo de escritura nunca admiten trabajo", async () => {
-  for (const authorization of [
-    { ...ready().authorization, canWrite: false },
-    { ...ready().authorization, canWrite: null },
-    { ...ready().authorization, contentUnchanged: false },
-  ]) {
-    const s = setup();
-    const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
-    try {
-      await workflow.observe([{ ...ready(), authorization }]);
-      assert.equal(workflow.list().length, 0);
-      assert.ok(workflow.observation.error);
-      assert.equal(s.tasks.length, 0);
-    } finally {
-      workflow.close();
-    }
+test("la admisión acepta contenido vacío o incompleto sin acreditar actores ni criterios", async () => {
+  const s = setup();
+  const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
+  try {
+    await workflow.observe([
+      { ...ready(1), title: "", body: "" },
+      { ...ready(2), body: " " },
+      { ...ready(3), body: "Quiero mejorar el catálogo." },
+    ]);
+    assert.equal(workflow.list().length, 3);
+    assert.equal(workflow.observation.error, null);
+    assert.equal(workflow.queue()[0].request?.body, "");
+    assert.equal(s.tasks.length, 0);
+  } finally {
+    workflow.close();
   }
 });
 
@@ -128,14 +118,17 @@ test("un Managed project excluye un segundo Workflow, incluso con otra raíz de 
   }
 });
 
-test("la cola sigue el orden observado de autorización y desempata de forma estable por issue", async () => {
+test("la cola sigue la primera observación y desempata de forma estable por issue", async () => {
   const s = setup();
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
+    workflow.factory.now = () => 1000;
     await workflow.observe([ready(9), ready(2)]);
+    workflow.factory.now = () => 2000;
+    await workflow.observe([ready(1)]);
     assert.deepEqual(
       workflow.queue().map((r) => r.request?.number),
-      [2, 9],
+      [2, 9, 1],
     );
     assert.equal(s.tasks.length, 0);
   } finally {
@@ -169,7 +162,7 @@ test("la configuración del proyecto incompleta o no confiable se rechaza antes 
   assert.equal(started, false);
 });
 
-test("la Petición fija conserva la configuración de agente elegida mientras espera en la cola", async () => {
+test("el Issue autorizado conserva la configuración de agente elegida mientras espera en la cola", async () => {
   const s = setup();
   const workflow = createWorkflow(
     { ...s.config, opencodeCli: "/trusted/opencode" },
@@ -188,19 +181,58 @@ test("la Petición fija conserva la configuración de agente elegida mientras es
   }
 });
 
-test("un issue no autorizado no puede bloquear otras peticiones autorizadas en la misma observación", async () => {
+test("un issue ajeno al Managed project no bloquea otros issues de la misma observación", async () => {
   const s = setup();
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
     await workflow.observe([
       {
         ...ready(9),
-        authorization: { ...ready(9).authorization, canWrite: false },
+        repository: "another/repository",
       },
       ready(2),
     ]);
     assert.equal(workflow.list()[0]?.request?.number, 2);
-    assert.match(workflow.observation.error!, /write permission/);
+    assert.match(workflow.observation.error!, /configured Managed project/);
+  } finally {
+    workflow.close();
+  }
+});
+
+test("el historial anterior sigue en cola sin depender de la acreditación guardada ni readmitir el issue", async () => {
+  const s = setup();
+  let workflow = createWorkflow(s.config, { createAgent: () => s.agent });
+  try {
+    await workflow.observe([ready(9), ready(2)]);
+    for (const run of workflow.list()) {
+      workflow.factory.store.save({
+        ...run,
+        request: Object.assign({}, run.request, {
+          updatedAt: "2026-10-17T10:00:00Z",
+          authorization: {
+            id: `legacy-${run.request!.number}`,
+            actor: "legacy-writer",
+            at:
+              run.request!.number === 9
+                ? "2026-10-15T10:00:00Z"
+                : "2026-10-17T10:00:00Z",
+            canWrite: true,
+            contentUnchanged: true,
+          },
+          contentHash: "legacy-content-hash",
+        }),
+      });
+    }
+    workflow.close();
+    workflow = createWorkflow(s.config, { createAgent: () => s.agent });
+    await workflow.observe([ready(9), ready(2)]);
+    assert.equal(workflow.list().length, 2);
+    assert.deepEqual(
+      workflow.queue().map((run) => run.request?.number),
+      [2, 9],
+    );
+    assert.equal(workflow.queue()[0].request?.body, ready().body);
+    assert.equal(workflow.observation.error, null);
   } finally {
     workflow.close();
   }

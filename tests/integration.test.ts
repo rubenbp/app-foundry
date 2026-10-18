@@ -235,7 +235,7 @@ for (const effect of ["integration-report", "close-issue"]) {
   });
 }
 
-test("un cambio del issue entre el resumen y el cierre impide completar o liberar el puesto", async () => {
+test("editar el issue entre el resumen y el cierre conserva el encargo y permite completar la Ejecución", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -245,18 +245,19 @@ test("un cambio del issue entre el resumen y el cierre impide completar o libera
     s.merge();
     s.onInspect(() => {
       if (s.workflow.view(run.id)?.publication?.integrationReport) {
-        s.facts.request.body = "Un objetivo diferente.";
+        s.issue.title = "Otro título";
+        s.issue.body = "Un objetivo diferente.";
       }
     });
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
     assert.ok(s.workflow.view(run.id)?.publication?.integrationReport);
-    assert.match(s.workflow.view(run.id)!.error!, /changed before closure/);
-    assert.equal(s.facts.request.open, true);
-    assert.equal(s.workflow.factory.active, run.id);
+    assert.equal(s.workflow.view(run.id)?.request?.body, run.request?.body);
+    assert.equal(s.facts.request.open, false);
+    assert.equal(s.workflow.factory.active, null);
     assert.equal(
       s.writes.some((write) => write.kind === "close-issue"),
-      false,
+      true,
     );
   } finally {
     s.close();

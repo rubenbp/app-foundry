@@ -9,7 +9,7 @@ import type {
   WorkflowOwnership,
 } from "./ports.ts";
 import { requestContext } from "./agentTask.ts";
-import { authorize } from "../domain/request.ts";
+import { captureIssue } from "../domain/request.ts";
 import type { ReadyIssue } from "../domain/request.ts";
 import type { AgentPort } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
@@ -151,7 +151,7 @@ export class Workflow {
         continue;
       }
       try {
-        const request = authorize(
+        const request = captureIssue(
           issue,
           this.factory.config.managedProject!,
           observedAt,

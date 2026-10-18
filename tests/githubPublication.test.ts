@@ -9,12 +9,13 @@ import { execute } from "../src/infrastructure/process.ts";
 
 for (const gate of [
   "unchanged",
+  "edited issue",
   "merge during preview",
   "revoked after merge",
   "success only after merge",
   "revoked before merge",
 ] as const) {
-  test(`el Workflow correlaciona la condición de integración (${({ unchanged: "sin cambios", "merge during preview": "integración durante la vista previa", "revoked after merge": "revocación tras integrar", "success only after merge": "éxito solo tras integrar", "revoked before merge": "revocación antes de integrar" } as const)[gate]}) mediante los adaptadores reales de GitHub y Vercel`, async () => {
+  test(`el Workflow correlaciona la condición de integración (${({ unchanged: "sin cambios", "edited issue": "issue editado", "merge during preview": "integración durante la vista previa", "revoked after merge": "revocación tras integrar", "success only after merge": "éxito solo tras integrar", "revoked before merge": "revocación antes de integrar" } as const)[gate]}) mediante los adaptadores reales de GitHub y Vercel`, async () => {
     let remoteHead: string | null = null;
     let pull: Record<string, unknown> | null = null;
     let deployment = false;
@@ -118,8 +119,9 @@ for (const gate of [
       const paged = (values: unknown[]) => JSON.stringify([values]);
       if (path === `${prefix}/issues/1`) {
         return JSON.stringify({
-          title: context.request!.title,
-          body: context.request!.body,
+          title:
+            gate === "edited issue" ? "Otro título" : context.request!.title,
+          body: gate === "edited issue" ? null : context.request!.body,
           state: requestOpen ? "open" : "closed",
         });
       }

@@ -301,8 +301,6 @@ export class GitHubPublication implements PublicationPort {
 
     return {
       request: {
-        title: text(request.title),
-        body: text(request.body ?? ""),
         open: request.state === "open",
       },
       remoteHead: ref ? sha(record(ref.object).sha) : null,

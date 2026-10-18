@@ -80,22 +80,13 @@ export function IssueDetails({ run }: { run: Run }) {
             <dt>Autor</dt>
             <dd>{request.author}</dd>
           </div>
-          <div>
-            <dt>Autorización de escritura</dt>
-            <dd>
-              {request.authorization.actor} · {request.authorization.at}
-            </dd>
-          </div>
-          <div>
-            <dt>Identidad del contenido capturado</dt>
-            <dd>{request.contentHash}</dd>
-          </div>
         </dl>
         <pre tabIndex={0}>{request.body}</pre>
         <p className="small muted">
-          El Issue autorizado queda fijado. Retirar factory:ready no cancela.
-          Para cambiar el objetivo o los criterios, cancela y autoriza otro
-          issue. Los secretos se omiten; los criterios no se truncan.
+          Se conserva el encargo inicial. Editar el issue no actualiza el
+          encargo ni bloquea la Ejecución. Retirar factory:ready no cancela. Las
+          respuestas en GitHub todavía no se envían al agente. Los secretos se
+          omiten; el contenido no se trunca.
         </p>
         <details>
           <summary>Configuración e instrucciones capturadas</summary>
