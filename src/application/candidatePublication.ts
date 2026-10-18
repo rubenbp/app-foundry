@@ -227,7 +227,7 @@ export class CandidatePublication {
           facts.preview?.state === "error"
         ) {
           run.status = "intervention";
-          run.error = `Deployment ${facts.preview.state}; preview no válida`;
+          run.error = `El deployment está en estado «${facts.preview.state}»; la vista previa no es válida.`;
         }
         this.runtime.save(run);
         return;
@@ -352,7 +352,7 @@ export class CandidatePublication {
       publication.observationError = this.runtime.factory.clean(
         String(failure),
       ).text;
-      run.error = publication.observationError;
+      run.error = `Falló la observación o publicación. Detalle: ${publication.observationError}`;
       run.status = "intervention";
       this.runtime.factory.record(run, "publication-error", run.error);
       this.runtime.save(run);

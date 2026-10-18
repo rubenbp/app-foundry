@@ -15,7 +15,7 @@ export function poll<T>(
         cache: "no-store",
       });
       if (!response.ok) {
-        throw new Error("Local observation unavailable");
+        throw new Error("Observación local no disponible");
       }
       const value: T = await response.json();
       if (!closed) {

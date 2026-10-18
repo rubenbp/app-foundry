@@ -97,7 +97,7 @@ export class Workflow {
         const run = this.view(reserved);
         if (!run) {
           throw new Error(
-            "Reserved Ejecución missing from this data root; inspect ownership manually",
+            "No se encontró la Ejecución reservada en esta carpeta de datos; comprueba manualmente quién la controla",
           );
         }
         if (run.status === "stopped" || run.status === "completed") {
@@ -106,7 +106,7 @@ export class Workflow {
           run.status = "intervention";
           run.phase = "preparation";
           run.error =
-            "Preparation ownership was reserved before restart; inspect effects before recovery. No task was resent.";
+            "La preparación quedó reservada antes del reinicio; comprueba los efectos antes de recuperar. No se reenvió la tarea.";
           this.factory.active = run.id;
           this.factory.record(run, "recovery", run.error);
           this.factory.persist(run);
@@ -164,7 +164,7 @@ export class Workflow {
       this.factory.store.observation({
         at: this.factory.now(),
         error: this.factory.clean(
-          `GitHub/workflow observation failed: ${String(error)}`,
+          `Falló la observación de GitHub o del workflow: ${String(error)}`,
         ).text,
       });
     } finally {
@@ -523,7 +523,7 @@ export class Workflow {
         completed,
         "verification",
         completed.error ??
-          "Technical checks passed; criterion judgment and preview pending",
+          "Las comprobaciones técnicas terminaron correctamente; falta evaluar los criterios y revisar la vista previa",
       );
       this.factory.persist(completed);
       return completed;
@@ -531,7 +531,7 @@ export class Workflow {
       this.factory.assertWritable();
       const current = this.view(run!.id)!;
       current.status = "intervention";
-      current.error = this.factory.clean(String(error)).text;
+      current.error = `Falló la verificación del Commit candidato. Detalle: ${this.factory.clean(String(error)).text}`;
       if (current.verification) {
         current.verification.status = "intervention";
         current.verification.error = current.error;

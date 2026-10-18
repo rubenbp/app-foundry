@@ -52,14 +52,14 @@ export class Observer {
         if (!this.abort.signal.aborted) {
           this.emit({
             type: "gap",
-            text: "OpenCode event stream ended; short transitions may be missing. Poll reconciliation continues without resending work.",
+            text: "Terminó el flujo de eventos de OpenCode; podrían faltar transiciones breves. Continúa la conciliación por consultas y no se reenvía el trabajo.",
           });
         }
       } catch {
         if (!this.abort.signal.aborted) {
           this.emit({
             type: "gap",
-            text: "OpenCode event stream interrupted. Poll reconciliation continues; replay is not assumed.",
+            text: "Se interrumpió el flujo de eventos de OpenCode. Continúa la conciliación por consultas; no se presupone que los eventos se repitan.",
           });
         }
       } finally {
@@ -291,7 +291,7 @@ export class Observer {
       if (!this.abort.signal.aborted) {
         this.emit({
           type: "gap",
-          text: `OpenCode observation failed: ${errorText(error)}. No task retry.`,
+          text: `Falló la observación de OpenCode: ${errorText(error)}. No se reintentará la tarea.`,
         });
       }
     } finally {

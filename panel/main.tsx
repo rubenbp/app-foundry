@@ -119,7 +119,7 @@ function App() {
             {disconnected
               ? "Sin conexión local"
               : failing
-                ? "Consulta local fallida"
+                ? "Error al consultar el estado local"
                 : lastLocal
                   ? "Dashboard conectado"
                   : "Conectando…"}

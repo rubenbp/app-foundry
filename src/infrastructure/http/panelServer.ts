@@ -25,11 +25,11 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
       (req.headers.origin && req.headers.origin !== origin) ||
       req.headers["sec-fetch-site"] === "cross-site"
     ) {
-      json(403, { error: "Loopback same-origin access required" });
+      json(403, { error: "Se requiere acceso local del mismo origen" });
       return;
     }
     if (req.method !== "GET") {
-      json(405, { error: "Dashboard is read-only" });
+      json(405, { error: "El Dashboard es de solo consulta" });
       return;
     }
     try {
@@ -47,12 +47,14 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
       if (output) {
         const run = factory.view(output[1]);
         if (!run?.parts.some((p) => p.id === output[2])) {
-          json(404, { error: "Output unavailable" });
+          json(404, { error: "Salida no disponible" });
           return;
         }
         const text = factory.output(output[1], output[2]);
         if (text === null) {
-          json(404, { error: "Artifact missing; observation gap" });
+          json(404, {
+            error: "Falta el artefacto; hay una laguna de observación",
+          });
           return;
         }
         res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
@@ -60,7 +62,7 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
         return;
       }
       if (url.pathname.startsWith("/api/")) {
-        json(404, { error: "Unknown endpoint" });
+        json(404, { error: "Ruta desconocida" });
         return;
       }
       const path = resolve(
@@ -71,7 +73,7 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
           ),
       );
       if (!path.startsWith(dist + sep) || !existsSync(path)) {
-        json(404, { error: "Not found" });
+        json(404, { error: "No se encontró el recurso" });
         return;
       }
       const type: Record<string, string> = {
@@ -84,7 +86,9 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
       });
       res.end(readFileSync(path));
     } catch {
-      json(500, { error: "Local read failed; no work was resent" });
+      json(500, {
+        error: "Falló la lectura local; no se volvió a enviar el trabajo",
+      });
     }
   });
 }

@@ -152,7 +152,7 @@ export class CandidateVerifier implements CandidateVerification {
         check.status = "failed";
         check.endedAt = Date.now();
         report.status = "failed";
-        report.error = `E2E origin already used or unavailable for exclusive ownership: ${e2e!.origin}; command not executed`;
+        report.error = `El origen de E2E ya está en uso o no está disponible para uso exclusivo: ${e2e!.origin}. No se ejecutó el comando.`;
         progress(report, {
           id: check.partId,
           label: `${check.command} · not executed`,
@@ -193,8 +193,8 @@ export class CandidateVerifier implements CandidateVerification {
         check.endedAt = Date.now();
         progress(report, {
           id: check.partId,
-          label: `${check.command} · execution unavailable`,
-          text: `Base ${report.baseSha}\nHead ${report.headSha}\nCommand: ${check.executedCommand}\nNo exit code observed: ${String(error)}`,
+          label: `${check.command} · ejecución no disponible`,
+          text: `Base ${report.baseSha}\nHead ${report.headSha}\nComando: ${check.executedCommand}\nNo se observó el código de salida: ${String(error)}`,
         });
         throw error;
       } finally {
@@ -222,7 +222,7 @@ export class CandidateVerifier implements CandidateVerification {
         check.status = "uncertain";
         progress(report);
         throw new Error(
-          `Verification cleanup unconfirmed; inspect command group ${check.pid ?? "unavailable"} and its E2E server/browser processes before releasing the execution`,
+          `No se confirmó la limpieza de la verificación. Inspecciona el grupo de procesos ${check.pid ?? "no disponible"} y sus procesos de servidor o navegador E2E antes de liberar la Ejecución.`,
         );
       }
       check.cleanup = "confirmed";
@@ -232,13 +232,13 @@ export class CandidateVerifier implements CandidateVerification {
         check.status = "failed";
         progress(report);
         throw new Error(
-          "Verification command output truncated; complete evidence unavailable",
+          "La salida del comando de verificación está truncada; faltan evidencias completas.",
         );
       }
       await unchanged();
       if (result.code !== 0) {
         report.status = "failed";
-        report.error = `Candidate verification failed: ${check.command} (exit ${result.code})`;
+        report.error = `Falló la verificación del Commit candidato: ${check.command} (código de salida ${result.code})`;
         progress(report);
         return;
       }

@@ -9,7 +9,7 @@ export function errorText(error: unknown): string {
     data?: { message?: string };
   };
 
-  return `${value.name ?? value._tag ?? "OpenCode error"}: ${value.message ?? value.data?.message ?? "No safe error message available"}`;
+  return `${value.name ?? value._tag ?? "Error de OpenCode"}: ${value.message ?? value.data?.message ?? "No hay un mensaje de error disponible"}`;
 }
 
 // El SDK de red es independiente del host integrado de OpenCode y sigue siendo compatible con Node 24.

@@ -113,7 +113,7 @@ export class IssueRecovery {
           failed.error = this.factory.clean(String(error)).text;
           this.factory.record(failed, "recovery-error", failed.error);
           this.factory.persist(failed);
-          message = `No se ha podido completar la recuperación: ${failed.error}`;
+          message = `No se ha podido completar la recuperación. Detalle: ${failed.error}`;
         }
       }
       await this.conversation.comment(

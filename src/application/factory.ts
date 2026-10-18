@@ -57,7 +57,7 @@ export class Factory {
       ) {
         run.status = "intervention";
         run.error =
-          "Factory restarted. Work/process state uncertain; no task was resent. Inspect owned PID before recovery.";
+          "La Factory se reinició. El estado del trabajo o del proceso no está confirmado; no se reenvió la tarea. Comprueba el PID propio antes de recuperar.";
         if (run.publication) {
           run.publication.recoveryRequired = true;
           delete run.publication.acceptance;
@@ -75,12 +75,12 @@ export class Factory {
             if (check.status === "running" || check.cleanup === "pending") {
               check.status = "uncertain";
               check.cleanup = "uncertain";
-              run.error += ` Verification command process group ${check.pid ?? "unavailable"} requires manual inspection.`;
+              run.error += ` El grupo de procesos del comando de verificación (${check.pid ?? "no disponible"}) requiere una inspección manual.`;
             }
           }
           run.verification.error = run.error;
         }
-        run.gaps.push("Observation interrupted by Factory restart");
+        run.gaps.push("La observación se interrumpió al reiniciar la Factory");
         this.record(run, "recovery", run.error);
         this.store.save(run);
         this.active = run.id;
@@ -101,7 +101,7 @@ export class Factory {
       this.store.save(run);
     } catch (error) {
       this.fault =
-        "Persistence failed; new effects blocked. Stop the owned process manually using the recorded PID.";
+        "Falló la persistencia y se bloquearon nuevos efectos. Detén manualmente el proceso propio con el PID registrado.";
 
       throw error;
     }
@@ -109,7 +109,9 @@ export class Factory {
 
   assertWritable() {
     if (this.store.failed || this.fault) {
-      throw new Error("Persistence unavailable: effects blocked");
+      throw new Error(
+        "La persistencia no está disponible; se bloquearon los efectos",
+      );
     }
   }
 
@@ -242,7 +244,7 @@ export class Factory {
       if (this.view(run.id)?.status !== "stopped") {
         this.ingest(run.id, {
           type: "error",
-          text: `Effect uncertain: ${String(error)}`,
+          text: `No se pudo confirmar el efecto: ${String(error)}`,
         });
       }
     }
@@ -276,7 +278,8 @@ export class Factory {
         try {
           this.store.write(id, fact.id, text!.text);
         } catch (error) {
-          this.fault = "Artifact persistence failed; effects blocked";
+          this.fault =
+            "Falló el guardado de artefactos; se bloquearon los efectos";
           throw error;
         }
         const part = {
@@ -446,7 +449,10 @@ export class Factory {
             }
           : await this.agent.stop(run.sessionId);
     } catch (error) {
-      result = { exited: false, detail: `Stop unconfirmed: ${String(error)}` };
+      result = {
+        exited: false,
+        detail: `No se pudo confirmar la detención: ${String(error)}`,
+      };
     }
     const latest = this.view(id)!;
     latest.status = result.exited ? "stopped" : "intervention";

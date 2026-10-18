@@ -96,7 +96,7 @@ export class IssueInterventions {
       this.factory.assertWritable();
       this.factory.ingest(run.id, {
         type: "error",
-        text: `Agent continuation unconfirmed: ${String(error)}. The reply will not be automatically resent.`,
+        text: `No se pudo confirmar la continuación del agente: ${String(error)}. La respuesta no se volverá a enviar automáticamente.`,
       });
     }
   }

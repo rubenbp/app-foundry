@@ -57,7 +57,7 @@ export function Output({ runId, part }: { runId: string; part: PartView }) {
       {open ? (
         <pre id={`output-${part.id}`} tabIndex={0}>
           {error
-            ? "Salida no disponible. Puede existir una laguna de observación."
+            ? "No se pudo cargar la salida. Puede faltar parte de la observación."
             : (text ?? "Cargando salida…")}
         </pre>
       ) : null}
