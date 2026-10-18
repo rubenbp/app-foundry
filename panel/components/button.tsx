@@ -1,4 +1,4 @@
-// Selective shadcn/ui Button pattern (MIT), using local shared design tokens.
+// Patrón selectivo del botón de shadcn/ui (MIT), con tokens de diseño compartidos locales.
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";

@@ -6,11 +6,12 @@ import type { Run } from "../../domain/run.ts";
 
 import type { RunRepository } from "../../application/runRepository.ts";
 
-// Only sanitized domain records reach this boundary. No SDK payloads or raw logs.
+// En este límite solo llegan registros del dominio saneados. No recibe cargas del SDK ni registros sin procesar.
 export class Store implements RunRepository {
   db: DatabaseSync;
   root: string;
   failed = false;
+
   constructor(root: string) {
     this.root = root;
     mkdirSync(join(root, "artifacts"), { recursive: true, mode: 0o700 });
@@ -19,6 +20,7 @@ export class Store implements RunRepository {
       "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, body TEXT NOT NULL); CREATE TABLE IF NOT EXISTS observation (id INTEGER PRIMARY KEY CHECK(id=1), body TEXT NOT NULL)",
     );
   }
+
   observation(value?: { at: number; error: string | null }) {
     if (value) {
       if (this.failed) {
@@ -53,6 +55,7 @@ export class Store implements RunRepository {
         })
       : { at: 0, error: null, lastSuccess: null };
   }
+
   save(run: Run) {
     if (this.failed) {
       throw new Error("Persistence unavailable: effects blocked");
@@ -68,12 +71,14 @@ export class Store implements RunRepository {
       throw error;
     }
   }
+
   list(): Run[] {
     return this.db
       .prepare("SELECT body FROM runs ORDER BY rowid DESC")
       .all()
       .map((row) => JSON.parse(String(row.body)));
   }
+
   artifact(runId: string, partId: string) {
     return join(
       this.root,
@@ -83,6 +88,7 @@ export class Store implements RunRepository {
         .digest("hex") + ".txt",
     );
   }
+
   write(runId: string, partId: string, text: string) {
     if (this.failed) {
       throw new Error("Persistence unavailable: effects blocked");
@@ -96,6 +102,7 @@ export class Store implements RunRepository {
       throw error;
     }
   }
+
   output(runId: string, partId: string) {
     try {
       return readFileSync(this.artifact(runId, partId), "utf8");
@@ -103,6 +110,7 @@ export class Store implements RunRepository {
       return null;
     }
   }
+
   close() {
     this.db.close();
   }

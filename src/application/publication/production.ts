@@ -9,16 +9,18 @@ import { candidateEvidence } from "./evidence.ts";
 export class IntegratedPublication {
   private runtime: PublicationRuntime;
   private production?: ProductionPort;
+
   constructor(runtime: PublicationRuntime, production?: ProductionPort) {
     this.runtime = runtime;
     this.production = production;
   }
+
   async advance(run: Run, facts: PublicationFacts) {
     const publication = run.publication!;
     const pull = facts.pull!;
     publication.pull = pull;
     publication.observedAt = this.runtime.factory.now();
-    // Keep the observed integration even when it violates the contract.
+    // Conserva la integración observada aunque incumpla el contrato.
     if (publication.mergeSha && publication.mergeSha !== pull.mergeSha) {
       publication.blocked =
         "Incidencia: el commit integrado observado cambió; revisión manual requerida.";
@@ -30,9 +32,9 @@ export class IntegratedPublication {
     if (publication.blocked) {
       throw new Error(publication.blocked);
     }
-    // A remote status write cannot be atomic with a human merge. Reconstruct
-    // the accepted snapshot at integration from durable history and GitHub's
-    // last gate at that time, even if a later local revocation cleared it.
+    // Una escritura de estado remoto no puede ser atómica con una integración humana. Reconstruye
+    // la instantánea aceptada en el momento de integrar a partir del historial duradero y de la
+    // última barrera de GitHub en ese momento, aunque una revocación local posterior la haya borrado.
     const accepted =
       publication.integratedAcceptance ??
       publication.acceptance ??
@@ -204,7 +206,7 @@ export class IntegratedPublication {
           result.passed &&
           JSON.stringify(result.check) === JSON.stringify(checks[index]),
       );
-    // Write failed observations too. No successful terminal state before durable evidence.
+    // También guarda las observaciones fallidas. No se establece un estado final satisfactorio sin evidencia duradera.
     const partId = `production-${pull.mergeSha}`;
     this.runtime.factory.ingest(
       run.id,

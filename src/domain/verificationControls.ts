@@ -17,7 +17,7 @@ const omission = new RegExp(
   "i",
 );
 
-/** Conservative comparison; uncertain edits require human judgment, not a claim of semantic safety. */
+/** Comparación prudente; los cambios dudosos requieren criterio humano, no una afirmación de seguridad semántica. */
 export function controlChange(
   path: string,
   patch: string,

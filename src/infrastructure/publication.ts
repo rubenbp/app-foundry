@@ -34,6 +34,7 @@ export class GitHubPublication implements PublicationPort {
   private process: ProcessPort;
   private root: string;
   private access: PreviewAccess;
+
   constructor(
     root: string,
     options: {
@@ -50,6 +51,7 @@ export class GitHubPublication implements PublicationPort {
       options.access ??
       new VercelPreviewAccess(root, this.command, options.vercelCli);
   }
+
   private async api(path: string, body?: unknown) {
     return JSON.parse(
       await this.command(
@@ -63,6 +65,7 @@ export class GitHubPublication implements PublicationPort {
       ),
     ) as unknown;
   }
+
   private async pages(path: string) {
     const value: unknown = JSON.parse(
       await this.command("gh", ["api", path, "--paginate", "--slurp"]),
@@ -70,6 +73,7 @@ export class GitHubPublication implements PublicationPort {
 
     return list(value).flatMap(list);
   }
+
   private pull(value: unknown, context: PublicationContext): PullCandidate {
     const pull = record(value);
     const head = record(pull.head);
@@ -102,6 +106,7 @@ export class GitHubPublication implements PublicationPort {
         : {}),
     };
   }
+
   private conversation(
     value: unknown,
     context: PublicationContext,
@@ -126,6 +131,7 @@ export class GitHubPublication implements PublicationPort {
       source,
     };
   }
+
   private async deployment(
     context: PublicationContext,
     target: "preview" | "production" = "preview",
@@ -209,6 +215,7 @@ export class GitHubPublication implements PublicationPort {
     preview.servedHead = served.head;
     return preview;
   }
+
   async inspect(
     context: PublicationContext,
     options = { preview: true },
@@ -248,7 +255,7 @@ export class GitHubPublication implements PublicationPort {
     const ref = refs
       .map(record)
       .find((value) => value.ref === `refs/heads/${context.workspace.branch}`);
-    // Before the first push this commit need not exist on GitHub yet.
+    // Antes del primer envío, es posible que este commit aún no exista en GitHub.
     const statusValues =
       ref || pull
         ? await this.pages(
@@ -269,8 +276,8 @@ export class GitHubPublication implements PublicationPort {
         ),
       );
     }
-    // Preview lookup can outlive the human merge. Reconcile the PR after all
-    // dependent reads before treating a retired preview as a candidate failure.
+    // La consulta de la vista previa puede terminar después de la integración humana. Reconcilia la PR tras todas
+    // las lecturas dependientes antes de considerar que una vista previa retirada indica un fallo del candidato.
     if (pull && options.preview && !pull.merged) {
       pull = this.pull(await this.api(`${path}/pulls/${pull.number}`), context);
     }
@@ -382,6 +389,7 @@ export class GitHubPublication implements PublicationPort {
     }
     return result.output.trim();
   }
+
   async push(context: PublicationContext) {
     if (
       (await this.git(context, ["rev-parse", "HEAD"])) !== context.head ||
@@ -389,8 +397,8 @@ export class GitHubPublication implements PublicationPort {
     ) {
       throw new Error("Candidate changed after verification");
     }
-    // Use the trusted URL, never the clone's pushurl. A zero-object lease rejects
-    // a branch created concurrently. Existing matching refs are reconciled first.
+    // Usa la URL de confianza, nunca el pushurl del clon. Una concesión sin objetos rechaza
+    // una rama creada en paralelo. Primero se reconcilian las referencias coincidentes existentes.
     await this.git(
       context,
       [
@@ -403,6 +411,7 @@ export class GitHubPublication implements PublicationPort {
       true,
     );
   }
+
   async prepareHead(context: PublicationContext, head: string) {
     sha(head);
     if (await this.git(context, ["status", "--porcelain"])) {
@@ -430,6 +439,7 @@ export class GitHubPublication implements PublicationPort {
     ]);
     await this.git(context, ["reset", "--hard", head]);
   }
+
   async openPull(context: PublicationContext) {
     return this.pull(
       await this.api(`repos/${context.repository}/pulls`, {
@@ -441,6 +451,7 @@ export class GitHubPublication implements PublicationPort {
       context,
     );
   }
+
   async comment(context: PublicationContext, body: string) {
     if (!context.pull) {
       throw new Error("PR required for publication report");
@@ -455,6 +466,7 @@ export class GitHubPublication implements PublicationPort {
       context.pull.number,
     );
   }
+
   async status(
     context: PublicationContext,
     state: "pending" | "success" | "failure" | "error",
@@ -471,6 +483,7 @@ export class GitHubPublication implements PublicationPort {
         `https://github.com/${context.repository}/issues/${context.issue}`,
     });
   }
+
   async canWrite(repository: string, author: string) {
     const permission = record(
       await this.api(

@@ -30,7 +30,7 @@ export function sanitizer(secrets: string[] = []) {
       .replace(tokenPattern, "[REDACTED]")
       .replace(credentialPattern, "$1[REDACTED]")
       .replace(/(https?:\/\/)[^\s/@]+:[^\s/@]+@/g, "$1[REDACTED]@")
-      // eslint-disable-next-line no-control-regex -- strip ANSI escape codes
+      // eslint-disable-next-line no-control-regex -- elimina los códigos de escape ANSI
       .replace(/\x1b\[[0-9;]*[A-Za-z]/g, "");
     const truncated = text.length > limit;
 

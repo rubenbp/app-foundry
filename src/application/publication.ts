@@ -17,6 +17,7 @@ export class CandidatePublication {
   private report: ReviewReport;
   private integration: IntegratedPublication;
   private busy?: Promise<void>;
+
   constructor(
     factory: Factory,
     port: PublicationPort,
@@ -26,6 +27,7 @@ export class CandidatePublication {
     this.report = new ReviewReport(this.runtime);
     this.integration = new IntegratedPublication(this.runtime, production);
   }
+
   async poll() {
     if (this.busy) {
       return this.busy;
@@ -35,6 +37,7 @@ export class CandidatePublication {
     });
     return this.busy;
   }
+
   private async advance() {
     const id = this.runtime.factory.active;
     const run = id ? this.runtime.factory.view(id) : null;
@@ -304,7 +307,7 @@ export class CandidatePublication {
         );
         this.runtime.save(run);
       }
-      // Re-read the mutable facts and permissions immediately before publishing success.
+      // Vuelve a leer los datos mutables y los permisos justo antes de publicar el éxito.
       const final = await this.runtime.facts(run);
       const valid = await canMerge(run, final, this.runtime.port);
       await this.runtime.setStatus(
@@ -370,6 +373,7 @@ export class CandidatePublication {
       this.runtime.save(run);
     }
   }
+
   async stop(id: string) {
     this.runtime.stopping = true;
     try {

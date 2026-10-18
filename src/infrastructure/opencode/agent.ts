@@ -209,7 +209,7 @@ export class OpenCode implements AgentPort {
               "Owned OpenCode server exited unexpectedly; remote work uncertain",
           });
         } catch {
-          /* Existing persistence fault remains visible. */
+          /* El fallo de persistencia existente sigue siendo visible. */
         }
       }
     });
@@ -251,7 +251,7 @@ export class OpenCode implements AgentPort {
           break;
         }
       } catch {
-        /* Startup reads only; no model effect retried. */
+        /* El arranque solo realiza lecturas; no se repite ningún efecto del modelo. */
       }
       await delay(250);
     }
@@ -324,6 +324,7 @@ export class OpenCode implements AgentPort {
       },
     };
   }
+
   async create() {
     if (!this.client) {
       throw new Error("OpenCode not started");
@@ -341,6 +342,7 @@ export class OpenCode implements AgentPort {
     await this.observer.start();
     return id;
   }
+
   async send(sessionId: string, task: string) {
     if (!this.client) {
       throw new Error("OpenCode not started");
@@ -348,6 +350,7 @@ export class OpenCode implements AgentPort {
     await this.client.session.prompt({ sessionID: sessionId, text: task });
     this.observer!.watch();
   }
+
   async stop(sessionId: string | null) {
     this.stopping = true;
     this.observer?.close();
@@ -379,7 +382,7 @@ export class OpenCode implements AgentPort {
     try {
       process.kill(-pid, "SIGTERM");
     } catch {
-      /* Checked below. */
+      /* Se comprueba más abajo. */
     }
     for (let i = 0; i < 20 && alive(); i++) {
       await delay(100);
@@ -388,7 +391,7 @@ export class OpenCode implements AgentPort {
       try {
         process.kill(-pid, "SIGKILL");
       } catch {
-        /* Checked below. */
+        /* Se comprueba más abajo. */
       }
     }
     for (let i = 0; i < 30 && alive(); i++) {

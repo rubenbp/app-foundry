@@ -17,8 +17,8 @@ interface Protection {
   [key: string]: unknown;
 }
 
-// Explicit setup operation. The poller never receives administrative duties.
-// Preserve existing checks, reviews, restrictions and protection flags.
+// Operación de configuración explícita. El sondeador nunca asume tareas administrativas.
+// Conserva las comprobaciones, revisiones, restricciones y opciones de protección existentes.
 export async function configureMergeProtection(
   project: ManagedProject,
   command: RemoteCommand = remoteCommand,

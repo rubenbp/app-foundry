@@ -13,16 +13,19 @@ import {
 export class GitWorkspace implements WorkspacePort {
   private root: string;
   private process: ProcessPort;
+
   constructor(dataDir: string, processPort: ProcessPort = execute) {
     mkdirSync(dataDir, { recursive: true, mode: 0o700 });
     this.root = realpathSync(dataDir);
     this.process = processPort;
   }
+
   private options(directory: string): ProcessOptions {
     const home = join(this.root, "command-home");
     mkdirSync(home, { recursive: true, mode: 0o700 });
     return { cwd: directory, env: reducedEnvironment(home) };
   }
+
   private async git(directory: string, args: string[]) {
     const result = await this.process(
       "git",
@@ -34,6 +37,7 @@ export class GitWorkspace implements WorkspacePort {
     }
     return result.output.trim();
   }
+
   async validate(workspace: Workspace, project: ManagedProject) {
     const expected = join(this.root, "workspaces");
     const path = realpathSync(workspace.directory);
@@ -63,6 +67,7 @@ export class GitWorkspace implements WorkspacePort {
       throw new Error("Agent push remote must remain disabled");
     }
   }
+
   async prepare(
     id: string,
     project: ManagedProject,
@@ -81,7 +86,7 @@ export class GitWorkspace implements WorkspacePort {
           "Clone already exists; inspect uncertain preparation before reuse",
         );
       }
-      // Only clone transport can use the trusted user's GitHub credentials. Candidate commands cannot.
+      // Solo el transporte del clon puede usar las credenciales de GitHub del usuario de confianza. Los comandos candidatos no pueden.
       const env = {
         ...this.options(clones).env,
         HOME: process.env.HOME,

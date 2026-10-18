@@ -20,7 +20,7 @@ function imports(file: string) {
   return ts.preProcessFile(readFileSync(file, "utf8"), true).importedFiles;
 }
 
-// Includes erased type imports: contracts must point inward too.
+// Incluye importaciones de tipos eliminadas: los contratos también deben apuntar hacia dentro.
 test("las capas hexagonales dependen hacia dentro y los adaptadores nunca importan composición", () => {
   for (const file of sources) {
     const name = relative(sourceRoot, file);

@@ -6,9 +6,11 @@ import { candidateEvidence } from "./evidence.ts";
 
 export class ReviewReport {
   private runtime: PublicationRuntime;
+
   constructor(runtime: PublicationRuntime) {
     this.runtime = runtime;
   }
+
   async publish(run: Run) {
     const publication = run.publication!;
     const preview = publication.preview!;
@@ -19,7 +21,7 @@ export class ReviewReport {
     const fragments: NonNullable<typeof publication.report>["evidence"] = [];
     if (details.length > 45_000) {
       const links: string[] = [];
-      // Split by UTF-16 code units without cutting a surrogate pair.
+      // Divide por unidades de código UTF-16 sin separar un par sustituto.
       for (let start = 0, index = 1; start < evidence.length; index++) {
         let end = Math.min(start + 20_000, evidence.length);
         if (

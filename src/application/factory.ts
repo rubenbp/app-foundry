@@ -16,6 +16,7 @@ export class Factory {
   active: string | null = null;
   fault: string | null = null;
   stopping = new Set<string>();
+
   constructor(
     config: FactoryConfig,
     agent: AgentPort,
@@ -66,6 +67,7 @@ export class Factory {
       }
     }
   }
+
   record(run: Run, kind: string, text: string) {
     run.history.push({
       at: this.now(),
@@ -73,6 +75,7 @@ export class Factory {
       text: this.clean(text, 4096).text,
     });
   }
+
   persist(run: Run) {
     try {
       this.store.save(run);
@@ -82,11 +85,13 @@ export class Factory {
       throw error;
     }
   }
+
   assertWritable() {
     if (this.store.failed || this.fault) {
       throw new Error("Persistence unavailable: effects blocked");
     }
   }
+
   assertRunning(id: string) {
     this.assertWritable();
     if (
@@ -99,6 +104,7 @@ export class Factory {
       );
     }
   }
+
   enqueue(task: string, request?: AuthorizedRequest) {
     this.assertWritable();
     if (!task.trim()) {
@@ -132,12 +138,14 @@ export class Factory {
 
     return run;
   }
+
   async run(task: string) {
     if (this.active) {
       throw new Error("One Ejecución already occupies the Factory");
     }
     return this.start(this.enqueue(task).id);
   }
+
   async start(
     id: string,
     prepare?: (
@@ -219,13 +227,14 @@ export class Factory {
     }
     return this.view(run.id)!;
   }
+
   ingest(id: string, fact: Fact, outputLimit = 65_536) {
     this.assertWritable();
     const run = this.view(id);
     if (!run || run.status === "stopped" || run.status === "completed") {
       return;
     }
-    // Late agent observations cannot move an independently verified candidate back into editing.
+    // Las observaciones tardías del agente no pueden devolver a edición un candidato verificado de forma independiente.
     if (
       (run.phase === "verification" || run.phase === "publication") &&
       fact.type !== "part" &&
@@ -347,6 +356,7 @@ export class Factory {
     }
     this.persist(run);
   }
+
   async stop(id: string) {
     this.assertWritable();
     const run = this.view(id);
@@ -383,15 +393,19 @@ export class Factory {
     }
     return latest;
   }
+
   view(id: string) {
     return this.store.list().find((r) => r.id === id) ?? null;
   }
+
   list() {
     return this.store.list();
   }
+
   output(id: string, partId: string) {
     return this.store.output(id, partId);
   }
+
   close() {
     this.store.close();
   }

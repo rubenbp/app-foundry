@@ -271,7 +271,7 @@ function playwrightConfiguration(
   e2e: NonNullable<ManagedProject["verification"]["e2e"]>,
   runtime: string,
 ) {
-  // The Factory controls the server, scope and reporter. Candidate tests remain untrusted same-user code.
+  // La Factory controla el servidor, el ámbito y el generador de informes. Las pruebas candidatas siguen siendo código no confiable del mismo usuario.
   return `
 import configuration from ${JSON.stringify(pathToFileURL(resolve(directory, e2e.configFile)).href)};
 import { resolve, dirname } from 'node:path';

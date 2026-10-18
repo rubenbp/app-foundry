@@ -492,7 +492,7 @@ test("tras reiniciar, se conserva la identidad del proceso verificador y no se l
       try {
         process.kill(-pid, "SIGKILL");
       } catch {
-        /* Already absent. */
+        /* Ya no existe. */
       }
     }
     await verification?.catch(() => {});

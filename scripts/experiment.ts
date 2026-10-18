@@ -16,7 +16,8 @@ import { panelServer } from "../src/infrastructure/http/panelServer.ts";
 import { consumption } from "../src/domain/run.ts";
 import type { Run } from "../src/domain/run.ts";
 
-// Explicit opt-in only. This script calls a real paid model; it is never part of npm test.
+// Requiere activación explícita. Este script llama a un modelo real de pago;
+// nunca forma parte de npm test.
 if (!process.argv.includes("--real")) {
   throw new Error("Pass --real to authorize the bounded model experiment");
 }

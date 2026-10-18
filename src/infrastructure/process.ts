@@ -44,7 +44,7 @@ export const execute: ProcessPort = (command, args, options) =>
           process.kill(-child.pid, signal);
         }
       } catch {
-        /* Exit is observed below. */
+        /* La salida se comprueba más abajo. */
       }
     };
     const abort = () => {
@@ -91,7 +91,7 @@ export const execute: ProcessPort = (command, args, options) =>
     }
   });
 
-// This reduces accidental access. Processes under the same macOS user are not an OS sandbox.
+// Esto reduce el acceso accidental. Los procesos del mismo usuario de macOS no están aislados por el sistema operativo.
 export function reducedEnvironment(home: string): NodeJS.ProcessEnv {
   return {
     PATH: process.env.PATH,

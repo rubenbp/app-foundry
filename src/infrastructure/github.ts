@@ -31,15 +31,18 @@ interface Event {
   created_at: string;
 }
 
-// No candidate code or credentials reach this adapter. Only selected facts leave it.
+// Ningún código candidato ni credencial llega a este adaptador. Solo salen los datos seleccionados.
 export class GitHub implements GitHubPort {
   private command: GitHubCommand;
+
   constructor(run: GitHubCommand = command) {
     this.command = run;
   }
+
   private async api(path: string) {
     return this.command(["api", path, "--paginate", "--slurp"]);
   }
+
   async ready(repository: string): Promise<ReadyIssue[]> {
     const pages = (await this.api(
       `repos/${repository}/issues?state=open&labels=factory%3Aready&per_page=100`,
@@ -72,7 +75,7 @@ export class GitHub implements GitHubPort {
             permission.user?.permissions?.push === true ||
             ["admin", "write", "maintain"].includes(permission.permission);
         } catch {
-          /* Missing observation is not authorization. */
+          /* La falta de una observación no equivale a una autorización. */
         }
       }
       const [owner, name] = repository.split("/");

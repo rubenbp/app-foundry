@@ -28,8 +28,8 @@ export interface Production {
   error?: string;
 }
 
-// The fixed authorized request supplies assertions, never executable code.
-// Unsupported behavior must receive human intervention instead of a green HTTP check.
+// La Petición autorizada fija las comprobaciones, nunca código ejecutable.
+// El comportamiento no compatible requiere intervención humana, no una comprobación HTTP satisfactoria.
 export function publicChecks(
   body: string,
   criteriaCount: number,

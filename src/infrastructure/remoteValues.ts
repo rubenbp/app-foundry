@@ -1,4 +1,4 @@
-// Decode untrusted network responses before translating to domain facts.
+// Decodifica las respuestas de red no confiables antes de traducirlas a datos del dominio.
 export function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Invalid remote object");

@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Install the agent's process boundary. Every invocation rechecks the owned
-// clone identity; only the exact read used by build version markers is added.
+// Instala el límite de procesos del agente. Cada invocación vuelve a comprobar la identidad
+// del clon propio; solo se añade la lectura exacta que usa la compilación de marcadores de versión.
 export function installLocalGitGuard(
   runtime: string,
   directory: string,

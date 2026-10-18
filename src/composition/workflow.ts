@@ -15,7 +15,7 @@ export type ComposedWorkflowOptions = Omit<
   verificationProcess?: ProcessPort;
 };
 
-// Public composition root. Tests retain real ownership, SQLite and artifacts.
+// Punto público de composición. Las pruebas conservan la gestión real, SQLite y los artefactos.
 export function createWorkflow(
   config: FactoryConfig,
   options: ComposedWorkflowOptions,

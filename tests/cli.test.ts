@@ -108,7 +108,7 @@ test("la configuración documentada del Managed project inicia el Workflow sin u
         config.managedProjectFile = "project.json";
         const configPath = join(trusted, "factory.json");
         writeFileSync(configPath, JSON.stringify(config));
-        // Control only the external GitHub process. Startup, SQLite and HTTP are real.
+        // Solo se sustituye el proceso externo de GitHub. El arranque, SQLite y HTTP son reales.
         writeFileSync(
           join(bin, "gh"),
           `#!${process.execPath}

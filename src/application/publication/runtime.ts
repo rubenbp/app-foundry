@@ -12,6 +12,7 @@ class StatusSkippedAfterMerge extends Error {}
 
 export class ObservedMerge extends Error {
   readonly facts: PublicationFacts;
+
   constructor(facts: PublicationFacts) {
     super("Human merge observed during candidate publication");
     this.facts = facts;
@@ -22,10 +23,12 @@ export class PublicationRuntime {
   readonly factory: Factory;
   readonly port: PublicationPort;
   stopping = false;
+
   constructor(factory: Factory, port: PublicationPort) {
     this.factory = factory;
     this.port = port;
   }
+
   save(run: Run) {
     this.factory.assertRunning(run.id);
     this.factory.persist({
@@ -33,6 +36,7 @@ export class PublicationRuntime {
       publication: sanitizedRecord(run.publication, this.factory.clean),
     });
   }
+
   context(run: Run): PublicationContext {
     return {
       repository: run.request!.repository,
@@ -44,6 +48,7 @@ export class PublicationRuntime {
       pull: run.publication!.pull,
     };
   }
+
   async effect<T>(
     run: Run,
     key: string,
@@ -54,7 +59,7 @@ export class PublicationRuntime {
     if (this.stopping) {
       throw new Error("Publication stopping; no new remote effects allowed");
     }
-    // Query before every retry, including a lost confirmation after remote success.
+    // Consulta antes de cada reintento, incluso si se perdió la confirmación tras el éxito remoto.
     const found = await observe();
     this.factory.assertRunning(run.id);
     let result: T;
@@ -83,10 +88,11 @@ export class PublicationRuntime {
     }
     return result;
   }
+
   async facts(run: Run, preview = true) {
     const facts = await this.port.inspect(this.context(run), { preview });
-    // Every pre-integration read can race with the human merge. Transition before
-    // treating the closed PR or retired preview as a candidate invalidation.
+    // Cada lectura previa a la integración puede coincidir con la integración humana. Cambia de estado antes de
+    // considerar que la PR cerrada o la vista previa retirada invalidan el candidato.
     if (
       facts.pull?.merged &&
       !run.publication!.integratedAcceptance &&
@@ -96,6 +102,7 @@ export class PublicationRuntime {
     }
     return facts;
   }
+
   async setStatus(
     run: Run,
     state: "pending" | "success" | "failure" | "error",
@@ -138,6 +145,7 @@ export class PublicationRuntime {
       this.save(run);
     }
   }
+
   async comment(run: Run, key: string, text: string) {
     const origin = `<!-- app-foundry:${run.id}:${key} -->`;
     const body = this.factory.clean(

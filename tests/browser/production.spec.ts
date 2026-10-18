@@ -9,8 +9,8 @@ import { join } from "node:path";
 import { publicationFixture } from "../support/publication.ts";
 import { verifyPublicProduction } from "../../src/infrastructure/publicProduction.ts";
 
-// Real browser + TLS + public HTTP boundary, real Workflow/SQLite/artifacts.
-// Trust only the ephemeral test certificate, never disable TLS in production.
+// Navegador real, límite HTTP público con TLS, Workflow, SQLite y artefactos reales.
+// Solo se confía en el certificado temporal de prueba; nunca se desactiva TLS en producción.
 for (const scenario of [
   "valid",
   "wrong text",

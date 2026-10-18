@@ -164,7 +164,7 @@ test("las instrucciones tempranas, ambiguas, editadas, no autorizadas, propias u
       ).length,
       1,
     );
-    // Editing a consumed comment never creates a fresh instruction.
+    // Editar un comentario ya consumido nunca crea una instrucción nueva.
     s.writer(true);
     denied.body = `Acepto la versión ${s.facts.pull!.head} y su preview ${report.preview}.`;
     await s.workflow.poll();

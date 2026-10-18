@@ -18,12 +18,13 @@ export interface PreviewAccess {
   ): Promise<{ access: Preview["access"]; head: string | null }>;
 }
 
-// Credentials remain in the trusted CLI profile. Candidate code never receives
-// tokens, authenticated URLs, cookies or CLI output. Protection stays enabled.
+// Las credenciales permanecen en el perfil de CLI de confianza. El código candidato nunca recibe
+// tokens, URL autenticadas, cookies ni la salida de la CLI. La protección sigue activa.
 export class VercelPreviewAccess implements PreviewAccess {
   private command: RemoteCommand;
   private executable: string;
   private directory: string;
+
   constructor(
     directory: string,
     command: RemoteCommand = remoteCommand,
@@ -33,6 +34,7 @@ export class VercelPreviewAccess implements PreviewAccess {
     this.executable = executable;
     this.directory = directory;
   }
+
   async inspect(
     origin: string,
     context: PublicationContext,
@@ -68,13 +70,14 @@ export class VercelPreviewAccess implements PreviewAccess {
       head: sha(meta.githubCommitSha),
     };
   }
+
   async servedHead(origin: string, context: PublicationContext) {
     const team = context.project.publication.teamId;
     if (typeof team !== "string" || !team) {
       throw new Error("Trusted Vercel teamId required for preview access");
     }
-    // A dedicated local CLI link prevents implicit project selection. These are
-    // public resource identifiers, not credentials; no Vercel settings change.
+    // Un enlace local dedicado a la CLI evita seleccionar un proyecto implícitamente. Estos son
+    // identificadores públicos de recursos, no credenciales; no se cambia la configuración de Vercel.
     const directory = join(
       this.directory,
       "vercel-access",
@@ -108,8 +111,8 @@ export class VercelPreviewAccess implements PreviewAccess {
     ) {
       throw new Error("Trusted version path required");
     }
-    // curl writes the status after the body. No redirects: never forward
-    // authentication to a login or an origin supplied by candidate content.
+    // curl escribe el estado después del cuerpo. No se siguen redirecciones: nunca se reenvía
+    // la autenticación a una pantalla de inicio de sesión ni a un origen indicado por contenido candidato.
     const output = await this.command(
       this.executable,
       [

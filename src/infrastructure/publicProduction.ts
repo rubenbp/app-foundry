@@ -5,8 +5,8 @@ import { chromium } from "@playwright/test";
 import type { PublicationContext } from "../application/publication/ports.ts";
 import type { PublicCheck, PublicEvidence } from "../domain/production.ts";
 
-// A fresh browser has no user credentials. Only public, read-only requests to
-// the configured origin are allowed; candidate scripts cannot probe local hosts.
+// Un navegador nuevo no tiene credenciales del usuario. Solo se permiten solicitudes públicas de lectura
+// al origen configurado; los scripts candidatos no pueden sondear hosts locales.
 export async function verifyPublicProduction(
   root: string,
   context: PublicationContext,
@@ -148,8 +148,8 @@ export async function verifyPublicProduction(
         await page.screenshot({ path: screenshot, fullPage: true });
         evidence.screenshots.push(screenshot);
       }
-      // Observe the alias again after all behavior checks; an alias switch cannot
-      // be accredited using a marker read only before navigation.
+      // Vuelve a comprobar el alias tras todas las pruebas de comportamiento; no se puede
+      // validar un cambio de alias con un marcador leído solo antes de navegar.
       await marker();
     } catch (error) {
       evidence.error = String(error);

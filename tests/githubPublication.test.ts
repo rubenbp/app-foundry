@@ -186,7 +186,7 @@ for (const gate of [
       }
       assert.fail(`Unexpected read ${path}`);
     };
-    // The filesystem and local Git remain real. Only remote transport is replaced.
+    // El sistema de archivos y Git local siguen siendo reales. Solo se sustituye el transporte remoto.
     const processPort: typeof execute = async (program, args, settings) => {
       if (program === "git" && args.includes("push")) {
         const run = s.workflow.list()[0];
@@ -206,7 +206,7 @@ for (const gate of [
       }
       return execute(program, args, settings);
     };
-    // Construct the adapter after the fixture path is available through a lazy port.
+    // Construye el adaptador cuando la ruta de la fixture esté disponible mediante un puerto diferido.
     const s = verificationFixture({
       production: {
         inspect: (...args) => adapter.production.inspect(...args),

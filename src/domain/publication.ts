@@ -88,8 +88,9 @@ export function publicationPlan(head: string): Publication {
   };
 }
 
-// This interpreter has no tools or effects. Only complete, affirmative instructions
-// from the displayed grammar can propose acceptance; authorization happens later.
+// Este intérprete no tiene herramientas ni efectos. Solo las instrucciones
+// afirmativas y completas de la gramática mostrada pueden proponer la aceptación;
+// la autorización se decide después.
 export function interpretComment(
   body: string,
 ):

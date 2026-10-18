@@ -48,7 +48,7 @@ export interface PublicationFacts {
     state: "pending" | "success" | "failure" | "error";
   } | null;
 }
-// All effects live at this boundary. There is deliberately no merge operation.
+// Todos los efectos se realizan en este límite. Se omite deliberadamente la operación de integración.
 export interface PublicationPort {
   inspect(
     context: PublicationContext,
