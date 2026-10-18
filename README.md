@@ -4,6 +4,8 @@ Factory local que admite una Petición autorizada desde GitHub, prepara un clon 
 
 La organización del código y sus límites se describen en [Arquitectura de la Factory](docs/architecture.md).
 
+El [manual de negocio de la Factory](docs/manual/README.md) explica el ciclo completo de un issue con diagramas Mermaid, decisiones humanas, variantes e interacciones con GitHub y Vercel.
+
 ## Preparación
 
 Requiere macOS, Node **24.21.0**, npm **11.19.0** y una cuenta OpenAI OAuth activa en OpenCode v2. No pongas credenciales en archivos del proyecto ni en la tarea. `@opencode/cli` y el SDK HTTP `@opencode/client` están fijados en **2.0.32** mediante `package-lock.json`. La Factory ejecuta el binario local y comprueba su versión y PID mediante `/api/info`. La ruta `opencodeCli` de configuración solo sirve para exportar en memoria la cuenta OAuth activa existente; no cambia la cuenta global. El método OAuth y sus metadatos se conservan al importarlos en el servidor propio.
