@@ -135,13 +135,7 @@ export class IntegratedPublication {
     run.endedAt = null;
     this.runtime.save(run);
     const origin = `<!-- app-foundry:${run.id}:integration:${pull.mergeSha} -->`;
-    const body = this.runtime.factory.clean(
-      `${origin}\n## Integración completada\n\nEjecución: ${run.id}\nBase: ${run.workspace!.baseSha}\nCandidato aceptado: ${publication.integratedAcceptance!.head}\nPreview aceptada: ${publication.integratedAcceptance!.preview}\nAceptado por: ${publication.integratedAcceptance!.author}\nCommit integrado: ${pull.mergeSha}\nPR: ${pull.url}\nIntegrado por: ${pull.mergedBy}\n\nEl resultado se ha aceptado en la preview de Vercel. La Ejecución termina con la integración y el cierre del issue.`,
-      55_000,
-    );
-    if (body.truncated) {
-      throw new Error("Integration report exceeds evidence limit");
-    }
+    const body = `${origin}\n\nEl código de este issue se ha integrado en el producto.\n\n${pull.url}`;
     const report = await this.runtime.effect(
       run,
       `integration-report:${pull.mergeSha}`,
