@@ -1,6 +1,6 @@
 import type { ManagedProject } from "../domain/request.ts";
 import { mergeContext } from "../domain/publication.ts";
-import { remoteCommand, type RemoteCommand } from "./publication.ts";
+import { remoteCommand, type RemoteCommand } from "./remote-command.ts";
 
 interface Protection {
   required_status_checks?: {

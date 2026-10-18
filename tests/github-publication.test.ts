@@ -1,10 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  GitHubPublication,
-  VercelPreviewAccess,
-  type RemoteCommand,
-} from "../src/infrastructure/publication.ts";
+import { GitHubPublication } from "../src/infrastructure/publication.ts";
+import { VercelPreviewAccess } from "../src/infrastructure/vercel-preview.ts";
+import { type RemoteCommand } from "../src/infrastructure/remote-command.ts";
 import { configureMergeProtection } from "../src/infrastructure/merge-protection.ts";
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/workspace.ts";
