@@ -44,6 +44,52 @@ test("los informes extensos publican el diff acumulado completo y las salidas sa
   }
 });
 
+test("los cambios informativos en controles permiten publicar y completar el resultado aceptado", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.start();
+    s.commit(
+      "package.json",
+      '{"private":true}',
+      "Update product configuration",
+    );
+    s.finish();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
+    assert.ok(s.workflow.view(run.id)?.verification?.controls.length);
+    assert.equal(s.writes.filter((write) => write.kind === "push").length, 1);
+    const head = s.git("rev-parse", "HEAD");
+    s.facts.preview = {
+      id: "deployment-controls",
+      head,
+      repository: s.project.repository,
+      projectId: "catalogue",
+      environment: "Preview",
+      state: "success",
+      url: "https://catalogue-controls.vercel.app",
+      access: "verified",
+      servedHead: head,
+    };
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    const report = s.writes
+      .filter((write) => write.kind === "comment")
+      .map((write) => write.body)
+      .join("\n");
+    assert.match(report, /Cambios en controles.*informativos/i);
+    assert.match(report, /package.json/);
+    s.comment();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+    assert.equal(s.facts.request.open, false);
+  } finally {
+    s.close();
+  }
+});
+
 test("un fallo al guardar la publicación impide cualquier efecto remoto", async () => {
   const s = publicationFixture();
   let blocker: DatabaseSync | undefined;

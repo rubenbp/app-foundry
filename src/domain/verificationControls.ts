@@ -17,7 +17,7 @@ const omission = new RegExp(
   "i",
 );
 
-/** Comparación prudente; los cambios dudosos requieren criterio humano, no una afirmación de seguridad semántica. */
+/** Observaciones para el informe humano; modificar controles del producto no bloquea la verificación. */
 export function controlChange(
   path: string,
   patch: string,
@@ -44,7 +44,7 @@ export function controlChange(
     return `${path}: possible omission or exclusive test`;
   }
   if (lines.some((line) => /^-(?!--)/.test(line) && line.slice(1).trim())) {
-    return `${path}: removed or modified control; semantic validity uncertain`;
+    return `${path}: test, fixture or script modified; review the cumulative diff`;
   }
   return null;
 }

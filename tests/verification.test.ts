@@ -192,7 +192,7 @@ test("una parada incierta del agente nunca fija un commit ni ejecuta comprobacio
   }
 });
 
-test("quitar comandos o borrar, omitir, aislar o debilitar pruebas requiere intervención humana", async () => {
+test("los cambios en controles del producto son informativos y se ejecuta el contrato completo", async () => {
   for (const change of ["command", "delete", "skip", "only", "weaken"]) {
     const s = verificationFixture({
       files: {
@@ -221,10 +221,10 @@ test("quitar comandos o borrar, omitir, aislar o debilitar pruebas requiere inte
       }
       s.finish();
       const result = (await s.workflow.verifyCandidate())!;
-      assert.equal(result.status, "intervention", change);
-      assert.equal(result.verification?.checks[0].status, "not_run");
+      assert.equal(result.status, "awaiting_preview", change);
+      assert.equal(result.verification?.checks[0].status, "passed");
       assert.ok(result.verification?.controls.length);
-      assert.match(result.error!, /controls.*human/i);
+      assert.equal(result.error, null);
       assert.match(
         s.workflow.output(result.id, "verification-controls")!,
         /package.json|catalogue.test.js/,
@@ -232,6 +232,114 @@ test("quitar comandos o borrar, omitir, aislar o debilitar pruebas requiere inte
     } finally {
       s.close();
     }
+  }
+});
+
+test("actualizar el mensaje del pie y la expectativa de su test permite verificar el candidato", async () => {
+  const previous = "Clásicos que merecen otra partida.";
+  const next = "Clásicos para volver a jugar.";
+  const footerTest = (expected: string) =>
+    `import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+test('footer slogan', () => assert.equal(readFileSync('footer.txt', 'utf8'), ${JSON.stringify(expected)}));
+`;
+  const s = verificationFixture({
+    files: {
+      "footer.txt": previous,
+      "tests/footer.test.mjs": footerTest(previous),
+    },
+    commands: ["node --test tests/footer.test.mjs"],
+  });
+  try {
+    await s.start();
+    s.commit("footer.txt", next, "Update requested footer");
+    s.commit(
+      "tests/footer.test.mjs",
+      footerTest(next),
+      "Update footer expectation",
+    );
+    s.finish();
+    const result = (await s.workflow.verifyCandidate())!;
+    assert.equal(result.status, "awaiting_preview", result.error ?? "");
+    assert.equal(result.verification?.status, "passed");
+    assert.equal(result.verification.checks[0].code, 0);
+    assert.ok(
+      result.verification.controls.some((change) =>
+        change.includes("tests/footer.test.mjs"),
+      ),
+    );
+    assert.match(
+      s.workflow.output(result.id, "verification-check-1")!,
+      /footer slogan/,
+    );
+    assert.match(
+      s.workflow.output(result.id, "verification-controls")!,
+      /informational/i,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("los cambios de dependencias y configuración se informan sin detener el contrato de confianza", async () => {
+  const s = verificationFixture({
+    commands: ["node check.mjs", "node --version"],
+  });
+  try {
+    await s.start();
+    for (const [path, text] of Object.entries({
+      "package.json": '{"private":true,"dependencies":{"example":"1.0.0"}}',
+      "pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+      "build.config.js": "export default {};\n",
+      ".gitignore": "dist/\n",
+    })) {
+      s.commit(path, text, `Update ${path}`);
+    }
+    s.finish();
+    const result = (await s.workflow.verifyCandidate())!;
+    assert.equal(result.status, "awaiting_preview", result.error ?? "");
+    const report = result.verification;
+    assert.ok(report);
+    assert.ok(report.checks.every((check) => check.status === "passed"));
+    assert.equal(report.controls.length, 4);
+  } finally {
+    s.close();
+  }
+});
+
+test("quitar un comando del producto falla al ejecutarlo aunque su cambio sea informativo", async () => {
+  const s = verificationFixture({
+    files: {
+      "package.json": JSON.stringify({ scripts: { verify: "node check.mjs" } }),
+    },
+    commands: ["npm run verify", "node --version"],
+  });
+  try {
+    await s.start();
+    s.commit(
+      "package.json",
+      '{"private":true}',
+      "Remove product verification script",
+    );
+    s.finish();
+    const result = (await s.workflow.verifyCandidate())!;
+    assert.equal(result.status, "intervention");
+    assert.equal(result.verification?.status, "failed");
+    assert.equal(result.verification.checks[0].status, "failed");
+    assert.notEqual(result.verification.checks[0].code, 0);
+    assert.equal(result.verification.checks[1].status, "not_run");
+    assert.ok(
+      result.verification.controls.some((change) =>
+        change.includes("package.json"),
+      ),
+    );
+    assert.match(
+      s.workflow.output(result.id, "verification-check-1")!,
+      /Missing script/,
+    );
+  } finally {
+    s.close();
   }
 });
 
@@ -253,7 +361,7 @@ test("se permiten pruebas de comportamiento nuevas", async () => {
   }
 });
 
-test("una prueba recién aislada y una fuente de comandos editada no pueden eludir la revisión de control", async () => {
+test("la comparación informativa de pruebas y scripts no impide ejecutar las verificaciones", async () => {
   for (const path of ["tests/new.test.js", "check.mjs"]) {
     const s = verificationFixture();
     try {
@@ -268,8 +376,8 @@ test("una prueba recién aislada y una fuente de comandos editada no pueden elud
       );
       s.finish();
       const result = (await s.workflow.verifyCandidate())!;
-      assert.equal(result.status, "intervention");
-      assert.equal(result.verification?.checks[0].status, "not_run");
+      assert.equal(result.status, "awaiting_preview");
+      assert.equal(result.verification?.checks[0].status, "passed");
       assert.ok(result.verification?.controls[0].includes(path));
     } finally {
       s.close();

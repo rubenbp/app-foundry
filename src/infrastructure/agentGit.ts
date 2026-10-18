@@ -14,7 +14,7 @@ export function installLocalGitGuard(
     { mode: 0o600 },
   );
   const guards = join(runtime, "bin");
-  mkdirSync(guards, { mode: 0o700 });
+  mkdirSync(guards, { recursive: true, mode: 0o700 });
   const script = `#!${process.execPath}
 const { spawnSync } = require("node:child_process");
 const { realpathSync } = require("node:fs");

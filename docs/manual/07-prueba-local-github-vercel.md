@@ -20,7 +20,7 @@ Comprobación realizada el 18 de octubre de 2026:
 | Conexión Git de Vercel              | Repositorio correcto, producción desde `main` y variables de sistema habilitadas.              |
 | Protección de `main`                | Exige `Vercel` y `Factory / ready-to-merge`, con rama actualizada y administradores incluidos. |
 | Issues abiertos con `factory:ready` | Ninguno en la consulta realizada.                                                              |
-| `factory.local.json` existente      | Modo manual de lectura, sin `managedProjectFile`. No usarlo para esta prueba.                  |
+| `sample/factory.local.json`         | Configuración del flujo de issues, junto con el resto del ejemplo en `sample`.                 |
 
 Los accesos remotos pueden cambiar. Estas observaciones no acreditan todavía una Ejecución nueva ni un Commit candidato desplegado.
 
@@ -87,28 +87,28 @@ La ruta de Vercel citada pertenece a una caché ya comprobada. Si desaparece, in
 Se ha preparado este archivo local:
 
 ```text
-/private/tmp/app-foundry-prueba-local.json
+/Users/rubenbp/dev/jakala-tfm/sample/factory.local.json
 ```
 
 Apunta al Managed project de Rebobina y conserva los datos en:
 
 ```text
-/Users/rubenbp/.local/share/app-foundry/prueba-local
+/Users/rubenbp/dev/jakala-tfm/sample/data
 ```
 
-Esa carpeta es independiente del código. No borres sus datos entre reinicios para intentar recuperar una Ejecución. El `factory.local.json` anterior no se ha modificado.
+Esa carpeta es independiente del código. No borres sus datos entre reinicios para intentar recuperar una Ejecución. El archivo de configuración, `managed-project.json`, el encargo `issue.md`, el arranque `start.sh` y las instrucciones del ejemplo están juntos en `/Users/rubenbp/dev/jakala-tfm/sample`. El arranque no depende de una configuración en la raíz de la Factory.
 
-Como `/private/tmp` es temporal, puedes reconstruir el archivo si desaparece. Este es su contenido:
+Este es el contenido de la configuración local del ejemplo:
 
 ```json
 {
-  "dataDir": "/Users/rubenbp/.local/share/app-foundry/prueba-local",
+  "dataDir": "/Users/rubenbp/dev/jakala-tfm/sample/data",
   "provider": "openai",
   "model": "gpt-6-luna",
   "auth": "opencode",
   "opencodeCli": "/opt/homebrew/bin/opencode",
   "vercelCli": "/Users/rubenbp/.npm/_npx/43d8461e34b9b106/node_modules/.bin/vercel",
-  "managedProjectFile": "/Users/rubenbp/dev/jakala-tfm/app-foundry/config/managed-projects/rebobina.json"
+  "managedProjectFile": "managed-project.json"
 }
 ```
 
@@ -119,7 +119,7 @@ Los IDs de Vercel y el dominio están en la configuración de confianza del Mana
 En la primera terminal:
 
 ```sh
-npm start -- serve --config /private/tmp/app-foundry-prueba-local.json --port 4310
+npm start -- serve --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local.json --port 4310
 ```
 
 Deja esa terminal abierta durante todo el recorrido. Abre [http://127.0.0.1:4310](http://127.0.0.1:4310).
@@ -217,7 +217,7 @@ Al completar, puedes cerrar la Factory con `Ctrl-C`. Para detener una Ejecución
 
 ```sh
 cd /Users/rubenbp/dev/jakala-tfm/app-foundry
-npm start -- stop --config /private/tmp/app-foundry-prueba-local.json --id ID_DE_EJECUCION
+npm start -- stop --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local.json --id ID_DE_EJECUCION
 ```
 
 Usa el ID del dashboard para una parada operativa local. Para cancelar desde GitHub, publica exactamente `Cancelar` en el issue: antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`), sin comprobar permisos del autor. La CLI `stop` no cierra el issue. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Reiniciar mientras espera una respuesta humana conserva el mismo thread y permite continuar al recibirla. Un reinicio en otros trabajos iniciados deja intervención; no reanuda esos trabajos automáticamente.

@@ -27,6 +27,14 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 
 La configuración operativa tiene un contrato propio en `application/configuration.ts`. Los registros de dominio y el consumo están en `domain/run.ts`; no se agrupan puertos y configuración en un módulo genérico de tipos.
 
+## Autonomía local del Managed project
+
+El MVP presupone operadores y repositorios de confianza. El agente puede mantener código y pruebas, actualizar dependencias y lockfiles y modificar scripts y configuración del producto. OpenCode permite comandos de desarrollo sin una lista literal de comandos shell. El entorno reducido, la protección local de Git y las instrucciones del agente mantienen la separación operativa: no recibe credenciales de publicación, no cambia la identidad del clon y no publica ni integra por su cuenta. Son controles frente a errores accidentales del mismo usuario de macOS, no aislamiento del sistema operativo.
+
+`domain/verificationControls.ts` identifica cambios en archivos relacionados con la verificación para el informe humano. Estas observaciones se conservan en `Verification.controls` y su artefacto; no son rechazos. `infrastructure/verification.ts` ejecuta después el contrato de la configuración externa de confianza. `application/publication/evidence.ts` incluye las observaciones en el informe y permite continuar si el commit y las comprobaciones tienen evidencia válida. No declara que las pruebas modificadas mantengan su calidad semántica.
+
+La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: instrucciones` abre otro Intento. No se añaden iteraciones automáticas ni recuperación automática general tras reiniciar. El Dashboard continúa siendo de lectura y la aceptación y el merge continúan siendo humanos.
+
 ## Responsabilidades de publicación
 
 `application/candidatePublication.ts` coordina el avance del Commit candidato y la espera de revisión. Delega responsabilidades con motivos de cambio distintos:

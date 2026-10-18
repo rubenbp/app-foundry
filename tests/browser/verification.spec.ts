@@ -117,3 +117,43 @@ test("el dashboard muestra la verificación independiente, el diff completo, las
     s.close();
   }
 });
+
+test("el dashboard muestra los cambios de configuración como información y conserva el candidato verificado", async ({
+  page,
+}) => {
+  const s = verificationFixture();
+  const run = await s.start();
+  s.commit("package.json", '{"private":true}', "Update product configuration");
+  s.finish();
+  await s.workflow.verifyCandidate();
+  const server = panelServer(s.workflow.factory);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    await page.goto(
+      `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    );
+    const section = page.getByRole("region", {
+      name: "Verificación independiente",
+    });
+    await expect(
+      section.getByRole("heading", {
+        name: "Cambios en controles (informativos)",
+      }),
+    ).toBeVisible();
+    await expect(section).toContainText("package.json");
+    await expect(section).toContainText("no bloquean las verificaciones");
+    await expect(page.locator(".badge.awaiting_preview")).toBeVisible();
+    await expect(page.locator(".badge.intervention")).toHaveCount(0);
+    await expect(section.getByRole("alert")).toHaveCount(0);
+    const snapshot = await page.request
+      .get(new URL(`/api/view?run=${run.id}`, page.url()).href)
+      .then((response) => response.json());
+    expect(snapshot.run.verification.status).toBe("passed");
+    expect(snapshot.run.verification.controls).toHaveLength(1);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    s.close();
+  }
+});

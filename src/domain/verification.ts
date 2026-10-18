@@ -25,6 +25,7 @@ export interface Verification {
   configurationPartId: string;
   checks: VerificationCheck[];
   criteria: CriterionEvidence[];
+  /** Cambios informativos en controles del producto; no son rechazos de verificación. */
   controls: string[];
   effectsUncertain?: boolean;
   e2e?: {
@@ -86,7 +87,7 @@ export function verificationPlan(
     })),
     controls: [],
     limitations: [
-      "Control comparison is conservative and cannot detect every semantic weakening.",
+      "Product test and configuration changes are informational; passing checks do not establish the semantic quality of the tests.",
       "Local verification does not accredit preview, acceptance, merge or production.",
       "Native Playwright traces, media and attachments are omitted and temporary test output is removed; only sanitized text and selected browser metadata are retained.",
     ],

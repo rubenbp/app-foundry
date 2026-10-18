@@ -156,7 +156,7 @@ export function VerificationDetails({ run }: { run: Run }) {
       </ol>
       {report.controls.length ? (
         <>
-          <h3>Controles que requieren intervención</h3>
+          <h3>Cambios en controles (informativos)</h3>
           <ul>
             {report.controls.map((control) => (
               <li key={control}>{control}</li>
@@ -177,10 +177,11 @@ export function VerificationDetails({ run }: { run: Run }) {
         </p>
       ) : null}
       <p className="small muted">
-        La comparación de controles es conservadora; no detecta todo
-        debilitamiento semántico. El estado de preview y aceptación se muestra
-        por separado. La revisión humana del preview precede al merge y al
-        cierre del issue.
+        Los cambios en pruebas y configuración del producto se muestran como
+        información para la revisión humana y no bloquean las verificaciones.
+        Superar las comprobaciones no demuestra la calidad de las pruebas. El
+        estado de preview y aceptación se muestra por separado. La revisión
+        humana del preview precede al merge y al cierre del issue.
       </p>
     </section>
   );

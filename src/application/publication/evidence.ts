@@ -14,7 +14,6 @@ export function candidateEvidence(factory: Factory, run: Run) {
   if (
     verification.headSha !== run.publication!.head ||
     verification.status !== "passed" ||
-    verification.controls.length ||
     verification.effectsUncertain ||
     !verification.checks.length ||
     verification.checks.some(
@@ -32,6 +31,11 @@ export function candidateEvidence(factory: Factory, run: Run) {
     `Issue: ${run.request!.title}\n${run.request!.body}`,
     `Diff acumulado completo ${verification.baseSha}..${verification.headSha}\n${output(verification.diffPartId)}`,
     `Configuración\n${output(verification.configurationPartId)}`,
+    ...(verification.controls.length
+      ? [
+          `Cambios en controles (informativos)\n${verification.controls.join("\n")}`,
+        ]
+      : []),
     ...verification.checks.map(
       (check) =>
         `Verificación ${check.command}: exit ${check.code}\n${output(check.partId)}`,

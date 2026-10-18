@@ -13,9 +13,8 @@ flowchart TD
     S -->|"Sí"| C{"¿Clon y rama correctos, base antecesora<br/>y ningún cambio sin commit?"}
     C -->|"No"| X
     C -->|"Sí"| D["Fijar base, Commit candidato y diff acumulado"]
-    D --> P{"¿Hay cambios en controles protegidos<br/>que requieren revisión?"}
-    P -->|"Sí"| X
-    P -->|"No"| V["Ejecutar contrato de verificación<br/>sobre todo el árbol del Commit candidato"]
+    D --> P["Registrar cambios en pruebas y configuración<br/>como información para revisar"]
+    P --> V["Ejecutar contrato de verificación<br/>sobre todo el árbol del Commit candidato"]
     V --> T{"¿Comandos correctos, evidencia completa<br/>y árbol de trabajo estable?"}
     T -->|"No"| X
     T -->|"Sí"| R["Verificación técnica superada<br/>Continuar hacia PR y preview"]
@@ -23,7 +22,7 @@ flowchart TD
 
 En Rebobina, el contrato incluye build, lint, comprobación de tipos, pruebas unitarias y pruebas de navegador. Un comando fallido detiene la secuencia; los posteriores quedan sin ejecutar. No hay un bucle automático para pedir al agente que corrija y vuelva a probar. La persona puede publicar `Corregir: instrucciones` en el issue para iniciar otro Intento y repetir la verificación completa, o `Reintentar` para volver a ejecutar la fase tras corregir la causa.
 
-La Factory compara controles con la base: comandos, configuración, manifests, lockfiles y pruebas existentes. Eliminar o modificar controles, omitir pruebas o hacer que solo se ejecuten algunas requiere intervención. Añadir pruebas sin esas señales sí está permitido. La revisión es conservadora: puede señalar cambios inocuos y no detecta todo debilitamiento posible.
+La Factory compara con la base los archivos de comandos, configuración, manifests, lockfiles, scripts y pruebas. Las observaciones aparecen en el Dashboard y en el informe de la PR como información para revisar; no impiden ejecutar los comandos ni publicar un candidato que supere el contrato. El agente puede mantener las pruebas existentes, actualizar expectativas, cambiar dependencias y ajustar la configuración del producto. Por ejemplo, cambiar el mensaje del pie y la expectativa de su test es parte del mismo encargo y no necesita una autorización adicional. La configuración de confianza de la Factory sigue fuera del clon y no puede cambiarla el agente.
 
 Las pruebas de navegador usan un servidor propio para el build del Commit candidato. Un puerto ocupado falla; no se reutiliza otro servidor. Hace falta informe válido y pruebas ejecutadas, sin fallos, omisiones ni resultados inestables. Un código de salida cero, por sí solo, no acredita la comprobación.
 
@@ -62,7 +61,7 @@ La Factory usa acceso autenticado a Vercel cuando corresponde y conserva Deploym
 
 ## Qué debe revisar una persona
 
-El informe de la PR reúne el Issue autorizado, la Ejecución, la base, el Commit candidato, el diff acumulado, las verificaciones, la evidencia por criterio, las lagunas y la preview. Si no cabe en un comentario, se divide en fragmentos enlazados; no se recorta el diff para aparentar evidencia completa.
+El informe de la PR reúne el Issue autorizado, la Ejecución, la base, el Commit candidato, el diff acumulado, las verificaciones, los cambios informativos en controles del producto, la evidencia por criterio, las lagunas y la preview. La persona revisora también debe valorar si las pruebas cambiadas siguen comprobando el comportamiento solicitado; pasar la suite no acredita por sí solo esa calidad. Si no cabe en un comentario, se divide en fragmentos enlazados; no se recorta el diff para aparentar evidencia completa.
 
 La persona revisa el comportamiento en preview y decide si satisface los criterios. Para aceptar, publica un comentario nuevo en el issue o en la conversación principal de la PR, usando el ejemplo exacto del informe:
 

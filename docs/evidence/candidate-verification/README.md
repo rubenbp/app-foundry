@@ -2,6 +2,8 @@
 
 Auditoría de los siete criterios de [#16](https://github.com/rubenbp/app-foundry/issues/16), realizada sobre la implementación `918744dff66d77236d7cf70013457e4b5020d27a` (precedida por `e1e9289`). No se modificó ni cerró el padre #12.
 
+> Nota de vigencia: este documento conserva la evidencia histórica de #16. La política posterior del MVP permite cambiar pruebas, scripts, dependencias y configuración del producto y muestra la comparación como información, sin bloquear por esos cambios. El contrato vigente está en el [manual de verificación](../../manual/03-verificacion-y-aceptacion.md). Las cifras y pruebas de este cierre corresponden a su implementación original.
+
 ## Comprobaciones de la Factory
 
 Se ejecutaron de nuevo `npm run typecheck`, `npm run lint`, `npm run format:check` y `npm test`: todos terminaron con código 0. La suite completa pasó **48 pruebas de servicio y 7 de navegador**, sin fallos ni pruebas omitidas. [Resumen de la ejecución](factory-checks.json).
