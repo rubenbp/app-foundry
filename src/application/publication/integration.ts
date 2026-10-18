@@ -143,11 +143,10 @@ export class IntegratedPublication {
         const current = await this.runtime.facts(run, false);
 
         return current.comments.find(
-          (comment) => comment.source === "issue" && comment.body === body.text,
+          (comment) => comment.source === "issue" && comment.body === body,
         );
       },
-      () =>
-        this.runtime.port.commentIssue(this.runtime.context(run), body.text),
+      () => this.runtime.port.commentIssue(this.runtime.context(run), body),
     );
     publication.integrationReport = { id: report.id, url: report.url };
     if (!publication.ownComments.includes(report.id)) {
@@ -161,7 +160,7 @@ export class IntegratedPublication {
         const current = await this.runtime.facts(run, false);
         if (
           !current.comments.some(
-            (comment) => comment.id === report.id && comment.body === body.text,
+            (comment) => comment.id === report.id && comment.body === body,
           )
         ) {
           throw new Error("Integration report changed before closure");

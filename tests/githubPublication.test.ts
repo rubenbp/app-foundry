@@ -318,7 +318,15 @@ for (const gate of [
         s.workflow.view(run.id)?.error ?? "",
       );
       assert.equal(requestOpen, false);
-      assert.match(String(issueComments[0].body), /Commit integrado: a{40}/);
+      assert.match(
+        String(issueComments[0].body),
+        /El código de este issue se ha integrado/,
+      );
+      assert.ok(
+        String(issueComments[0].body).includes(
+          `https://github.com/${s.project.repository}/pull/2`,
+        ),
+      );
       assert.ok(writes.includes(`repos/${s.project.repository}/issues/1`));
     } finally {
       s.close();

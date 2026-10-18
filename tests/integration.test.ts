@@ -221,7 +221,7 @@ for (const effect of ["integration-report", "close-issue"]) {
         s.facts.comments.filter(
           (comment) =>
             comment.source === "issue" &&
-            comment.body.includes("## Integración completada"),
+            comment.body.includes("El código de este issue se ha integrado"),
         ).length,
         1,
       );

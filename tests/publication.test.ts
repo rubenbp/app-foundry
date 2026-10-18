@@ -502,9 +502,8 @@ test("un issue en lenguaje natural completa la integración squash, publica el r
       (comment) => comment.id === completed.publication?.integrationReport?.id,
     )!;
     assert.equal(report.source, "issue");
-    assert.match(report.body, /Integración completada/);
-    assert.match(report.body, new RegExp(`Candidato aceptado: ${candidate}`));
-    assert.match(report.body, /Commit integrado: a{40}/);
+    assert.match(report.body, /El código de este issue se ha integrado/);
+    assert.ok(report.body.includes(s.facts.pull!.url));
     assert.equal(s.facts.request.open, false);
     assert.equal(s.workflow.factory.active, null);
     assert.equal(
