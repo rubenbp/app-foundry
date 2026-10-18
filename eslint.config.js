@@ -31,11 +31,21 @@ export default tseslint.config(
         },
       ],
       "no-multiple-empty-lines": ["error", { max: 1 }],
+      "lines-between-class-members": [
+        "error",
+        {
+          enforce: [
+            { blankLine: "always", prev: "*", next: "method" },
+            { blankLine: "never", prev: "field", next: "field" },
+          ],
+        },
+      ],
       "padding-line-between-statements": [
         "error",
         { blankLine: "always", prev: "const", next: "return" },
         { blankLine: "always", prev: "let", next: "return" },
         { blankLine: "always", prev: "var", next: "return" },
+        { blankLine: "always", prev: "*", next: "function" },
       ],
     },
   },

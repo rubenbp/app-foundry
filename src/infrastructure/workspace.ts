@@ -23,6 +23,7 @@ export class GitWorkspace implements WorkspacePort {
   private options(directory: string): ProcessOptions {
     const home = join(this.root, "command-home");
     mkdirSync(home, { recursive: true, mode: 0o700 });
+
     return { cwd: directory, env: reducedEnvironment(home) };
   }
 
@@ -63,6 +64,7 @@ export class GitWorkspace implements WorkspacePort {
       "--push",
       "origin",
     ]);
+
     if (push !== "disabled://factory-owned-remote-effects") {
       throw new Error("Agent push remote must remain disabled");
     }

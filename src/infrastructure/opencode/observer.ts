@@ -15,6 +15,7 @@ export class Observer {
   timer: ReturnType<typeof setTimeout> | undefined;
   polling = false;
   pending = new Map<string, Pending>();
+
   constructor(
     client: OpenCodeClient,
     sessionId: string,
@@ -24,6 +25,7 @@ export class Observer {
     this.sessionId = sessionId;
     this.emit = emit;
   }
+
   async start() {
     let connected!: () => void;
     const ready = new Promise<void>((resolve) => {
@@ -34,6 +36,7 @@ export class Observer {
       () => this.abort.abort(new Error("OpenCode stream connection timeout")),
       5000,
     );
+
     void (async () => {
       try {
         for await (const event of stream) {
@@ -44,6 +47,7 @@ export class Observer {
           }
           this.event(event);
         }
+
         if (!this.abort.signal.aborted) {
           this.emit({
             type: "gap",
@@ -62,17 +66,21 @@ export class Observer {
         connected();
       }
     })().catch(() => this.close());
+
     await ready;
     this.abort.signal.throwIfAborted();
   }
+
   message(message: SessionMessageInfo) {
     if (message.type !== "assistant") {
       return;
     }
+
     const t = message.tokens;
     const counters = t
       ? [t.input, t.output, t.reasoning, t.cache?.read, t.cache?.write]
       : [];
+
     this.emit({
       type: "usage",
       usage: {
@@ -101,9 +109,11 @@ export class Observer {
         completed: Boolean(message.time.completed),
       },
     });
+
     if (message.error) {
       this.emit({ type: "error", text: errorText(message.error) });
     }
+
     for (const [index, part] of message.content.entries()) {
       if (part.type === "text") {
         this.emit({
@@ -114,6 +124,7 @@ export class Observer {
           text: part.text,
         });
       }
+
       if (part.type === "tool") {
         const state = part.state;
         const content =
@@ -144,6 +155,7 @@ export class Observer {
       }
     }
   }
+
   event(event: V2Event) {
     const data = event.data;
     if (!("sessionID" in data) || data.sessionID !== this.sessionId) {
@@ -175,6 +187,7 @@ export class Observer {
       });
     }
   }
+
   async poll() {
     if (this.polling || this.abort.signal.aborted) {
       return;
@@ -277,6 +290,7 @@ export class Observer {
       this.polling = false;
     }
   }
+
   watch() {
     const tick = async () => {
       await this.poll();
@@ -288,6 +302,7 @@ export class Observer {
     };
     void tick().catch(() => this.close());
   }
+
   close() {
     this.abort.abort();
     clearTimeout(this.timer);

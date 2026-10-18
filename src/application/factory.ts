@@ -82,6 +82,7 @@ export class Factory {
     } catch (error) {
       this.fault =
         "Persistence failed; new effects blocked. Stop the owned process manually using the recorded PID.";
+
       throw error;
     }
   }
@@ -386,6 +387,7 @@ export class Factory {
       latest.process.exited = result.exited;
     }
     latest.pending = [];
+
     this.record(latest, "stop", result.detail);
     this.persist(latest);
     if (result.exited) {

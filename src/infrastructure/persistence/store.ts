@@ -68,12 +68,14 @@ export class Store implements RunRepository {
         .run(run.id, JSON.stringify(run));
     } catch (error) {
       this.failed = true;
+
       throw error;
     }
   }
 
   list(): Run[] {
     return this.db
+
       .prepare("SELECT body FROM runs ORDER BY rowid DESC")
       .all()
       .map((row) => JSON.parse(String(row.body)));
@@ -83,6 +85,7 @@ export class Store implements RunRepository {
     return join(
       this.root,
       "artifacts",
+
       createHash("sha256")
         .update(runId + ":" + partId)
         .digest("hex") + ".txt",
@@ -96,6 +99,7 @@ export class Store implements RunRepository {
     try {
       const path = this.artifact(runId, partId);
       writeFileSync(path + ".tmp", text, { mode: 0o600 });
+
       renameSync(path + ".tmp", path);
     } catch (error) {
       this.failed = true;

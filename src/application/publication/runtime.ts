@@ -22,10 +22,11 @@ export class ObservedMerge extends Error {
 export class PublicationRuntime {
   readonly factory: Factory;
   readonly port: PublicationPort;
-  stopping = false;
+stopping = false;
 
   constructor(factory: Factory, port: PublicationPort) {
     this.factory = factory;
+
     this.port = port;
   }
 
@@ -33,6 +34,7 @@ export class PublicationRuntime {
     this.factory.assertRunning(run.id);
     this.factory.persist({
       ...run,
+
       publication: sanitizedRecord(run.publication, this.factory.clean),
     });
   }
@@ -44,6 +46,7 @@ export class PublicationRuntime {
       runId: run.id,
       head: run.publication!.head,
       project: run.request!.configuration,
+
       workspace: run.workspace!,
       pull: run.publication!.pull,
     };
@@ -83,6 +86,7 @@ export class PublicationRuntime {
         state: "confirmed",
         at: this.factory.now(),
       };
+
       this.factory.record(run, "confirmed", key);
       this.save(run);
     }

@@ -126,6 +126,7 @@ export class GitHubPublication implements PublicationPort {
       body: text(comment.body),
       author: text(user.login),
       human: user.type === "User" && !comment.performed_via_github_app,
+
       createdAt: timestamp(comment.created_at),
       updatedAt: timestamp(comment.updated_at),
       source,
@@ -313,6 +314,7 @@ export class GitHubPublication implements PublicationPort {
         open: request.state === "open",
       },
       remoteHead: ref ? sha(record(ref.object).sha) : null,
+
       pull,
       comments,
       preview,
@@ -382,6 +384,7 @@ export class GitHubPublication implements PublicationPort {
         signal: AbortSignal.timeout(30_000),
       },
     );
+
     if (result.code !== 0 || result.truncated || result.forcedStop) {
       throw new Error(
         `Publication Git operation unconfirmed: ${result.output}`,
@@ -403,6 +406,7 @@ export class GitHubPublication implements PublicationPort {
       context,
       [
         "push",
+
         `--force-with-lease=refs/heads/${context.workspace.branch}:`,
         "--",
         `https://github.com/${context.repository}.git`,

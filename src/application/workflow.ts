@@ -45,9 +45,11 @@ export class Workflow {
   private verificationDone?: Promise<void>;
   private verifier: CandidateVerification;
   private publication?: CandidatePublication;
+
   get observation() {
     return this.factory.store.observation();
   }
+
   constructor(config: FactoryConfig, options: WorkflowOptions) {
     this.github = options.github;
     this.workspace = options.workspace;
@@ -95,7 +97,9 @@ export class Workflow {
       throw error;
     }
   }
+
   private halted = false;
+
   halt() {
     this.halted = true;
   }
@@ -135,6 +139,7 @@ export class Workflow {
       this.polling = false;
     }
   }
+
   async observe(issues: ReadyIssue[]) {
     const observedAt = this.factory.now();
     const errors: string[] = [];
@@ -176,6 +181,7 @@ export class Workflow {
       error: errors.length ? this.factory.clean(errors.join("\n")).text : null,
     });
   }
+
   async startNext() {
     if (this.halted || this.factory.active) {
       return null;
@@ -235,9 +241,11 @@ export class Workflow {
       };
     });
   }
+
   queue() {
     return queuedRuns(this.list());
   }
+
   async verifyCandidate() {
     const id = this.factory.active;
     const run = id ? this.view(id) : null;
@@ -353,15 +361,19 @@ export class Workflow {
       done();
     }
   }
+
   list() {
     return this.factory.list();
   }
+
   view(id: string) {
     return this.factory.view(id);
   }
+
   output(runId: string, partId: string) {
     return this.factory.output(runId, partId);
   }
+
   async stop(id: string) {
     await this.publication?.stop(id);
     if (this.verifying && this.factory.active === id) {
@@ -386,6 +398,7 @@ export class Workflow {
     }
     return result;
   }
+
   close() {
     if (this.closed) {
       return;

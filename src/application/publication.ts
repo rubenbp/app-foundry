@@ -35,6 +35,7 @@ export class CandidatePublication {
     this.busy = this.advance().finally(() => {
       this.busy = undefined;
     });
+
     return this.busy;
   }
 
@@ -370,6 +371,7 @@ export class CandidatePublication {
         }
       }
       delete publication.acceptance;
+
       this.runtime.save(run);
     }
   }

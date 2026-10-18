@@ -19,6 +19,7 @@ export class CandidateVerifier implements CandidateVerification {
     this.root = privateRoot;
     this.process = processPort;
   }
+
   private root: string;
   private process: ProcessPort;
 

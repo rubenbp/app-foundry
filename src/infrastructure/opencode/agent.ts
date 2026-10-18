@@ -213,9 +213,11 @@ export class OpenCode implements AgentPort {
         }
       }
     });
+
     const headers = {
       Authorization: `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`,
     };
+
     this.client = NativeClient.make({
       baseUrl: url,
       headers,
@@ -238,7 +240,9 @@ export class OpenCode implements AgentPort {
         });
       },
     });
+
     let info: Awaited<ReturnType<OpenCodeClient["server"]["info"]>> | undefined;
+
     for (let i = 0; i < 80; i++) {
       if (child.exitCode !== null) {
         throw new Error("Owned OpenCode server exited during startup");
@@ -255,21 +259,25 @@ export class OpenCode implements AgentPort {
       }
       await delay(250);
     }
+
     if (info?.version !== OPENCODE_VERSION || info.pid !== child.pid) {
       throw new Error("Owned OpenCode identity/version not confirmed");
     }
+
     await this.client.credential.create({
       integrationID: selected.integrationID,
       value: selected.value,
       activate: true,
       label: "Factory temporary OAuth",
     });
+
     let agents =
       (
         await this.client.agent.list({
           location: { directory: this.config.projectDir },
         })
       ).data ?? [];
+
     for (let i = 0; i < 20 && !agents.some((a) => a.id === "factory"); i++) {
       await delay(250);
       agents =
@@ -287,6 +295,7 @@ export class OpenCode implements AgentPort {
           rule.resource === "*" &&
           rule.effect === "deny",
       ) ?? -1;
+
     const validPolicy =
       actual &&
       start >= 0 &&
@@ -297,6 +306,7 @@ export class OpenCode implements AgentPort {
       actual.permissions
         .slice(start + activePolicy.length)
         .every((rule) => rule.effect === "deny");
+
     if (!actual || actual.model?.id !== "gpt-6-luna" || !validPolicy) {
       const sources = await this.client.config.get({
         location: { directory: this.config.projectDir },
@@ -305,6 +315,7 @@ export class OpenCode implements AgentPort {
         `Effective Factory agent/model/tool policy differs from trusted configuration: ${JSON.stringify({ ids: agents.map((a) => a.id), model: actual?.model, permissions: actual?.permissions, sources: sources.map((s) => ({ path: s.path, type: s.type, agents: s.type === "document" ? Object.keys(s.info.agents ?? {}) : [] })) })}`,
       );
     }
+
     return {
       pid: child.pid!,
       version: info.version,
@@ -348,6 +359,7 @@ export class OpenCode implements AgentPort {
       throw new Error("OpenCode not started");
     }
     await this.client.session.prompt({ sessionID: sessionId, text: task });
+
     this.observer!.watch();
   }
 
@@ -384,6 +396,7 @@ export class OpenCode implements AgentPort {
     } catch {
       /* Se comprueba más abajo. */
     }
+
     for (let i = 0; i < 20 && alive(); i++) {
       await delay(100);
     }
@@ -394,13 +407,16 @@ export class OpenCode implements AgentPort {
         /* Se comprueba más abajo. */
       }
     }
+
     for (let i = 0; i < 30 && alive(); i++) {
       await delay(100);
     }
     const exited = !alive();
+
     detail += exited
       ? `Owned process group ${pid} absent. Provider-side work/effects cannot be proven stopped or reverted.`
       : `Owned process group ${pid} still observable; manual inspection required.`;
+
     if (exited && this.runtime) {
       rmSync(this.runtime, { recursive: true, force: true });
     }
