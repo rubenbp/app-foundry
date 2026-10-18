@@ -651,7 +651,7 @@ summary {
   color: #28428b;
 }
 
-.badge.checking_production,
+.badge.closing_issue,
 .badge.completed {
   background: #e2f2eb;
   color: #235d46;

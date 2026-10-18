@@ -91,7 +91,6 @@ test("la autorización de GitHub requiere que quien aplicó la etiqueta tenga pe
           publication: {
             provider: "vercel",
             projectId: "example",
-            productionOrigin: "https://example.com",
             humanMergeRequired: true,
           },
         },

@@ -78,7 +78,14 @@ export class Store implements RunRepository {
 
       .prepare("SELECT body FROM runs ORDER BY rowid DESC")
       .all()
-      .map((row) => JSON.parse(String(row.body)));
+      .map((row): Run => {
+        const run = JSON.parse(String(row.body));
+        // Las ejecuciones anteriores conservan su evidencia, pero ya no esperan producción.
+        if (run.status === "checking_production") {
+          run.status = "closing_issue";
+        }
+        return run;
+      });
   }
 
   artifact(runId: string, partId: string) {

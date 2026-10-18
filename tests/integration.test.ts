@@ -1,74 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
+import { join } from "node:path";
 import { publicationFixture } from "./support/publication.ts";
-
-for (const invalid of [
-  "head",
-  "repository",
-  "projectId",
-  "environment",
-  "failure",
-  "query",
-  "marker",
-  "coverage",
-] as const) {
-  test(`una incertidumbre de producción (${({ head: "commit", repository: "repositorio", projectId: "identificador del proyecto", environment: "entorno", failure: "fallo", query: "consulta", marker: "marcador", coverage: "cobertura" } as const)[invalid]}) no puede cerrar el issue ni acreditar la finalización`, async () => {
-    const s = publicationFixture();
-    try {
-      const run = await s.candidate();
-      await s.workflow.poll();
-      s.comment();
-      await s.workflow.poll();
-      s.merge();
-      s.productionReady();
-      s.productionFault(invalid);
-      await s.workflow.poll();
-      const current = s.workflow.view(run.id)!;
-      assert.equal(current.status, "intervention", invalid);
-      assert.equal(current.publication?.production?.status, "intervention");
-      assert.equal(s.facts.request.open, true);
-      assert.equal(
-        s.writes.some((write) => write.kind === "close-issue"),
-        false,
-      );
-      if (invalid === "query") {
-        assert.equal(current.publication?.production?.observations.length, 0);
-        assert.match(current.error!, /observation unavailable/);
-      }
-      if (invalid === "marker" || invalid === "coverage") {
-        assert.ok(
-          current.parts.some(
-            (part) =>
-              part.id === current.publication?.production?.evidencePartId,
-          ),
-        );
-      }
-    } finally {
-      s.close();
-    }
-  });
-}
-
-test("una Petición cerrada manualmente sigue requiriendo todas las pruebas de producción", async () => {
-  const s = publicationFixture();
-  try {
-    const run = await s.candidate();
-    await s.workflow.poll();
-    s.comment();
-    await s.workflow.poll();
-    s.merge();
-    s.facts.request.open = false;
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "checking_production");
-    assert.equal(s.workflow.factory.active, run.id);
-    s.productionReady();
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "completed");
-    assert.ok(s.workflow.view(run.id)?.publication?.production?.report);
-  } finally {
-    s.close();
-  }
-});
 
 test("una corrección no autorizada antes de integrar no puede invalidar una integración aceptada por una persona", async () => {
   const s = publicationFixture();
@@ -79,7 +13,6 @@ test("una corrección no autorizada antes de integrar no puede invalidar una int
     await s.workflow.poll();
     s.comment("Corrige el catálogo.", { author: "outsider" });
     s.merge();
-    s.productionReady();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "completed");
   } finally {
@@ -88,7 +21,7 @@ test("una corrección no autorizada antes de integrar no puede invalidar una int
 });
 
 for (const inspection of [2, 3, 4, 5, 6, 7]) {
-  test(`una integración humana durante la observación ${inspection} de la publicación conserva la aceptación y llega a producción`, async () => {
+  test(`una integración humana durante la observación ${inspection} de la publicación conserva la aceptación y completa el cierre del issue`, async () => {
     const s = publicationFixture();
     try {
       const run = await s.candidate();
@@ -105,11 +38,19 @@ for (const inspection of [2, 3, 4, 5, 6, 7]) {
       await s.workflow.poll();
       assert.equal(
         s.workflow.view(run.id)?.status,
-        "checking_production",
+        "completed",
         s.workflow.view(run.id)?.error ?? "",
       );
       assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
-      assert.equal(s.writes.length, writes, "no post-merge status revocation");
+      assert.equal(
+        s.writes
+          .slice(writes)
+          .some((write) =>
+            ["pending", "failure", "error", "success"].includes(write.kind),
+          ),
+        false,
+        "no post-merge status revocation",
+      );
     } finally {
       s.close();
     }
@@ -135,11 +76,18 @@ test("una PR abierta obsoleta con una vista previa retirada no puede borrar la a
     await s.workflow.poll();
     assert.equal(
       s.workflow.view(run.id)?.status,
-      "checking_production",
+      "completed",
       s.workflow.view(run.id)?.error ?? "",
     );
     assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
-    assert.equal(s.writes.length, writes);
+    assert.equal(
+      s.writes
+        .slice(writes)
+        .some((write) =>
+          ["pending", "failure", "error", "success"].includes(write.kind),
+        ),
+      false,
+    );
   } finally {
     s.close();
   }
@@ -193,7 +141,7 @@ test("una revocación registrada tras una integración concurrente conserva el i
     await s.workflow.poll();
     assert.equal(
       s.workflow.view(run.id)?.status,
-      "checking_production",
+      "completed",
       s.workflow.view(run.id)?.error ?? "",
     );
     assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
@@ -215,7 +163,6 @@ test("una aceptación histórica no puede reanudar una intervención operativa s
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
     s.observationFails(false);
     s.merge();
-    s.productionReady();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
     assert.equal(
@@ -227,6 +174,134 @@ test("una aceptación histórica no puede reanudar una intervención operativa s
       s.writes.some((write) => write.kind === "close-issue"),
       false,
     );
+  } finally {
+    s.close();
+  }
+});
+
+test("un issue cerrado manualmente tras el merge conserva su resumen y completa sin repetir el cierre", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.merge();
+    s.facts.request.open = false;
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+    assert.ok(s.workflow.view(run.id)?.publication?.integrationReport);
+    assert.equal(
+      s.writes.some((write) => write.kind === "close-issue"),
+      false,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+for (const effect of ["integration-report", "close-issue"]) {
+  test(`perder la respuesta de ${effect} conserva el puesto hasta conciliar el cierre sin duplicar efectos`, async () => {
+    const s = publicationFixture();
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      s.comment();
+      await s.workflow.poll();
+      s.merge();
+      s.uncertainEffect(effect);
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "intervention");
+      assert.equal(s.workflow.factory.active, run.id);
+      assert.equal(s.workflow.view(run.id)?.endedAt, null);
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "completed");
+      assert.equal(s.workflow.factory.active, null);
+      assert.equal(
+        s.facts.comments.filter(
+          (comment) =>
+            comment.source === "issue" &&
+            comment.body.includes("## Integración completada"),
+        ).length,
+        1,
+      );
+      assert.equal(
+        s.writes.filter((write) => write.kind === "close-issue").length,
+        1,
+      );
+    } finally {
+      s.close();
+    }
+  });
+}
+
+test("un cambio del issue entre el resumen y el cierre impide completar o liberar el puesto", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.merge();
+    s.onInspect(() => {
+      if (s.workflow.view(run.id)?.publication?.integrationReport) {
+        s.facts.request.body = "Un objetivo diferente.";
+      }
+    });
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.ok(s.workflow.view(run.id)?.publication?.integrationReport);
+    assert.match(s.workflow.view(run.id)!.error!, /changed before closure/);
+    assert.equal(s.facts.request.open, true);
+    assert.equal(s.workflow.factory.active, run.id);
+    assert.equal(
+      s.writes.some((write) => write.kind === "close-issue"),
+      false,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("un registro anterior pendiente de producción se lee como cierre pendiente y conserva la intervención tras reiniciar", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.comment();
+    await s.workflow.poll();
+    s.merge();
+    s.uncertainEffect("close-issue");
+    await s.workflow.poll();
+    const current = s.workflow.view(run.id)!;
+    const legacy = {
+      ...current,
+      status: "checking_production",
+      publication: {
+        ...current.publication,
+        production: { status: "pending", observations: [] },
+      },
+    };
+    const db = new DatabaseSync(join(s.config.dataDir, "factory.sqlite"));
+    try {
+      db.prepare("UPDATE runs SET body = ? WHERE id = ?").run(
+        JSON.stringify(legacy),
+        run.id,
+      );
+    } finally {
+      db.close();
+    }
+    assert.equal(s.workflow.view(run.id)?.status, "closing_issue");
+    assert.deepEqual(
+      s.workflow.view(run.id)?.publication?.integratedAcceptance,
+      current.publication?.integratedAcceptance,
+    );
+    const writes = s.writes.length;
+    s.reopen();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(s.writes.length, writes);
+    assert.equal(s.workflow.factory.active, run.id);
   } finally {
     s.close();
   }

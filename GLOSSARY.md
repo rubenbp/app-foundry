@@ -25,7 +25,7 @@ Issue de GitHub cuyo contenido y autorización se han comprobado y capturado par
 _Avoid_: Petición autorizada, cambio aceptado, resultado aprobado
 
 **Ejecución**:
-Recorrido de la Factory para atender un Issue autorizado, desde el inicio del trabajo hasta su finalización o cancelación. Incluye el trabajo automático y las esperas de intervención humana, integración y publicación.
+Recorrido de la Factory para atender un Issue autorizado, desde el inicio del trabajo hasta su finalización o cancelación. Incluye el trabajo automático y las esperas de intervención humana e integración. Termina al integrar el resultado aceptado y cerrar el issue, o al cancelar el trabajo.
 _Avoid_: sesión del agente, issue
 
 **Intento**:

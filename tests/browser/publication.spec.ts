@@ -65,7 +65,7 @@ test("el dashboard guía la revisión y la integración humana con enlaces a la 
   }
 });
 
-test("el dashboard distingue el Commit candidato aceptado, la integración y la producción pública verificada en el historial completado", async ({
+test("el dashboard distingue el Commit candidato aceptado, la integración y el cierre del issue en el historial completado", async ({
   page,
 }) => {
   const s = publicationFixture();
@@ -82,32 +82,34 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y la 
     await page.goto(
       `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     );
-    await expect(page.locator(".badge.checking_production")).toHaveText(
-      "Comprobando producción",
-    );
-    const production = page.getByRole("region", {
-      name: "Integración y producción",
-    });
-    await expect(production).toContainText(s.facts.pull!.head);
-    await expect(production).toContainText("a".repeat(40));
-    await expect(production).toContainText("Producción pendiente");
-    s.productionReady();
-    await s.workflow.poll();
     await expect(page.locator(".badge.completed")).toHaveText("Completada");
-    await expect(production).toContainText("Producción comprobada");
     await expect(
-      production.getByRole("link", { name: "Abrir dominio público" }),
-    ).toHaveAttribute("href", s.project.publication.productionOrigin);
+      page.getByRole("region", { name: "Fases de la Ejecución" }),
+    ).toContainText("Integración y cierre");
+    await expect(page.getByText("Producción", { exact: true })).toHaveCount(0);
+    const integration = page.getByRole("region", {
+      name: "Integración y cierre",
+    });
+    await expect(integration).toContainText(s.facts.pull!.head);
+    await expect(integration).toContainText("a".repeat(40));
+    await expect(integration).toContainText(
+      "Integración completada e issue cerrado.",
+    );
     await expect(
-      production.getByRole("link", {
-        name: "Revisar evidencia de producción en GitHub",
+      integration.getByRole("link", {
+        name: "Revisar resumen de integración en GitHub",
       }),
     ).toHaveAttribute(
       "href",
-      s.workflow.view(run.id)!.publication!.production!.report!.url,
+      s.workflow.view(run.id)!.publication!.integrationReport!.url,
     );
+    await expect(
+      page.getByText("Comprobando producción", { exact: true }),
+    ).toHaveCount(0);
     await page.reload();
-    await expect(production).toContainText("SHA servido: " + "a".repeat(40));
+    await expect(integration).toContainText(
+      "Integración completada e issue cerrado.",
+    );
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
       await page.evaluate(
@@ -115,7 +117,7 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y la 
       ),
     ).toBe(true);
     await page.screenshot({
-      path: test.info().outputPath("production-panel.png"),
+      path: test.info().outputPath("integration-panel.png"),
       fullPage: true,
     });
   } finally {

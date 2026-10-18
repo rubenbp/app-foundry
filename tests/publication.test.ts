@@ -94,9 +94,9 @@ test("una integración aceptada conserva su commit aceptado y el SHA integrado e
     await s.workflow.poll();
     s.merge();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)!.status, "checking_production");
+    assert.equal(s.workflow.view(run.id)!.status, "completed");
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)!.status, "checking_production");
+    assert.equal(s.workflow.view(run.id)!.status, "completed");
     assert.equal(
       s.workflow.view(run.id)?.publication?.mergeSha,
       "a".repeat(40),
@@ -379,6 +379,12 @@ test("el Workflow publica un Commit candidato verificado y solo permite la integ
     async canWrite() {
       return true;
     },
+    async commentIssue() {
+      throw new Error("No integration expected");
+    },
+    async closeIssue() {
+      throw new Error("No integration expected");
+    },
     async prepareHead() {
       throw new Error("No new head");
     },
@@ -442,83 +448,43 @@ test("el Workflow publica un Commit candidato verificado y solo permite la integ
   }
 });
 
-test("una integración squash aceptada espera a producción, guarda las evidencias públicas antes de cerrar el issue y sigue completada tras reiniciar", async () => {
-  const s = publicationFixture();
+test("un issue en lenguaje natural completa la integración squash, publica el resumen y sigue completado tras reiniciar", async () => {
+  const body =
+    "Quiero mostrar el catálogo y conservar la navegación con teclado. El catálogo debe ser visible y se debe poder recorrer sin ratón.";
+  const s = publicationFixture({ body });
   try {
     const run = await s.candidate();
     await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.request?.body, body);
+    assert.equal(s.workflow.view(run.id)?.verification?.criteria[0].text, body);
     s.comment();
     await s.workflow.poll();
     const candidate = s.facts.pull!.head;
     s.merge();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "checking_production");
-    assert.equal(
-      s.workflow.view(run.id)?.publication?.mergeSha,
-      "a".repeat(40),
-    );
-    assert.equal(
-      s.workflow.view(run.id)?.publication?.integratedAcceptance?.head,
-      candidate,
-    );
-    assert.equal(
-      s.writes.some((write) => write.kind === "close-issue"),
-      false,
-    );
-    s.productionReady();
-    await s.workflow.poll();
     const completed = s.workflow.view(run.id)!;
     assert.equal(completed.status, "completed");
-    assert.equal(completed.publication?.production?.servedHead, "a".repeat(40));
-    assert.ok(completed.publication?.production?.report?.url);
-    assert.ok(
-      s.workflow.output(
-        run.id,
-        completed.publication!.production!.evidencePartId!,
-      ),
-    );
+    assert.equal(completed.publication?.mergeSha, "a".repeat(40));
+    assert.equal(completed.publication?.integratedAcceptance?.head, candidate);
+    assert.ok(completed.publication?.integrationReport?.url);
+    assert.ok(completed.publication?.closedAt);
+    const report = s.facts.comments.find(
+      (comment) => comment.id === completed.publication?.integrationReport?.id,
+    )!;
+    assert.equal(report.source, "issue");
+    assert.match(report.body, /Integración completada/);
+    assert.match(report.body, new RegExp(`Candidato aceptado: ${candidate}`));
+    assert.match(report.body, /Commit integrado: a{40}/);
+    assert.equal(s.facts.request.open, false);
     assert.equal(s.workflow.factory.active, null);
     assert.equal(
       s.writes.filter((write) => write.kind === "close-issue").length,
       1,
     );
+    await s.workflow.poll();
     s.reopen();
     assert.equal(s.workflow.view(run.id)?.status, "completed");
     assert.equal(s.workflow.factory.active, null);
-  } finally {
-    s.close();
-  }
-});
-
-test("un fallo en producción conserva las evidencias públicas y el issue abierto; las consultas posteriores no reanudan el proceso en silencio", async () => {
-  const s = publicationFixture();
-  try {
-    const run = await s.candidate();
-    await s.workflow.poll();
-    s.comment();
-    await s.workflow.poll();
-    s.merge();
-    s.productionReady();
-    s.publicFailure(true);
-    await s.workflow.poll();
-    const failed = s.workflow.view(run.id)!;
-    assert.equal(failed.status, "intervention");
-    assert.ok(failed.publication?.production?.evidencePartId);
-    assert.match(
-      s.workflow.output(
-        run.id,
-        failed.publication!.production!.evidencePartId!,
-      )!,
-      /Wrong page/,
-    );
-    assert.equal(s.facts.request.open, true);
-    s.publicFailure(false);
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "intervention");
-    assert.equal(
-      s.writes.some((write) => write.kind === "close-issue"),
-      false,
-    );
   } finally {
     s.close();
   }
@@ -530,7 +496,6 @@ test("integrar sin una aceptación humana vigente es un incidente, aunque el iss
     const run = await s.candidate();
     await s.workflow.poll();
     s.merge();
-    s.productionReady();
     s.facts.request.open = false;
     await s.workflow.poll();
     const observed = s.workflow.view(run.id)!;
@@ -538,7 +503,7 @@ test("integrar sin una aceptación humana vigente es un incidente, aunque el iss
     assert.equal(observed.publication?.mergeSha, "a".repeat(40));
     assert.match(observed.error!, /Incidencia/);
     assert.equal(observed.publication?.integratedAcceptance, undefined);
-    assert.equal(observed.publication?.production, undefined);
+    assert.equal(observed.publication?.integrationReport, undefined);
   } finally {
     s.close();
   }

@@ -4,25 +4,6 @@ import type {
   Preview,
   PullCandidate,
 } from "../../domain/publication.ts";
-import type { PublicCheck, PublicEvidence } from "../../domain/production.ts";
-
-export interface ProductionPort {
-  inspect(
-    context: PublicationContext,
-    integratedSha: string,
-  ): Promise<Preview | null>;
-  verify(
-    context: PublicationContext,
-    integratedSha: string,
-    checks: PublicCheck[],
-  ): Promise<PublicEvidence>;
-  comment(
-    context: PublicationContext,
-    body: string,
-  ): Promise<ConversationComment>;
-  closeIssue(context: PublicationContext): Promise<void>;
-}
-
 export interface PublicationContext {
   repository: string;
   issue: number;
@@ -64,6 +45,11 @@ export interface PublicationPort {
     context: PublicationContext,
     state: "pending" | "success" | "failure" | "error",
   ): Promise<void>;
+  commentIssue(
+    context: PublicationContext,
+    body: string,
+  ): Promise<ConversationComment>;
+  closeIssue(context: PublicationContext): Promise<void>;
   canWrite(repository: string, author: string): Promise<boolean>;
   prepareHead(context: PublicationContext, head: string): Promise<void>;
 }

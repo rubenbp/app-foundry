@@ -1,5 +1,5 @@
 import type { Factory } from "./factory.ts";
-import type { PublicationPort, ProductionPort } from "./publication/ports.ts";
+import type { PublicationPort } from "./publication/ports.ts";
 import {
   fenced,
   interpretComment,
@@ -10,7 +10,7 @@ import { PublicationRuntime, ObservedMerge } from "./publication/runtime.ts";
 import { candidateEvidence } from "./publication/evidence.ts";
 import { isOwn, reportIntact, canMerge } from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
-import { IntegratedPublication } from "./publication/production.ts";
+import { IntegratedPublication } from "./publication/integration.ts";
 
 export class CandidatePublication {
   private runtime: PublicationRuntime;
@@ -18,14 +18,10 @@ export class CandidatePublication {
   private integration: IntegratedPublication;
   private busy?: Promise<void>;
 
-  constructor(
-    factory: Factory,
-    port: PublicationPort,
-    production?: ProductionPort,
-  ) {
+  constructor(factory: Factory, port: PublicationPort) {
     this.runtime = new PublicationRuntime(factory, port);
     this.report = new ReviewReport(this.runtime);
-    this.integration = new IntegratedPublication(this.runtime, production);
+    this.integration = new IntegratedPublication(this.runtime);
   }
 
   async poll() {
@@ -341,10 +337,6 @@ export class CandidatePublication {
       publication.observationError = this.runtime.factory.clean(
         String(failure),
       ).text;
-      if (publication.production) {
-        publication.production.status = "intervention";
-        publication.production.error = publication.observationError;
-      }
       run.error = publication.observationError;
       run.status = "intervention";
       this.runtime.factory.record(run, "publication-error", run.error);

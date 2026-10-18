@@ -27,7 +27,6 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
     publication: {
       provider: "vercel" as const,
       projectId: "panel-project",
-      productionOrigin: "https://catalogue.example",
       humanMergeRequired: true as const,
     },
   };

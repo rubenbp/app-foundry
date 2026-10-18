@@ -22,7 +22,7 @@ export class ObservedMerge extends Error {
 export class PublicationRuntime {
   readonly factory: Factory;
   readonly port: PublicationPort;
-stopping = false;
+  stopping = false;
 
   constructor(factory: Factory, port: PublicationPort) {
     this.factory = factory;

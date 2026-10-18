@@ -48,7 +48,6 @@ function fixture(options: { stopConfirmed?: boolean } = {}) {
     publication: {
       provider: "vercel" as const,
       projectId: "different-project",
-      productionOrigin: "https://different.example",
       humanMergeRequired: true as const,
     },
   };

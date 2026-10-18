@@ -98,13 +98,4 @@ export function validateProject(
       "Publication identity and human merge required in configuration",
     );
   }
-  const origin = new URL(project.publication.productionOrigin);
-  if (
-    origin.protocol !== "https:" ||
-    origin.username ||
-    origin.password ||
-    origin.origin !== project.publication.productionOrigin
-  ) {
-    throw new Error("Publication requires a credential-free HTTPS origin");
-  }
 }

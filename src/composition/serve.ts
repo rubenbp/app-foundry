@@ -45,7 +45,6 @@ export async function serveFactory(
         workspace: new GitWorkspace(config.dataDir),
         github: new GitHub(),
         publication,
-        production: publication.production,
         secrets,
       })
     : null;

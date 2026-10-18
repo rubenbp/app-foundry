@@ -17,7 +17,6 @@ export const project: ManagedProject = {
   publication: {
     provider: "vercel",
     projectId: "other-id",
-    productionOrigin: "https://other.example",
     humanMergeRequired: true,
   },
 };

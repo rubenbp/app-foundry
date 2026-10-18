@@ -32,6 +32,11 @@ for (const gate of [
       const path = args[1];
       const context = s.workflow.list()[0];
       if (executable === "vercel") {
+        assert.equal(
+          integrated,
+          false,
+          "Vercel must not be queried after merge",
+        );
         if (args.includes("curl")) {
           assert.ok(args.includes("--max-time"));
           return access === "protected"
@@ -82,7 +87,7 @@ for (const gate of [
           return JSON.stringify(pull);
         }
         if (path === `${prefix}/issues/1`) {
-          assert.ok(context.publication?.production?.report);
+          assert.ok(context.publication?.integrationReport);
           assert.equal(input.state, "closed");
           requestOpen = false;
           return JSON.stringify({ state: "closed" });
@@ -163,6 +168,11 @@ for (const gate of [
         return paged([]);
       }
       if (path.includes("/deployments?")) {
+        assert.equal(
+          integrated,
+          false,
+          "Deployments must not be queried after merge",
+        );
         return paged(
           deployment
             ? [
@@ -208,28 +218,14 @@ for (const gate of [
     };
     // Construye el adaptador cuando la ruta de la fixture esté disponible mediante un puerto diferido.
     const s = verificationFixture({
-      production: {
-        inspect: (...args) => adapter.production.inspect(...args),
-        comment: (...args) => adapter.production.comment(...args),
-        closeIssue: (...args) => adapter.production.closeIssue(...args),
-        verify: async (context, head, checks) => ({
-          origin: context.project.publication.productionOrigin,
-          servedHead: head,
-          browser: "Chrome HTTP boundary double",
-          screenshots: [],
-          checks: checks.map((check) => ({
-            check,
-            observed: "Catalogue visible",
-            passed: true,
-          })),
-        }),
-      },
-      body: '## Acceptance criteria\n- Catalogue visible.\n\n## Production checks\n```factory-production\n[{"criterion":1,"path":"/","selector":"h1","text":"Catalogue"}]\n```',
+      body: "Quiero mostrar el catálogo. Debe ser visible al abrir la página.",
       publication: {
         inspect: (...args) => adapter.inspect(...args),
         push: (...args) => adapter.push(...args),
         openPull: (...args) => adapter.openPull(...args),
         comment: (...args) => adapter.comment(...args),
+        commentIssue: (...args) => adapter.commentIssue(...args),
+        closeIssue: (...args) => adapter.closeIssue(...args),
         status: (...args) => adapter.status(...args),
         canWrite: (...args) => adapter.canWrite(...args),
         prepareHead: (...args) => adapter.prepareHead(...args),

@@ -9,10 +9,7 @@ import { execute } from "../../src/infrastructure/process.ts";
 import type { ProcessPort } from "../../src/infrastructure/process.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
-import type {
-  PublicationPort,
-  ProductionPort,
-} from "../../src/application/publication/ports.ts";
+import type { PublicationPort } from "../../src/application/publication/ports.ts";
 
 export function verificationFixture(
   options: {
@@ -22,7 +19,6 @@ export function verificationFixture(
     commands?: string[];
     e2e?: ManagedProject["verification"]["e2e"];
     publication?: PublicationPort;
-    production?: ProductionPort;
     body?: string;
   } = {},
 ) {
@@ -76,7 +72,6 @@ export function verificationFixture(
     publication: {
       provider: "vercel",
       projectId: "catalogue",
-      productionOrigin: "https://catalogue.example",
       humanMergeRequired: true,
     },
   };
@@ -138,7 +133,6 @@ export function verificationFixture(
       workspace: new GitWorkspace(config.dataDir, processPort),
       verificationProcess: processPort,
       publication: options.publication,
-      production: options.production,
       github: {
         async ready() {
           return [];

@@ -52,7 +52,7 @@ test("el dashboard muestra la verificación independiente, el diff completo, las
       page.getByRole("heading", { name: "Verificación independiente" }),
     ).toBeVisible();
     await expect(page.locator(".badge.verifying")).toHaveText(
-      "Verificando candidato",
+      "Verificando Commit candidato",
     );
     await expect(
       page.getByRole("listitem").filter({ hasText: /^Verificación$/ }),

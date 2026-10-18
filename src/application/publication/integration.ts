@@ -1,18 +1,15 @@
 import type { Run } from "../../domain/run.ts";
 import { interpretComment } from "../../domain/publication.ts";
-import { publicChecks } from "../../domain/production.ts";
-import type { PublicationFacts, ProductionPort } from "./ports.ts";
+import type { PublicationFacts } from "./ports.ts";
 import type { PublicationRuntime } from "./runtime.ts";
 import { isOwn, reportIntact } from "./reviewPolicy.ts";
 import { candidateEvidence } from "./evidence.ts";
 
 export class IntegratedPublication {
   private runtime: PublicationRuntime;
-  private production?: ProductionPort;
 
-  constructor(runtime: PublicationRuntime, production?: ProductionPort) {
+  constructor(runtime: PublicationRuntime) {
     this.runtime = runtime;
-    this.production = production;
   }
 
   async advance(run: Run, facts: PublicationFacts) {
@@ -126,13 +123,7 @@ export class IntegratedPublication {
         "merge-observed",
         `Base ${run.workspace!.baseSha}; accepted candidate ${accepted.head}; integrated ${pull.mergeSha}; merged by ${pull.mergedBy}`,
       );
-      publication.production = { status: "pending", observations: [] };
-      run.status = "checking_production";
       this.runtime.save(run);
-    }
-    const production = publication.production!;
-    if (production.status === "intervention") {
-      throw new Error(production.error ?? "Production requires intervention");
     }
     if (
       facts.request.title !== run.request!.title ||
@@ -141,128 +132,41 @@ export class IntegratedPublication {
       !pull.mergeSha
     ) {
       throw new Error(
-        "Request or integrated candidate changed; production closure blocked",
+        "Request or integrated candidate changed; issue closure blocked",
       );
     }
-    if (!this.production) {
-      throw new Error("Production adapter required after observed merge");
-    }
-    run.status = "checking_production";
+    run.status = "closing_issue";
     run.error = null;
     publication.observationError = null;
     run.endedAt = null;
     this.runtime.save(run);
-    const deployment = await this.production.inspect(
-      this.runtime.context(run),
-      pull.mergeSha,
-    );
-    production.observations.push({
-      at: this.runtime.factory.now(),
-      deployment,
-    });
-    production.deployment = deployment ?? undefined;
-    this.runtime.save(run);
-    if (
-      !deployment ||
-      deployment.state === "pending" ||
-      deployment.state === "inactive"
-    ) {
-      return;
-    }
-    if (deployment.state !== "success") {
-      throw new Error(
-        `Production deployment ${deployment.state}; intervention required`,
-      );
-    }
-    if (
-      deployment.head !== pull.mergeSha ||
-      deployment.repository !== run.request!.repository ||
-      deployment.projectId !==
-        run.request!.configuration.publication.projectId ||
-      deployment.environment !==
-        (run.request!.configuration.publication.productionEnvironment ??
-          "Production")
-    ) {
-      throw new Error("Production deployment identity mismatch");
-    }
-    const checks = publicChecks(
-      run.request!.body,
-      run.verification!.criteria.length,
-    );
-    const evidence = await this.production.verify(
-      this.runtime.context(run),
-      pull.mergeSha,
-      checks,
-    );
-    const complete =
-      evidence.origin ===
-        run.request!.configuration.publication.productionOrigin &&
-      !evidence.error &&
-      evidence.servedHead === pull.mergeSha &&
-      Boolean(evidence.browser) &&
-      evidence.checks.length === checks.length &&
-      evidence.checks.every(
-        (result, index) =>
-          result.passed &&
-          JSON.stringify(result.check) === JSON.stringify(checks[index]),
-      );
-    // También guarda las observaciones fallidas. No se establece un estado final satisfactorio sin evidencia duradera.
-    const partId = `production-${pull.mergeSha}`;
-    this.runtime.factory.ingest(
-      run.id,
-      {
-        type: "part",
-        id: partId,
-        messageId: "production",
-        kind: "evidence",
-        label: "Producción: dominio público, versión y criterios",
-        text: JSON.stringify(evidence, null, 2),
-      },
-      1_100_000,
-    );
-    Object.assign(run, this.runtime.factory.view(run.id), { publication });
-    production.evidencePartId = partId;
-    this.runtime.save(run);
-    if (
-      !complete ||
-      this.runtime.factory
-        .view(run.id)!
-        .parts.find((part) => part.id === partId)?.truncated
-    ) {
-      throw new Error(
-        "Public version or complete requested behavior unverified; inspect production evidence",
-      );
-    }
-    production.servedHead = pull.mergeSha;
-    production.status = "verified";
-    production.verifiedAt = this.runtime.factory.now();
-    this.runtime.save(run);
-    const origin = `<!-- app-foundry:${run.id}:production:${pull.mergeSha} -->`;
+    const origin = `<!-- app-foundry:${run.id}:integration:${pull.mergeSha} -->`;
     const body = this.runtime.factory.clean(
-      `${origin}\n## Producción comprobada\n\nEjecución: ${run.id}\nBase: ${run.workspace!.baseSha}\nCandidato aceptado: ${publication.integratedAcceptance!.head}\nCommit integrado: ${pull.mergeSha}\nPR: ${pull.url}\nDeployment: ${deployment.id} · ${deployment.environment} · ${deployment.projectId}\nDominio público: ${evidence.origin}\nSHA servido: ${evidence.servedHead}\nNavegador: ${evidence.browser}\n\n${evidence.checks.map((result) => `- [x] Criterio ${result.check.criterion}: ${result.check.path} ${result.check.selector} — ${result.observed}`).join("\n")}\n\nEvidencia persistida: ${partId}. La comprobación cubre las aserciones declaradas en la petición y revisadas con el candidato; no acredita comportamientos no expresados en ellas.`,
+      `${origin}\n## Integración completada\n\nEjecución: ${run.id}\nBase: ${run.workspace!.baseSha}\nCandidato aceptado: ${publication.integratedAcceptance!.head}\nPreview aceptada: ${publication.integratedAcceptance!.preview}\nAceptado por: ${publication.integratedAcceptance!.author}\nCommit integrado: ${pull.mergeSha}\nPR: ${pull.url}\nIntegrado por: ${pull.mergedBy}\n\nEl resultado se ha aceptado en la preview de Vercel. La Ejecución termina con la integración y el cierre del issue.`,
       55_000,
     );
     if (body.truncated) {
-      throw new Error("Production report exceeds evidence limit");
+      throw new Error("Integration report exceeds evidence limit");
     }
     const report = await this.runtime.effect(
       run,
-      `production-report:${pull.mergeSha}`,
+      `integration-report:${pull.mergeSha}`,
       async () => {
         const current = await this.runtime.facts(run, false);
         if (
           current.request.title !== run.request!.title ||
           current.request.body !== run.request!.body
         ) {
-          throw new Error("Request changed before production report");
+          throw new Error("Request changed before integration report");
         }
         return current.comments.find(
           (comment) => comment.source === "issue" && comment.body === body.text,
         );
       },
-      () => this.production!.comment(this.runtime.context(run), body.text),
+      () =>
+        this.runtime.port.commentIssue(this.runtime.context(run), body.text),
     );
-    production.report = { id: report.id, url: report.url };
+    publication.integrationReport = { id: report.id, url: report.url };
     if (!publication.ownComments.includes(report.id)) {
       publication.ownComments.push(report.id);
     }
@@ -280,24 +184,24 @@ export class IntegratedPublication {
           )
         ) {
           throw new Error(
-            "Production evidence or request changed before closure",
+            "Integration report or request changed before closure",
           );
         }
         return current.request.open ? undefined : true;
       },
       async () => {
-        await this.production!.closeIssue(this.runtime.context(run));
+        await this.runtime.port.closeIssue(this.runtime.context(run));
         return true;
       },
     );
-    production.closedAt = this.runtime.factory.now();
+    publication.closedAt = this.runtime.factory.now();
     run.status = "completed";
     run.endedAt = this.runtime.factory.now();
     run.error = null;
     this.runtime.factory.record(
       run,
       "completed",
-      `Production ${pull.mergeSha} verified and evidence published: ${report.url}`,
+      `Accepted candidate integrated as ${pull.mergeSha}; integration report published: ${report.url}`,
     );
     this.runtime.save(run);
     this.runtime.factory.active = null;

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { IssueDetails } from "./issue.tsx";
 import { VerificationDetails } from "./verification.tsx";
-import { ProductionDetails } from "./production.tsx";
+import { IntegrationDetails } from "./integration.tsx";
 import { PublicationDetails } from "./publication.tsx";
 import { poll } from "./polling.ts";
 import type { FactoryView } from "../src/application/factoryView.ts";
@@ -254,7 +254,7 @@ function App() {
               <IssueDetails run={run} />
               <VerificationDetails run={run} />
               <PublicationDetails run={run} />
-              <ProductionDetails run={run} />
+              <IntegrationDetails run={run} />
               <section
                 className="health-grid"
                 aria-label="Antigüedad y procedencia de observaciones"

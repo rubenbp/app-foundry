@@ -9,7 +9,7 @@ export function IssueDetails({ run }: { run: Run }) {
     run.status === "completed"
       ? "Completada"
       : run.publication?.mergeSha
-        ? "Producción"
+        ? "Integración y cierre"
         : run.status === "awaiting_merge"
           ? "Merge humano"
           : run.status === "queued"
@@ -34,7 +34,7 @@ export function IssueDetails({ run }: { run: Run }) {
             "Verificación",
             "Preview y aceptación",
             "Merge humano",
-            "Producción",
+            "Integración y cierre",
             "Completada",
           ].map((phase) => (
             <li

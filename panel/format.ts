@@ -11,7 +11,7 @@ export const labels: Record<RunStatus, string> = {
   awaiting_preview: "Verificado · Preview pendiente",
   awaiting_review: "Esperando revisión humana",
   awaiting_merge: "Esperando merge humano",
-  checking_production: "Comprobando producción",
+  closing_issue: "Cerrando issue",
   completed: "Completada",
   intervention: "Requiere intervención",
   stopped: "Detenida",

@@ -42,8 +42,6 @@
     "projectId": "prj_xELrnqlWcsy0MNKqyZN2Dekd0PKE",
     "projectName": "appfoundry-site-demo",
     "previewEnvironment": "Preview",
-    "productionEnvironment": "Production",
-    "productionOrigin": "https://rebobina-appfoundry.vercel.app",
     "versionPath": "/version.json",
     "commitVariable": "VERCEL_GIT_COMMIT_SHA",
     "requiredStatusCheck": "Vercel",

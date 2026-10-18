@@ -10,7 +10,6 @@ export interface PreviewAccess {
   inspect(
     origin: string,
     context: PublicationContext,
-    target?: "preview" | "production",
   ): Promise<{ projectId: string; repository: string; head: string }>;
   servedHead(
     origin: string,
@@ -35,11 +34,7 @@ export class VercelPreviewAccess implements PreviewAccess {
     this.directory = directory;
   }
 
-  async inspect(
-    origin: string,
-    context: PublicationContext,
-    target: "preview" | "production" = "preview",
-  ) {
+  async inspect(origin: string, context: PublicationContext) {
     const host = new URL(previewOrigin(origin)).hostname;
     const team = context.project.publication.teamId;
     const query =
@@ -57,9 +52,7 @@ export class VercelPreviewAccess implements PreviewAccess {
     const meta = record(deployment.meta);
     if (
       previewOrigin(`https://${text(deployment.url)}`) !== origin ||
-      (target === "production"
-        ? deployment.target !== "production"
-        : deployment.target !== null && deployment.target !== "preview") ||
+      (deployment.target !== null && deployment.target !== "preview") ||
       deployment.readyState !== "READY"
     ) {
       throw new Error("Vercel deployment URL or environment mismatch");

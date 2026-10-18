@@ -4,9 +4,7 @@ import type {
   PublicationContext,
   PublicationFacts,
   PublicationPort,
-  ProductionPort,
 } from "../application/publication/ports.ts";
-import { verifyPublicProduction } from "./publicProduction.ts";
 import { mergeContext } from "../domain/publication.ts";
 import type {
   ConversationComment,
@@ -135,12 +133,9 @@ export class GitHubPublication implements PublicationPort {
 
   private async deployment(
     context: PublicationContext,
-    target: "preview" | "production" = "preview",
   ): Promise<Preview | null> {
     const environment =
-      target === "production"
-        ? (context.project.publication.productionEnvironment ?? "Production")
-        : (context.project.publication.previewEnvironment ?? "Preview");
+      context.project.publication.previewEnvironment ?? "Preview";
     if (typeof environment !== "string" || !environment) {
       throw new Error("Configured deployment environment required");
     }
@@ -197,7 +192,7 @@ export class GitHubPublication implements PublicationPort {
     if (state !== "success" || !preview.url) {
       return preview;
     }
-    const identity = await this.access.inspect(preview.url, context, target);
+    const identity = await this.access.inspect(preview.url, context);
     preview.projectId = identity.projectId;
     if (
       identity.head !== context.head ||
@@ -207,9 +202,6 @@ export class GitHubPublication implements PublicationPort {
       throw new Error(
         "Vercel preview identity does not match repository, project and candidate",
       );
-    }
-    if (target === "production") {
-      return preview;
     }
     const served = await this.access.servedHead(preview.url, context);
     preview.access = served.access;
@@ -322,36 +314,33 @@ export class GitHubPublication implements PublicationPort {
       mergeStatus,
     };
   }
-  readonly production: ProductionPort = {
-    inspect: (context, integratedSha) =>
-      this.deployment({ ...context, head: integratedSha }, "production"),
-    verify: (context, integratedSha, checks) =>
-      verifyPublicProduction(this.root, context, integratedSha, checks),
-    comment: async (context, body) =>
-      this.conversation(
-        await this.api(
-          `repos/${context.repository}/issues/${context.issue}/comments`,
-          { body },
-        ),
-        context,
-        "issue",
-        context.issue,
+
+  async commentIssue(context: PublicationContext, body: string) {
+    return this.conversation(
+      await this.api(
+        `repos/${context.repository}/issues/${context.issue}/comments`,
+        { body },
       ),
-    closeIssue: async (context) => {
-      await this.command(
-        "gh",
-        [
-          "api",
-          `repos/${context.repository}/issues/${context.issue}`,
-          "--method",
-          "PATCH",
-          "--input",
-          "-",
-        ],
-        { state: "closed", state_reason: "completed" },
-      );
-    },
-  };
+      context,
+      "issue",
+      context.issue,
+    );
+  }
+
+  async closeIssue(context: PublicationContext) {
+    await this.command(
+      "gh",
+      [
+        "api",
+        `repos/${context.repository}/issues/${context.issue}`,
+        "--method",
+        "PATCH",
+        "--input",
+        "-",
+      ],
+      { state: "closed", state_reason: "completed" },
+    );
+  }
 
   private async git(
     context: PublicationContext,

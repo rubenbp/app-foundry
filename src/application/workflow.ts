@@ -16,10 +16,7 @@ import type { FactoryConfig } from "./configuration.ts";
 import { verificationPlan } from "../domain/verification.ts";
 import type { CandidateVerification } from "./verification.ts";
 import { CandidatePublication } from "./candidatePublication.ts";
-import {
-  type PublicationPort,
-  type ProductionPort,
-} from "./publication/ports.ts";
+import type { PublicationPort } from "./publication/ports.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -28,7 +25,6 @@ export interface WorkflowOptions {
   verifier: CandidateVerification;
   createFactory: (config: FactoryConfig, agent: AgentPort) => Factory;
   publication?: PublicationPort;
-  production?: ProductionPort;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
 }
 
@@ -66,7 +62,6 @@ export class Workflow {
         this.publication = new CandidatePublication(
           this.factory,
           options.publication,
-          options.production,
         );
       }
       const reserved = this.ownership.reservation();

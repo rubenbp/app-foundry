@@ -12,7 +12,7 @@ export type RunStatus =
   | "awaiting_preview"
   | "awaiting_review"
   | "awaiting_merge"
-  | "checking_production"
+  | "closing_issue"
   | "completed"
   | "intervention"
   | "stopped";
