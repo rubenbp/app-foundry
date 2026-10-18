@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { publicationFixture } from "../support/publication.ts";
-import { verifyPublicProduction } from "../../src/infrastructure/public-production.ts";
+import { verifyPublicProduction } from "../../src/infrastructure/publicProduction.ts";
 
 // Real browser + TLS + public HTTP boundary, real Workflow/SQLite/artifacts.
 // Trust only the ephemeral test certificate, never disable TLS in production.

@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { GitHubPublication } from "../src/infrastructure/publication.ts";
-import { VercelPreviewAccess } from "../src/infrastructure/vercel-preview.ts";
-import { type RemoteCommand } from "../src/infrastructure/remote-command.ts";
-import { configureMergeProtection } from "../src/infrastructure/merge-protection.ts";
+import { VercelPreviewAccess } from "../src/infrastructure/vercelPreview.ts";
+import { type RemoteCommand } from "../src/infrastructure/remoteCommand.ts";
+import { configureMergeProtection } from "../src/infrastructure/mergeProtection.ts";
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/process.ts";
 

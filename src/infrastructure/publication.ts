@@ -6,7 +6,7 @@ import type {
   PublicationPort,
   ProductionPort,
 } from "../application/publication/ports.ts";
-import { verifyPublicProduction } from "./public-production.ts";
+import { verifyPublicProduction } from "./publicProduction.ts";
 import { mergeContext } from "../domain/publication.ts";
 import type {
   ConversationComment,
@@ -16,7 +16,7 @@ import type {
 import { GitWorkspace } from "./workspace.ts";
 import { execute, reducedEnvironment, type ProcessPort } from "./process.ts";
 
-import { remoteCommand, type RemoteCommand } from "./remote-command.ts";
+import { remoteCommand, type RemoteCommand } from "./remoteCommand.ts";
 import {
   record,
   text,
@@ -26,8 +26,8 @@ import {
   timestamp,
   githubUrl,
   previewOrigin,
-} from "./remote-values.ts";
-import { VercelPreviewAccess, type PreviewAccess } from "./vercel-preview.ts";
+} from "./remoteValues.ts";
+import { VercelPreviewAccess, type PreviewAccess } from "./vercelPreview.ts";
 
 export class GitHubPublication implements PublicationPort {
   private command: RemoteCommand;

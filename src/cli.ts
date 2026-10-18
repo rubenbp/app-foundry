@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { readConfig } from "./infrastructure/configuration.ts";
-import { sendControlCommand } from "./infrastructure/cli/control-client.ts";
+import { sendControlCommand } from "./infrastructure/cli/controlClient.ts";
 import { serveFactory } from "./composition/serve.ts";
 
 const args = process.argv.slice(2);

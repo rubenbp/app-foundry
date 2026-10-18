@@ -6,7 +6,7 @@ import {
 } from "@opencode/client";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { installLocalGitGuard } from "../agent-git.ts";
+import { installLocalGitGuard } from "../agentGit.ts";
 import { reducedEnvironment } from "../process.ts";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";

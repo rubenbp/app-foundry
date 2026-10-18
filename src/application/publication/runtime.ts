@@ -6,7 +6,7 @@ import type {
   PublicationFacts,
   PublicationPort,
 } from "./ports.ts";
-import { canMerge } from "./review-policy.ts";
+import { canMerge } from "./reviewPolicy.ts";
 
 class StatusSkippedAfterMerge extends Error {}
 

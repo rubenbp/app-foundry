@@ -29,7 +29,7 @@ La configuración de publicación identifica `projectId`, `teamId`, `previewEnvi
 Antes de usar el control de merge, revisa y ejecuta la configuración administrativa explícita:
 
 ```sh
-node --experimental-strip-types scripts/configure-merge-protection.ts config/managed-projects/rebobina.json
+node --experimental-strip-types scripts/configureMergeProtection.ts config/managed-projects/rebobina.json
 ```
 
 Añade `Factory / ready-to-merge` y `Vercel`, exige PR, rama actualizada y conversaciones resueltas e incluye administradores. Conserva checks existentes y sus aplicaciones, restricciones, número de reviews y demás flags. La Factory no ejecuta este ajuste durante polling. Esta configuración no acredita por sí sola el recorrido de un candidato.

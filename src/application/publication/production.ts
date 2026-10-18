@@ -3,7 +3,7 @@ import { interpretComment } from "../../domain/publication.ts";
 import { publicChecks } from "../../domain/production.ts";
 import type { PublicationFacts, ProductionPort } from "./ports.ts";
 import type { PublicationRuntime } from "./runtime.ts";
-import { isOwn, reportIntact } from "./review-policy.ts";
+import { isOwn, reportIntact } from "./reviewPolicy.ts";
 import { candidateEvidence } from "./evidence.ts";
 
 export class IntegratedPublication {

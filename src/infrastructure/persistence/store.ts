@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import type { Run } from "../../domain/run.ts";
 
-import type { RunRepository } from "../../application/run-repository.ts";
+import type { RunRepository } from "../../application/runRepository.ts";
 
 // Only sanitized domain records reach this boundary. No SDK payloads or raw logs.
 export class Store implements RunRepository {

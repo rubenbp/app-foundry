@@ -18,7 +18,7 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 ## Contratos y composición
 
 - `application/agent.ts` define las observaciones y operaciones del agente. OpenCode implementa ese contrato; sus mensajes nativos se traducen en `infrastructure/opencode/observer.ts`.
-- `application/run-repository.ts` define persistencia de Ejecuciones, observaciones y evidencias. `infrastructure/persistence/store.ts` conserva SQLite y artefactos atómicos. Un fallo de escritura sigue bloqueando nuevos efectos.
+- `application/runRepository.ts` define persistencia de Ejecuciones, observaciones y evidencias. `infrastructure/persistence/store.ts` conserva SQLite y artefactos atómicos. Un fallo de escritura sigue bloqueando nuevos efectos.
 - `application/verification.ts` define la verificación independiente del candidato. El adaptador ejecuta comandos y comunica progreso, evidencias y cancelación.
 - `application/ports.ts` define admisión desde GitHub, preparación del workspace y propiedad exclusiva del workflow.
 - `application/publication/ports.ts` define observación y efectos de publicación y producción. No ofrece una operación de merge: la integración sigue siendo humana.
@@ -32,15 +32,15 @@ La configuración operativa tiene un contrato propio en `application/configurati
 
 - `publication/runtime.ts` registra intención y confirmación, reconcilia efectos remotos, observa merges concurrentes e impide efectos nuevos durante una parada.
 - `publication/evidence.ts` exige evidencia técnica completa del SHA vigente.
-- `publication/review-report.ts` construye y fragmenta el informe de revisión.
-- `publication/review-policy.ts` comprueba integridad del informe, identidad del candidato, aceptación y permisos efectivos.
+- `publication/reviewReport.ts` construye y fragmenta el informe de revisión.
+- `publication/reviewPolicy.ts` comprueba integridad del informe, identidad del candidato, aceptación y permisos efectivos.
 - `publication/production.ts` reconstruye la aceptación vigente al integrar, comprueba producción, publica evidencia y cierra la Petición autorizada.
 
 Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comandos y el acceso autenticado a Vercel. Las credenciales y respuestas nativas permanecen en infraestructura.
 
 ## Consulta y presentación
 
-`application/factory-view.ts` construye la proyección de lectura y define `FactoryView`, compartido con el panel mediante un import de tipos. El servidor HTTP conserva transporte, validación de origen, cabeceras y entrega de archivos. React conserva selección, polling y presentación; `panel/components/output.tsx` administra la carga y cancelación de salidas desplegables.
+`application/factoryView.ts` construye la proyección de lectura y define `FactoryView`, compartido con el panel mediante un import de tipos. El servidor HTTP conserva transporte, validación de origen, cabeceras y entrega de archivos. React conserva selección, polling y presentación; `panel/components/output.tsx` administra la carga y cancelación de salidas desplegables.
 
 ## Verificación de los límites
 

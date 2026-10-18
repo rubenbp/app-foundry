@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { validateProject } from "../src/domain/configuration.ts";
-import { configureMergeProtection } from "../src/infrastructure/merge-protection.ts";
+import { configureMergeProtection } from "../src/infrastructure/mergeProtection.ts";
 
 const path = process.argv[2];
 if (!path)
   throw new Error(
-    "Usage: node --experimental-strip-types scripts/configure-merge-protection.ts MANAGED_PROJECT_JSON",
+    "Usage: node --experimental-strip-types scripts/configureMergeProtection.ts MANAGED_PROJECT_JSON",
   );
 const project: unknown = JSON.parse(readFileSync(path, "utf8"));
 validateProject(project);

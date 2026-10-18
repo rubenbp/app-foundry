@@ -1,5 +1,5 @@
 import type { Factory } from "./factory.ts";
-import type { Observation } from "./run-repository.ts";
+import type { Observation } from "./runRepository.ts";
 import { queuedRuns } from "../domain/queue.ts";
 import { consumption, type Run } from "../domain/run.ts";
 

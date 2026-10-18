@@ -5,7 +5,7 @@ import { VerificationDetails } from "./verification.tsx";
 import { ProductionDetails } from "./production.tsx";
 import { PublicationDetails } from "./publication.tsx";
 import { poll } from "./polling.ts";
-import type { FactoryView } from "../src/application/factory-view.ts";
+import type { FactoryView } from "../src/application/factoryView.ts";
 import { Output } from "./components/output.tsx";
 import { labels, time, age } from "./format.ts";
 import "./style.css";

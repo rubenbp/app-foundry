@@ -8,7 +8,7 @@ import type {
   WorkspacePort,
   WorkflowOwnership,
 } from "./ports.ts";
-import { requestContext } from "./agent-task.ts";
+import { requestContext } from "./agentTask.ts";
 import { authorize } from "../domain/request.ts";
 import type { ReadyIssue } from "../domain/request.ts";
 import type { AgentPort } from "./agent.ts";

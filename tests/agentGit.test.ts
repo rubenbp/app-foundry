@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { installLocalGitGuard } from "../src/infrastructure/agent-git.ts";
+import { installLocalGitGuard } from "../src/infrastructure/agentGit.ts";
 import { reducedEnvironment } from "../src/infrastructure/process.ts";
 import { verificationFixture } from "./support/verification.ts";
 

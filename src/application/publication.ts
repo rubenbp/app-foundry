@@ -8,8 +8,8 @@ import {
 } from "../domain/publication.ts";
 import { PublicationRuntime, ObservedMerge } from "./publication/runtime.ts";
 import { candidateEvidence } from "./publication/evidence.ts";
-import { isOwn, reportIntact, canMerge } from "./publication/review-policy.ts";
-import { ReviewReport } from "./publication/review-report.ts";
+import { isOwn, reportIntact, canMerge } from "./publication/reviewPolicy.ts";
+import { ReviewReport } from "./publication/reviewReport.ts";
 import { IntegratedPublication } from "./publication/production.ts";
 
 export class CandidatePublication {

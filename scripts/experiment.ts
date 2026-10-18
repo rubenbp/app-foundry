@@ -12,7 +12,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { once } from "node:events";
 import { createFactory } from "../src/composition/factory.ts";
 import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
-import { panelServer } from "../src/infrastructure/http/panel-server.ts";
+import { panelServer } from "../src/infrastructure/http/panelServer.ts";
 import { consumption } from "../src/domain/run.ts";
 import type { Run } from "../src/domain/run.ts";
 

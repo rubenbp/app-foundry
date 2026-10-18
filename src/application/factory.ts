@@ -1,6 +1,6 @@
 import type { AuthorizedRequest, Workspace } from "../domain/request.ts";
 import { randomUUID } from "node:crypto";
-import type { RunRepository } from "./run-repository.ts";
+import type { RunRepository } from "./runRepository.ts";
 import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";

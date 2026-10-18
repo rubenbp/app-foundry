@@ -1,7 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, extname, sep } from "node:path";
-import { factoryView } from "../../application/factory-view.ts";
+import { factoryView } from "../../application/factoryView.ts";
 import type { Factory } from "../../application/factory.ts";
 
 export function panelServer(factory: Factory, dist = resolve("dist")): Server {

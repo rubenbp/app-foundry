@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { once } from "node:events";
-import { panelServer } from "../../src/infrastructure/http/panel-server.ts";
+import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { verificationFixture } from "../support/verification.ts";
 import { execute } from "../../src/infrastructure/process.ts";
 

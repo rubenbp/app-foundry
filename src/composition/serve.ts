@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { once } from "node:events";
 import { OpenCode } from "../infrastructure/opencode/agent.ts";
 import { createFactory } from "./factory.ts";
-import { panelServer } from "../infrastructure/http/panel-server.ts";
+import { panelServer } from "../infrastructure/http/panelServer.ts";
 import { createWorkflow } from "./workflow.ts";
 import { GitHub } from "../infrastructure/github.ts";
 import { GitWorkspace } from "../infrastructure/workspace.ts";
@@ -12,7 +12,7 @@ import { GitHubPublication } from "../infrastructure/publication.ts";
 import { acquireLock } from "../infrastructure/lock.ts";
 
 import type { FactoryConfig } from "../application/configuration.ts";
-import { controlServer } from "../infrastructure/http/control-server.ts";
+import { controlServer } from "../infrastructure/http/controlServer.ts";
 
 export async function serveFactory(
   config: FactoryConfig,

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { once } from "node:events";
 import { createFactory } from "../../src/composition/factory.ts";
-import { panelServer } from "../../src/infrastructure/http/panel-server.ts";
+import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
 
 test("panel observes persisted API state, pending work, text outputs and history after restart", async ({
