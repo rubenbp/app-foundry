@@ -40,7 +40,7 @@ Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comand
 
 ## Consulta y presentación
 
-`application/factoryView.ts` construye la proyección de lectura y define `FactoryView`, compartido con el panel mediante un import de tipos. El servidor HTTP conserva transporte, validación de origen, cabeceras y entrega de archivos. React conserva selección, polling y presentación; `panel/components/output.tsx` administra la carga y cancelación de salidas desplegables.
+`application/factoryView.ts` construye la proyección de lectura y define `FactoryView`, compartido con el Dashboard mediante un import de tipos. El servidor HTTP conserva transporte, validación de origen, cabeceras y entrega de archivos. React conserva selección, polling y presentación; `panel/components/output.tsx` administra la carga y cancelación de salidas desplegables.
 
 ## Verificación de los límites
 

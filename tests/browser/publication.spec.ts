@@ -3,7 +3,7 @@ import { once } from "node:events";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { publicationFixture } from "../support/publication.ts";
 
-test("el panel guía la revisión y la integración humana con enlaces a la PR, el candidato, el despliegue y el informe", async ({
+test("el dashboard guía la revisión y la integración humana con enlaces a la PR, el candidato, el despliegue y el informe", async ({
   page,
 }) => {
   const s = publicationFixture();
@@ -65,7 +65,7 @@ test("el panel guía la revisión y la integración humana con enlaces a la PR, 
   }
 });
 
-test("el panel distingue el Commit candidato aceptado, la integración y la producción pública verificada en el historial completado", async ({
+test("el dashboard distingue el Commit candidato aceptado, la integración y la producción pública verificada en el historial completado", async ({
   page,
 }) => {
   const s = publicationFixture();

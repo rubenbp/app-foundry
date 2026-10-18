@@ -94,4 +94,4 @@ Comprobar primero la base permite distinguir un problema anterior de una regresi
 
 El agente recibe la petición fijada, las instrucciones de la base y los comandos permitidos. Puede cambiar el producto y crear commits locales. La Factory conserva el control del push, la PR, los informes y los estados remotos. No entrega al agente las credenciales de publicación.
 
-Si el agente pide un permiso o hace una pregunta, la Ejecución queda esperando. El panel muestra la solicitud, pero todavía no permite responder o continuar de forma guiada. Hoy se inspecciona y se detiene si hace falta. Un error de autenticación, modelo o proceso exige intervención; no hay cambio automático de proveedor ni reenvío de la tarea.
+Si el agente pide un permiso o hace una pregunta, la Ejecución queda esperando. El dashboard muestra la solicitud, pero todavía no permite responder o continuar de forma guiada. Hoy se inspecciona y se detiene si hace falta. Un error de autenticación, modelo o proceso exige intervención; no hay cambio automático de proveedor ni reenvío de la tarea.

@@ -47,7 +47,7 @@ El número `criterion` sigue el orden de la lista. La sección separada evita qu
 
 1. **Revisar la petición.** Confirmar objetivo, criterios observables y comprobaciones públicas. Si el comportamiento no se puede expresar con el plan actual, ampliar la capacidad de verificación antes de usarlo para cerrar ese trabajo.
 2. **Autorizar en GitHub.** Una persona con escritura aplica `factory:ready` al contenido estable. Si aún no se admite por ambigüedad, revisar la causa y volver a aplicar la etiqueta tras estabilizarlo.
-3. **Seguir la Ejecución.** Abrir el panel local y comprobar si espera turno, prepara, trabaja o requiere intervención. Una petición admitida no se cancela quitando la etiqueta.
+3. **Seguir la Ejecución.** Abrir el Dashboard y comprobar si espera turno, prepara, trabaja o requiere intervención. Una petición admitida no se cancela quitando la etiqueta.
 4. **Revisar la PR y su informe.** Leer el diff completo, resultados y lagunas. Confirmar que el SHA informado es el del Commit candidato vigente.
 5. **Probar la preview.** Revisar cada criterio en la URL del informe. Comprobar el resultado visible y la navegación, además de las pruebas técnicas.
 6. **Aceptar o pedir corrección.** Si el resultado es correcto, copiar el ejemplo del informe con SHA completo y URL. Publicarlo como comentario nuevo en el issue o la conversación principal de la PR. Si no es correcto, una orden reconocida como `Corrige el texto del pie.` revoca el control y requiere intervención; hoy no lanza otro Intento.
@@ -62,7 +62,7 @@ flowchart TD
     R["Estoy revisando un issue"] --> A{"¿Se ha admitido ya?"}
     A -->|"No"| P["Completar petición y autorizar contenido estable"]
     A -->|"Sí"| C{"¿Hay informe y preview vigentes?"}
-    C -->|"No"| E["Consultar fase y causa en el panel"]
+    C -->|"No"| E["Consultar fase y causa en el dashboard"]
     C -->|"Sí"| B{"¿Cumple todos los criterios?"}
     B -->|"Tengo dudas"| Q["Preguntar en GitHub<br/>La consulta no acepta"]
     B -->|"No"| X["Pedir corrección mediante orden reconocida<br/>Requiere intervención"]

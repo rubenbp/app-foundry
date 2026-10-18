@@ -77,4 +77,4 @@ Mientras falten revisión, merge o comprobación de producción, la preparación
 
 Conservar en [`docs/evidence/rebobina-preparation/`](../evidence/rebobina-preparation/README.md) el SHA inicial, candidato y merge, comandos, códigos, logs saneados, toolchain, alcance, navegador, modos especiales, protección, preview y decisión humana. Revisar salidas antes de versionarlas; excluir credenciales, estados de autenticación y volcados completos del entorno.
 
-Este incremento corresponde a preparación/construcción. No implementar el texto exacto de introducción ni el filtro de dificultad reservados a #12. No contabilizar este trabajo como Intento AFK ni como resultado de los casos de evaluación. No añadir todavía límites, panel, OpenCode, concurrencia, worktrees o backend.
+Este incremento corresponde a preparación/construcción. No implementar el texto exacto de introducción ni el filtro de dificultad reservados a #12. No contabilizar este trabajo como Intento AFK ni como resultado de los casos de evaluación. No añadir todavía límites, dashboard, OpenCode, concurrencia, worktrees o backend.

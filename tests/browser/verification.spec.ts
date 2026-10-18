@@ -4,7 +4,7 @@ import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { verificationFixture } from "../support/verification.ts";
 import { execute } from "../../src/infrastructure/process.ts";
 
-test("el panel muestra la verificación independiente, el diff completo, las comprobaciones y las evidencias de criterios con acceso por teclado", async ({
+test("el dashboard muestra la verificación independiente, el diff completo, las comprobaciones y las evidencias de criterios con acceso por teclado", async ({
   page,
 }) => {
   let entered!: () => void;

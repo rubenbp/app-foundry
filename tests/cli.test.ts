@@ -41,7 +41,7 @@ test("la CLI rechaza una segunda instancia, conserva el trabajo incierto tras re
       child.stdout!.on("data", (chunk) => {
         output += String(chunk);
         const match = output.match(
-          /Factory panel: (http:\/\/127\.0\.0\.1:\d+)/,
+          /Factory dashboard: (http:\/\/127\.0\.0\.1:\d+)/,
         );
         if (match) {
           resolve(match[1]);
@@ -146,7 +146,7 @@ process.stdout.write("[[]]");
             child.stdout!.on("data", (chunk) => {
               output += String(chunk);
               const match = output.match(
-                /Factory panel: (http:\/\/127\.0\.0\.1:\d+)/,
+                /Factory dashboard: (http:\/\/127\.0\.0\.1:\d+)/,
               );
               if (match) {
                 resolve(match[1]);

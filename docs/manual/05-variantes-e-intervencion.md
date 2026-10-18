@@ -29,7 +29,7 @@ flowchart TD
 | Issue ya admitido, reabierto o etiquetado otra vez                                    | No se crea otra Ejecución en ese historial.                                 | Revisar la Ejecución existente; no usar la etiqueta como botón de reintento.              |
 | Hay una Ejecución activa                                                              | Las nuevas peticiones válidas permanecen en cola.                           | Resolver o detener de forma confirmada la activa.                                         |
 | Fallan clonación, instalación o comprobaciones de base                                | Intervención de preparación; no empieza el agente.                          | Corregir la causa y revisar los efectos ya realizados. No hay recuperación guiada actual. |
-| El agente pide permiso o formula una pregunta                                         | `waiting`, con solicitud visible y puesto ocupado.                          | Inspeccionar y detener si procede. El panel no permite responder.                         |
+| El agente pide permiso o formula una pregunta                                         | `waiting`, con solicitud visible y puesto ocupado.                          | Inspeccionar y detener si procede. El dashboard no permite responder.                     |
 | Falla el agente, la autenticación o su proceso                                        | Intervención, sin reenvío ni cambio automático de modelo.                   | Revisar el error y el estado del proceso.                                                 |
 | Quedan cambios sin commit o no se confirma la parada del agente                       | No se fija un Commit candidato acreditado.                                  | Resolver la incertidumbre; no aceptar el resultado como verificado.                       |
 | Cambian controles protegidos o fallan comandos                                        | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el Commit candidato. No se encarga una corrección automática.                     |
@@ -106,7 +106,7 @@ La Factory registra intención antes de los efectos y confirmación después. Es
 
 Si falla la persistencia, bloquea nuevos efectos propios. La persona debe inspeccionar los procesos registrados y detenerlos manualmente si no se puede guardar la parada. El fallo de escritura no garantiza que un proceso ya lanzado se haya detenido.
 
-## Cómo interpretar el panel
+## Cómo interpretar el dashboard
 
 | Señal                                 | Significado                                                             |
 | ------------------------------------- | ----------------------------------------------------------------------- |
@@ -121,9 +121,9 @@ Si falla la persistencia, bloquea nuevos efectos propios. La persona debe inspec
 | `intervention`                        | Fallo, garantía ausente o efectos inciertos; revisar la causa concreta. |
 | `stopped` / `completed`               | Parada confirmada / recorrido completo acreditado.                      |
 
-La Factory consulta GitHub al arrancar y programa la siguiente consulta 15 segundos después de terminar. El panel consulta cada 2 segundos después de completar la lectura anterior. Ninguno solapa sus propias consultas.
+La Factory consulta GitHub al arrancar y programa la siguiente consulta 15 segundos después de terminar. El dashboard consulta cada 2 segundos después de completar la lectura anterior. Ninguno solapa sus propias consultas.
 
-El panel distingue conexión local, observación de OpenCode y actividad del agente. Los avisos tras 30 segundos sin conexión o 2 minutos sin actividad automática no reenvían tareas. Una espera humana no se trata como inactividad automática del agente.
+El dashboard distingue conexión local, observación de OpenCode y actividad del agente. Los avisos tras 30 segundos sin conexión o 2 minutos sin actividad automática no reenvían tareas. Una espera humana no se trata como inactividad automática del agente.
 
 Los tokens y costes mostrados son observaciones o estimaciones de OpenCode. Un coste cero o no disponible no demuestra gratuidad; no es gasto facturado ni una condición de aceptación del cambio.
 

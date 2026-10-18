@@ -29,7 +29,7 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
       return;
     }
     if (req.method !== "GET") {
-      json(405, { error: "Panel is read-only" });
+      json(405, { error: "Dashboard is read-only" });
       return;
     }
     try {

@@ -3,7 +3,7 @@ import type { Observation } from "./runRepository.ts";
 import { queuedRuns } from "../domain/queue.ts";
 import { consumption, type Run } from "../domain/run.ts";
 
-/** Proyección de solo lectura compartida por el adaptador HTTP local y el panel. */
+/** Proyección de solo lectura compartida por el adaptador HTTP local y el Dashboard. */
 export interface FactoryView {
   serverNow: number;
   admission: Observation;

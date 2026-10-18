@@ -113,4 +113,4 @@ flowchart TD
 
 Un nuevo SHA provoca reverificación automática del Commit candidato publicado; no crea otro Intento del agente. Una petición modificada necesita revisión y nueva autorización, pero el issue ya consumido no vuelve a entrar por quitar y poner la etiqueta.
 
-La Factory observa por consultas periódicas. La revocación no es instantánea y un fallo de red puede impedir confirmar su escritura en GitHub. El panel conserva esa incertidumbre. El control favorable debe combinarse con las protecciones de la rama y el merge humano.
+La Factory observa por consultas periódicas. La revocación no es instantánea y un fallo de red puede impedir confirmar su escritura en GitHub. El dashboard conserva esa incertidumbre. El control favorable debe combinarse con las protecciones de la rama y el merge humano.

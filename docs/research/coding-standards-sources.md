@@ -4,9 +4,9 @@ Consulta: 17 de octubre de 2026. Las cifras de estrellas son aproximadas y proce
 
 ## Contexto local
 
-Según `package.json`, `tsconfig.json` y `README.md`, App Foundry combina una Factory local en Node.js y TypeScript con un panel React, Vite, Tailwind y Radix. Usa ESM, TypeScript estricto, SQLite, procesos externos, `node:test` y Playwright. ESLint y Prettier ya definen parte de las normas mecánicas.
+Según `package.json`, `tsconfig.json` y `README.md`, App Foundry combina una Factory local en Node.js y TypeScript con un dashboard React, Vite, Tailwind y Radix. Usa ESM, TypeScript estricto, SQLite, procesos externos, `node:test` y Playwright. ESLint y Prettier ya definen parte de las normas mecánicas.
 
-Conviene distinguir normas de la Factory y normas del panel. Las reglas de un Managed project pertenecen a su propio repositorio y deben adaptarse a su stack.
+Conviene distinguir normas de la Factory y normas del dashboard. Las reglas de un Managed project pertenecen a su propio repositorio y deben adaptarse a su stack.
 
 ## 1. n8n: base para el núcleo de la Factory
 
@@ -16,7 +16,7 @@ Conviene distinguir normas de la Factory y normas del panel. Las reglas de un Ma
 - Qué seleccionaría: estrechar entradas desconocidas mediante validación; distinguir errores de usuario, fallos operativos y bugs; mantener el acceso a persistencia detrás de operaciones del dominio; consultar utilidades existentes antes de duplicarlas.
 - Adaptación: su frontend es Vue. Sus comandos, paquetes, TypeORM, clases de error y organización de monorepo son propios. Adoptar los criterios sin imponer esa infraestructura a App Foundry.
 
-## 2. Bulletproof React: base para el panel
+## 2. Bulletproof React: base para el dashboard
 
 - Documentos: [`docs/project-standards.md`](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-standards.md), [`AGENTS.md`](https://github.com/alan2207/bulletproof-react/blob/master/AGENTS.md), [estructura](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md) y [componentes](https://github.com/alan2207/bulletproof-react/blob/master/docs/components-and-styling.md).
 - Respaldo: [repositorio de Alan Alickovic, unas 36.000 estrellas](https://github.com/alan2207/bulletproof-react). Incluye una implementación React con Vite.
@@ -42,7 +42,7 @@ Conviene distinguir normas de la Factory y normas del panel. Las reglas de un Ma
 - Documento: [`skills/react-best-practices/AGENTS.md`](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/AGENTS.md).
 - Respaldo: [colección oficial de Vercel, unas 33.000 estrellas](https://github.com/vercel-labs/agent-skills). El documento está dirigido expresamente a agentes y modelos.
 - Qué seleccionaría: ejemplos de comportamiento incorrecto/correcto, prioridades por impacto, evitar peticiones secuenciales independientes y mantener coherencia entre estado derivado, renderizado y efectos.
-- Adaptación: seleccionar las reglas de React cliente y JavaScript aplicables. Las secciones de Server Components, Server Actions y APIs de Next.js no corresponden al panel Vite. Las optimizaciones requieren un problema y una comprobación adecuados a su coste.
+- Adaptación: seleccionar las reglas de React cliente y JavaScript aplicables. Las secciones de Server Components, Server Actions y APIs de Next.js no corresponden al dashboard Vite. Las optimizaciones requieren un problema y una comprobación adecuados a su coste.
 
 ## 6. FiftyOne: ejemplo con el nombre exacto CODING_STANDARDS.md
 
@@ -50,7 +50,7 @@ Conviene distinguir normas de la Factory y normas del panel. Las reglas de un Ma
 - Respaldo: [proyecto de Voxel51, unas 11.000 estrellas](https://github.com/voxel51/fiftyone).
 - Contenido: decisiones concretas sobre estado de UI, hooks de dominio, eventos y sistema de diseño.
 - Qué seleccionaría: elegir el mecanismo de estado más sencillo suficiente y exponer operaciones de dominio que oculten detalles internos.
-- Adaptación: gran parte del documento trata sus librerías, migraciones y eventos internos. Es útil como ejemplo de precisión y alcance; su contenido necesita más adaptación que Bulletproof React para este panel.
+- Adaptación: gran parte del documento trata sus librerías, migraciones y eventos internos. Es útil como ejemplo de precisión y alcance; su contenido necesita más adaptación que Bulletproof React para este dashboard.
 
 ## 7. Node.js Best Practices: catálogo de consulta para backend
 
@@ -62,6 +62,6 @@ Conviene distinguir normas de la Factory y normas del panel. Las reglas de un Ma
 
 ## Propuesta de síntesis
 
-Usar n8n como referencia principal del núcleo y Bulletproof React para el panel. Complementar con VS Code para dependencias y ciclo de vida de recursos, Google para tipos y Vercel para rendimiento cuando corresponda. FiftyOne aporta un ejemplo de estándar concreto con el nombre solicitado.
+Usar n8n como referencia principal del núcleo y Bulletproof React para el dashboard. Complementar con VS Code para dependencias y ciclo de vida de recursos, Google para tipos y Vercel para rendimiento cuando corresponda. FiftyOne aporta un ejemplo de estándar concreto con el nombre solicitado.
 
 Redactar una selección local breve en `CODING_STANDARDS.md` y enlazarla desde `AGENTS.md`. Cada regla debe indicar alcance y comportamiento comprobable. La configuración seguirá siendo la fuente de verdad para formato y comprobaciones mecánicas. Las fuentes externas servirán de fundamento; resolver sus diferencias en el documento local evita instrucciones contradictorias.

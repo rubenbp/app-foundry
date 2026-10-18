@@ -65,7 +65,7 @@ export async function serveFactory(
       .poll()
       .catch(() => {
         console.error(
-          "Workflow persistence failed; inspect panel and owned processes.",
+          "Workflow persistence failed; inspect dashboard and owned processes.",
         );
       })
       .finally(() => {
@@ -82,7 +82,7 @@ export async function serveFactory(
   panel.listen(port, "127.0.0.1");
   await once(panel, "listening");
   console.log(
-    `Factory panel: http://127.0.0.1:${(panel.address() as { port: number }).port}`,
+    `Factory dashboard: http://127.0.0.1:${(panel.address() as { port: number }).port}`,
   );
   console.log(`Factory PID ${process.pid}; local control socket ${socket}`);
   tick();

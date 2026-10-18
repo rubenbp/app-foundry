@@ -115,7 +115,7 @@ const waitFor = async (
   return factory.view(id)!;
 };
 try {
-  console.log(`Experiment panel: ${origin}`);
+  console.log(`Experiment dashboard: ${origin}`);
   const task =
     "Use the read tool to inspect package.json in this directory. Report the package name and its build script in one sentence. Do not edit files, run commands, or delegate. This is a bounded observation experiment.";
   const first = await factory.run(task);

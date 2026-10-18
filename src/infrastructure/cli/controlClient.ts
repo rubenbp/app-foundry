@@ -26,7 +26,7 @@ export function sendControlCommand(
   req.on("timeout", () =>
     req.destroy(
       new Error(
-        "Control timeout; work may have started. Inspect panel before retrying.",
+        "Control timeout; work may have started. Inspect dashboard before retrying.",
       ),
     ),
   );

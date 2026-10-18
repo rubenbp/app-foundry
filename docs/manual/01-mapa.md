@@ -16,13 +16,13 @@ flowchart TB
     F -->|"Comprueba identidad y versión"| V
     F -->|"Comprueba comportamiento público"| P["Dominio de producción"]
     V -->|"Sirve la versión publicada"| P
-    F -->|"Expone estado y evidencias"| L["Panel local de consulta"]
+    F -->|"Expone estado y evidencias"| L["Dashboard"]
     H -->|"Consulta"| L
 ```
 
 La persona decide el objetivo y si el resultado es aceptable. El agente propone código. La Factory controla el recorrido y verifica las pruebas. GitHub conserva la conversación y la integración. Vercel construye y sirve las versiones mediante su integración con GitHub.
 
-El panel permite entender lo que ocurre, pero no autoriza peticiones, responde preguntas del agente ni acepta resultados.
+El dashboard permite entender lo que ocurre, pero no autoriza peticiones, responde preguntas del agente ni acepta resultados.
 
 ## Los dos repositorios
 

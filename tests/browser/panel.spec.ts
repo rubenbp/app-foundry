@@ -7,7 +7,7 @@ import { createFactory } from "../../src/composition/factory.ts";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
 
-test("el panel observa el estado persistido de la API, el trabajo pendiente, las salidas de texto y el historial tras reiniciar", async ({
+test("el dashboard observa el estado persistido de la API, el trabajo pendiente, las salidas de texto y el historial tras reiniciar", async ({
   page,
 }) => {
   const root = mkdtempSync(join(tmpdir(), "foundry-browser-"));
@@ -172,7 +172,7 @@ test("la conexión local y los avisos automáticos de actividad usan relojes dis
   try {
     await page.clock.install({ time: new Date() });
     await page.goto(origin);
-    await expect(page.locator(".connection")).toHaveText("Panel conectado");
+    await expect(page.locator(".connection")).toHaveText("Dashboard conectado");
     await page.clock.fastForward(121_000);
     await expect(
       page.getByText(/Sin actividad del agente durante 2 minutos/),
@@ -195,7 +195,7 @@ test("la conexión local y los avisos automáticos de actividad usan relojes dis
     ).toBeVisible();
     await page.unroute("**/api/view*");
     await page.clock.fastForward(2000);
-    await expect(page.locator(".connection")).toHaveText("Panel conectado");
+    await expect(page.locator(".connection")).toHaveText("Dashboard conectado");
     expect(sends).toBe(1);
   } finally {
     server.closeAllConnections();

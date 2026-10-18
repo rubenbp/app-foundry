@@ -121,7 +121,7 @@ function App() {
               : failing
                 ? "Consulta local fallida"
                 : lastLocal
-                  ? "Panel conectado"
+                  ? "Dashboard conectado"
                   : "Conectando…"}
           </span>
         </header>
@@ -285,8 +285,9 @@ function App() {
                   <pre>{run.error}</pre>
                   <p>
                     Revisa la causa y el contexto en el issue. Ejemplo:
-                    «Ejecución {run.id}: necesito aclarar los criterios». El
-                    panel conserva el puesto; consultar no reanuda el trabajo.
+                    «Ejecución {run.id}: necesito aclarar los criterios». El el
+                    Dashboard conserva el puesto; consultar no reanuda el
+                    trabajo.
                   </p>
                   <a
                     href={

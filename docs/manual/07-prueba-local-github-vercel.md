@@ -44,7 +44,7 @@ lsof -nP -iTCP:4310 -sTCP:LISTEN
 
 Sin salida significa que no se ha encontrado un proceso escuchando. Si hay uno, identifica y detén tu servidor antes de continuar.
 
-Prepara dependencias y panel:
+Prepara dependencias y dashboard:
 
 ```sh
 npm ci
@@ -114,7 +114,7 @@ Como `/private/tmp` es temporal, puedes reconstruir el archivo si desaparece. Es
 
 Los IDs de Vercel y el dominio están en la configuración de confianza del Managed project. No hace falta hacer `vercel link` sobre el repositorio de la Factory ni ejecutar `vercel --prod`.
 
-## 5. Arrancar y ver el panel
+## 5. Arrancar y ver el dashboard
 
 En la primera terminal:
 
@@ -124,7 +124,7 @@ npm start -- serve --config /private/tmp/app-foundry-prueba-local.json --port 43
 
 Deja esa terminal abierta durante todo el recorrido. Abre [http://127.0.0.1:4310](http://127.0.0.1:4310).
 
-El panel debería mostrar la Factory sin Ejecución activa. El arranque consulta automáticamente los issues abiertos con `factory:ready` del Managed project; comprueba que no hayas autorizado otros trabajos que no quieras ejecutar todavía.
+El dashboard debería mostrar la Factory sin Ejecución activa. El arranque consulta automáticamente los issues abiertos con `factory:ready` del Managed project; comprueba que no hayas autorizado otros trabajos que no quieras ejecutar todavía.
 
 Si la carpeta de datos ya tenía una Ejecución iniciada, puede aparecer en intervención. No arranques otra instancia ni borres reservas para saltarla; inspecciona esa Ejecución.
 
@@ -173,15 +173,15 @@ gh issue edit NUMERO_DEL_ISSUE --repo rubenbp/appfoundry-site-demo \
   --add-label factory:ready
 ```
 
-El panel debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
+El dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
 
 No edites el issue ni añadas comentarios de prueba inmediatamente después de aplicar la etiqueta. La admisión relaciona la autorización con el contenido estable; otras actualizaciones pueden hacerla ambigua. Si aún no se admitió, estabiliza y vuelve a aplicar la etiqueta. Si ya se admitió, volver a etiquetar no reejecuta el issue.
 
-La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, abre la causa y las salidas del panel antes de seguir; no aceptes para intentar desbloquear una verificación fallida.
+La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, abre la causa y las salidas del dashboard antes de seguir; no aceptes para intentar desbloquear una verificación fallida.
 
 ## 8. Revisar y aceptar
 
-Abre la PR desde el panel y lee el informe vigente. Abre su preview con tu sesión Vercel y comprueba:
+Abre la PR desde el dashboard y lee el informe vigente. Abre su preview con tu sesión Vercel y comprueba:
 
 1. El nuevo texto del pie en `/`.
 2. El mismo texto en `/sobre-rebobina/`.
@@ -201,7 +201,7 @@ Espera `awaiting_merge` y `Factory / ready-to-merge: success`. Si cambia el Comm
 
 Haz el merge manualmente en GitHub cuando estén favorables los controles de Factory y Vercel. Mantén encendida la Factory.
 
-El panel debe pasar a `checking_production`. Cuando el deployment de producción esté listo, la Factory comprobará la versión y los tres criterios en el dominio público, publicará el informe en el issue y lo cerrará. El resultado final debe ser `completed`.
+El dashboard debe pasar a `checking_production`. Cuando el deployment de producción esté listo, la Factory comprobará la versión y los tres criterios en el dominio público, publicará el informe en el issue y lo cerrará. El resultado final debe ser `completed`.
 
 Puedes observar el sitio y el marcador:
 
@@ -222,7 +222,7 @@ cd /Users/rubenbp/dev/jakala-tfm/app-foundry
 npm start -- stop --config /private/tmp/app-foundry-prueba-local.json --id ID_DE_EJECUCION
 ```
 
-Usa el ID del panel. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Un reinicio a mitad del recorrido deja intervención; no reanuda el trabajo automáticamente.
+Usa el ID del dashboard. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Un reinicio a mitad del recorrido deja intervención; no reanuda el trabajo automáticamente.
 
 Para probar otro cambio crea otro issue con un resultado diferente, una vez completado o detenido el anterior. El mismo issue no se consume dos veces dentro de ese historial.
 
