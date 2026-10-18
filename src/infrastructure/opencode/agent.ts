@@ -7,7 +7,7 @@ import {
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { installLocalGitGuard } from "../agent-git.ts";
-import { reducedEnvironment } from "../workspace.ts";
+import { reducedEnvironment } from "../process.ts";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";

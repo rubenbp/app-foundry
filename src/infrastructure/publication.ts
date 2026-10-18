@@ -13,12 +13,8 @@ import type {
   Preview,
   PullCandidate,
 } from "../domain/publication.ts";
-import {
-  GitWorkspace,
-  execute,
-  reducedEnvironment,
-  type ProcessPort,
-} from "./workspace.ts";
+import { GitWorkspace } from "./workspace.ts";
+import { execute, reducedEnvironment, type ProcessPort } from "./process.ts";
 
 import { remoteCommand, type RemoteCommand } from "./remote-command.ts";
 import {

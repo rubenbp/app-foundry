@@ -7,7 +7,7 @@ import { createServer } from "node:net";
 import { once } from "node:events";
 import { join } from "node:path";
 import { verificationFixture } from "./support/verification.ts";
-import { execute } from "../src/infrastructure/workspace.ts";
+import { execute } from "../src/infrastructure/process.ts";
 
 test("the Workflow stops editing before fixing a complete multi-commit candidate and persists independent evidence", async () => {
   const s = verificationFixture();

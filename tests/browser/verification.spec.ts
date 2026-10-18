@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { once } from "node:events";
 import { panelServer } from "../../src/infrastructure/http/panel-server.ts";
 import { verificationFixture } from "../support/verification.ts";
-import { execute } from "../../src/infrastructure/workspace.ts";
+import { execute } from "../../src/infrastructure/process.ts";
 
 test("panel shows independent verification, complete diff, checks and criterion evidence with keyboard access", async ({
   page,

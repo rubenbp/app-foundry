@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createWorkflow } from "../src/composition/workflow.ts";
-import { GitWorkspace, execute } from "../src/infrastructure/workspace.ts";
+import { GitWorkspace } from "../src/infrastructure/workspace.ts";
+import { execute } from "../src/infrastructure/process.ts";
 import type { AgentPort } from "../src/application/agent.ts";
 
 function fixture(options: { stopConfirmed?: boolean } = {}) {

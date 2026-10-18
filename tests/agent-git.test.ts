@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { installLocalGitGuard } from "../src/infrastructure/agent-git.ts";
-import { reducedEnvironment } from "../src/infrastructure/workspace.ts";
+import { reducedEnvironment } from "../src/infrastructure/process.ts";
 import { verificationFixture } from "./support/verification.ts";
 
 test("an agent build can read its version and commit a candidate while its Git process guard rejects remote effects and changed identity", async () => {

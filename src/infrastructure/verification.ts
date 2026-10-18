@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import type { Workspace, ManagedProject } from "../domain/request.ts";
 import type { Verification } from "../domain/verification.ts";
 import { controlChange } from "../domain/verification-controls.ts";
-import { execute, reducedEnvironment, type ProcessPort } from "./workspace.ts";
+import { execute, reducedEnvironment, type ProcessPort } from "./process.ts";
 
 import type {
   CandidateVerification,

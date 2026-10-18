@@ -5,7 +5,7 @@ import { acquireWorkflowOwnership } from "../infrastructure/ownership.ts";
 
 import { createFactory } from "./factory.ts";
 import { CandidateVerifier } from "../infrastructure/verification.ts";
-import type { ProcessPort } from "../infrastructure/workspace.ts";
+import type { ProcessPort } from "../infrastructure/process.ts";
 
 export type ComposedWorkflowOptions = Omit<
   WorkflowOptions,
