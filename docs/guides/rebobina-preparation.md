@@ -2,7 +2,7 @@
 
 Contrato de preparación del [incremento #13](https://github.com/rubenbp/app-foundry/issues/13), previo a cualquier Ejecución AFK. Complementa la [guía GitHub–Vercel](vercel-setup.md). El Managed project es `rubenbp/appfoundry-site-demo`; la Factory mantiene su repositorio independiente.
 
-La preparación original ya está integrada en el runtime de la Factory. Para operar el recorrido actual, incluidas las aclaraciones por comentarios y la recuperación del mismo thread, sigue el [manual de negocio](../manual/README.md) y la [prueba local](../manual/07-prueba-local-github-vercel.md). Las restricciones del incremento #13 al final de esta guía describen su alcance histórico.
+La preparación original ya está integrada en el runtime de la Factory. Para operar el recorrido actual, incluidas las aclaraciones, las órdenes explícitas de recuperación por comentarios y la continuidad del mismo thread, sigue el [manual de negocio](../manual/README.md) y la [prueba local](../manual/07-prueba-local-github-vercel.md). Las restricciones del incremento #13 al final de esta guía describen su alcance histórico.
 
 ## Configuración del Managed project
 

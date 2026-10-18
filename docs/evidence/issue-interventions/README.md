@@ -1,5 +1,7 @@
 # Validación de intervenciones por comentarios del issue
 
+Esta evidencia documenta las aclaraciones del agente. La recuperación operativa posterior mediante `Reintentar`, `Corregir: instrucciones` y `Cancelar` se describe y valida en [recuperación por issue](../issue-recovery/README.md).
+
 Validación del 18 de octubre de 2026 sobre el desarrollo de continuación del agente en la misma conversación. Implementación: `cafe172`; documentación inicial: `a4faeaa`.
 
 ## Comportamiento comprobado

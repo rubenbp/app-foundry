@@ -13,6 +13,12 @@ La espera no caduca, conserva el puesto y sobrevive al reinicio de la Factory. C
 - [Espera, parada, reinicio y errores](manual/05-variantes-e-intervencion.md).
 - [Validación y alcance de las pruebas](evidence/issue-interventions/README.md).
 
+## Recuperación por comentarios
+
+Los fallos que dejan la Ejecución en intervención generan un aviso en el issue con su causa y acciones disponibles. Basta un comentario humano nuevo, sin comprobar permisos: `Reintentar` repite la fase fallida; `Corregir: instrucciones` abre otro Intento conservando thread, rama y PR; `Cancelar` confirma la parada y cierra como no implementado. La corrección exige nueva verificación y aceptación. Después del merge solo se permite reintentar el resumen y el cierre pendientes.
+
+El MVP mantiene este flujo sencillo; no añade recuperación de comunicaciones ni colas de avisos. Consulta el [contrato operativo](manual/05-variantes-e-intervencion.md#recuperar-desde-el-issue) y las [pruebas de recuperación](../tests/issueRecovery.test.ts).
+
 ## Organización
 
 | Carpeta o documento                                       | Contenido                                                                       |

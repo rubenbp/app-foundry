@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart TB
-    H["Persona responsable"] -->|"Autoriza, responde dudas, acepta y hace merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
+    H["Persona responsable"] -->|"Autoriza, responde, recupera, acepta y hace merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
     F["Factory<br/>Coordina y conserva evidencias"] -->|"Lee peticiones y decisiones"| G
     F -->|"Publica dudas, rama, PR, informes y estado"| G
     F -->|"Encarga un Intento"| A["Agente de código<br/>OpenCode"]
@@ -74,7 +74,18 @@ flowchart TD
     T -. "Fallo o evidencia insuficiente" .-> X
     V -. "Deployment fallido" .-> X
     M -. "Merge fuera del contrato" .-> X
+    X --> N["Publicar causa y acciones en el issue"]
+    N -->|"Reintentar"| P["Repetir fase fallida en la misma Ejecución"]
+    P -->|"Preparación"| B
+    P -->|"Agente"| O
+    P -->|"Verificación"| T
+    P -->|"Publicación"| V
+    P -->|"Cierre tras merge"| C
+    N -->|"Corregir: instrucciones<br/>Antes del merge"| O
+    N -->|"Cancelar<br/>Antes del merge"| Z["Confirmar parada y cerrar issue<br/>como no implementado; liberar puesto"]
 ```
+
+La intervención tiene salida desde el mismo issue: `Reintentar` repite la fase fallida y `Corregir: instrucciones` encarga otro Intento en la misma conversación, rama y PR. `Cancelar` confirma la parada y cierra como no implementado. Basta un comentario humano, sin comprobar permisos para estas órdenes. Después del merge solo se reintentan el resumen y el cierre pendientes.
 
 Este es el camino favorable. [Las variantes](05-variantes-e-intervencion.md) explican cuándo se espera, se vuelve a comprobar o se exige intervención.
 

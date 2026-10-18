@@ -36,7 +36,7 @@ La Ejecución termina como `completed` cuando la integración autorizada, el res
 
 Si el issue ya estaba cerrado después del merge, se publica el mismo resumen y se reconoce el cierre existente. Cerrar el issue manualmente no sustituye la aceptación de preview ni autoriza un merge fuera del contrato.
 
-Si se pierde la respuesta al publicar el resumen o cerrar el issue, la Ejecución conserva el puesto y muestra el error. La siguiente consulta busca el efecto remoto antes de repetirlo para evitar duplicados. Si falta el resumen requerido o ha cambiado antes del cierre, no completa. Editar el título o cuerpo del issue no reemplaza el encargo capturado ni impide por sí solo el cierre. Un reinicio durante esta fase sigue exigiendo recuperación autorizada.
+Si se pierde la respuesta al publicar el resumen o cerrar el issue, la Ejecución conserva el puesto y muestra el error. La siguiente consulta busca el efecto remoto antes de repetirlo para evitar duplicados. Si falta el resumen requerido o ha cambiado antes del cierre, no completa. Editar el título o cuerpo del issue no reemplaza el encargo capturado ni impide por sí solo el cierre. Un reinicio durante esta fase sigue exigiendo recuperación explícita. La persona puede comentar `Reintentar` en el issue para completar el resumen y el cierre pendientes. Después del merge no se admiten `Corregir: instrucciones` ni `Cancelar`; los cambios adicionales requieren otro issue.
 
 ## Límite del MVP
 

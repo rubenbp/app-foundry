@@ -100,6 +100,8 @@ Cada issue mantiene una misma conversación con el agente. Si faltan datos o una
 4. El agente continúa en el mismo thread y con el trabajo acumulado. Si necesita más información, vuelve a pedir intervención.
 5. Cuando termina el código, la Factory ejecuta las verificaciones y continúa con la PR y la preview de Vercel.
 
-La espera no caduca y mantiene el único puesto ocupado. Reiniciar la Factory mientras espera conserva el thread y la solicitud pendiente. Los comentarios publicados mientras el agente trabaja quedan sin procesar; tampoco se recogen respuestas adicionales después de reanudarlo. Si falta algo, el agente vuelve a preguntar.
+La espera no caduca y mantiene el único puesto ocupado. Reiniciar la Factory mientras espera conserva el thread y la solicitud pendiente. Los comentarios de conversación publicados mientras el agente trabaja no se envían al thread; tampoco se recogen respuestas adicionales después de reanudarlo. La orden explícita `Cancelar` se procesa en las consultas del workflow. Si falta algo, el agente vuelve a preguntar.
 
-Las respuestas aclaran el encargo; no conceden permisos técnicos ni aceptan el resultado. Los errores de autenticación, modelo, proceso, verificación o despliegue conservan su tratamiento actual; no hay reparación automática ni cambio de proveedor.
+Las respuestas aclaran el encargo; no conceden permisos técnicos ni aceptan el resultado. Los errores de autenticación, modelo, proceso, verificación o despliegue se notifican en el issue y permiten la [recuperación por comentarios](05-variantes-e-intervencion.md#recuperar-desde-el-issue). No hay reparación automática ni cambio de proveedor.
+
+`Corregir: instrucciones` abre otro Intento en la misma Ejecución, conversación y rama. Si ya existe PR, se conserva. La Factory detiene la edición anterior, retira la aceptación y vuelve a verificar el resultado completo antes de pedir una nueva aceptación. `Reintentar` sobre un fallo del agente también abre otro Intento; repetir preparación o verificación no crea trabajo adicional del agente por sí solo.

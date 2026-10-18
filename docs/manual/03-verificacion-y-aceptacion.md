@@ -21,7 +21,7 @@ flowchart TD
     T -->|"Sí"| R["Verificación técnica superada<br/>Continuar hacia PR y preview"]
 ```
 
-En Rebobina, el contrato incluye build, lint, comprobación de tipos, pruebas unitarias y pruebas de navegador. Un comando fallido detiene la secuencia; los posteriores quedan sin ejecutar. No hay un bucle automático para pedir al agente que corrija y vuelva a probar.
+En Rebobina, el contrato incluye build, lint, comprobación de tipos, pruebas unitarias y pruebas de navegador. Un comando fallido detiene la secuencia; los posteriores quedan sin ejecutar. No hay un bucle automático para pedir al agente que corrija y vuelva a probar. La persona puede publicar `Corregir: instrucciones` en el issue para iniciar otro Intento y repetir la verificación completa, o `Reintentar` para volver a ejecutar la fase tras corregir la causa.
 
 La Factory compara controles con la base: comandos, configuración, manifests, lockfiles y pruebas existentes. Eliminar o modificar controles, omitir pruebas o hacer que solo se ejecuten algunas requiere intervención. Añadir pruebas sin esas señales sí está permitido. La revisión es conservadora: puede señalar cambios inocuos y no detecta todo debilitamiento posible.
 
@@ -83,7 +83,8 @@ flowchart TD
     O -->|"No"| K{"¿Qué instrucción contiene?"}
     K -->|"Consulta u otro texto"| Q["No aceptar ni iniciar otro Intento"]
     K -->|"Aceptación ambigua"| L["Pedir comentario nuevo con SHA y preview"]
-    K -->|"Corrección, cancelación o revocación reconocida"| P{"¿Autor con escritura?"}
+    K -->|"Orden explícita en el issue:<br/>Reintentar, Corregir: instrucciones, Cancelar"| RC["Ejecutar acción disponible sin comprobar permisos<br/>Corregir y Cancelar solo antes del merge"]
+    K -->|"Revocación o fórmula anterior de bloqueo"| P{"¿Autor con escritura?"}
     P -->|"No"| I
     P -->|"Sí"| X["Revocar control y exigir intervención"]
     K -->|"Aceptación explícita"| V{"¿Posterior al informe, sin editar,<br/>SHA y URL vigentes y autor con escritura?"}
@@ -94,9 +95,9 @@ flowchart TD
     R -->|"Sí"| M["Habilitar control de merge<br/>Esperar merge humano"]
 ```
 
-La interpretación reconoce fórmulas concretas; no interpreta cualquier frase libre como una orden. «¿Puedo aceptar?» es una consulta. «Acepto» exige aclaración. Para revocar puede usarse, por ejemplo, un comentario nuevo que empiece por `Revoco` o `Cancela`.
+La interpretación reconoce fórmulas concretas; no interpreta cualquier frase libre como una orden. «¿Puedo aceptar?» es una consulta. «Acepto» exige aclaración. Para revocar puede usarse, por ejemplo, un comentario nuevo que empiece por `Revoco`. Las órdenes operativas se escriben completas en el issue: `Reintentar`, `Corregir: instrucciones` o `Cancelar`. Estas tres órdenes no comprueban permisos; la aceptación y el merge mantienen los suyos. Las fórmulas anteriores como «Corrige el pie» o «Cancela» conservan el bloqueo de revisión y no sustituyen las órdenes operativas.
 
-Las respuestas ya entregadas al agente quedan identificadas por su ID y no se reinterpretan durante la revisión ni al comprobar el merge. Por ejemplo, «Corrige el título a Catálogo» puede resolver una duda durante la implementación sin bloquear después la PR. Del mismo modo, aceptar una propuesta del agente durante una aclaración no acepta el Commit candidato: hace falta un comentario posterior al informe con el SHA y la preview vigentes.
+Las órdenes de recuperación consumidas y las respuestas ya entregadas al agente quedan identificadas por su ID y no se reinterpretan durante la revisión ni al comprobar el merge. Por ejemplo, «Corrige el título a Catálogo» puede resolver una duda durante la implementación sin bloquear después la PR. Del mismo modo, aceptar una propuesta del agente durante una aclaración no acepta el Commit candidato: hace falta un comentario posterior al informe con el SHA y la preview vigentes.
 
 Cada ID de comentario se consume una sola vez. Corregir un comentario editándolo no lo convierte en una aceptación válida; hay que publicar otro. La aceptación tampoco sirve si es anterior al informe, señala otra preview, usa una versión antigua o procede de una persona sin escritura acreditada.
 
@@ -112,7 +113,10 @@ flowchart TD
     C -->|"Preview deja de ser válida"| P["Retirar aceptación y esperar preview válida"]
     C -->|"Informe o fragmento editado o eliminado"| I["Invalidar informe y aceptación<br/>Publicar informe vigente y pedir nueva aceptación"]
     C -->|"Permiso retirado o aceptación alterada"| H["Revocar aceptación<br/>Requerir una aceptación válida"]
-    C -->|"PR se cierra sin merge<br/>o llega orden de corrección o cancelación"| X["Intervención"]
+    C -->|"PR se cierra sin merge"| X["Intervención y aviso en el issue"]
+    C -->|"Corregir: instrucciones en el issue"| O["Revocar aceptación; otro Intento<br/>Misma conversación, rama y PR"]
+    O --> T
+    C -->|"Cancelar en el issue"| Z["Confirmar parada y cerrar como no implementado"]
 ```
 
 Un nuevo SHA provoca reverificación automática del Commit candidato publicado; no crea otro Intento del agente. Editar el título o el cuerpo del issue no actualiza el encargo capturado ni invalida la aceptación. El issue ya consumido no vuelve a entrar por quitar y poner la etiqueta.

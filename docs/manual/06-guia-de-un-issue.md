@@ -21,7 +21,7 @@ También se pueden usar encabezados de objetivo y criterios, listas o contexto a
 3. **Seguir la Ejecución y responder dudas.** Consultar el Dashboard y los comentarios del issue. Cuando la Factory publique preguntas del agente, responder con un comentario nuevo; puede contener todas las respuestas. Cualquier persona puede hacerlo. El agente continúa en el mismo thread y puede volver a preguntar. Retirar la etiqueta no cancela un trabajo admitido.
 4. **Revisar la PR y su informe.** Leer diff, resultados y lagunas del Commit candidato vigente.
 5. **Probar la preview.** El creador del issue se responsabiliza de conseguir la revisión de cada criterio en la URL del informe.
-6. **Aceptar o pedir corrección.** Cualquier persona con escritura puede copiar el ejemplo del informe con SHA completo y URL y publicarlo como comentario nuevo. Una orden reconocida de corrección revoca el control y requiere intervención; hoy no lanza otro Intento.
+6. **Aceptar o pedir corrección.** Cualquier persona con escritura puede copiar el ejemplo del informe con SHA completo y URL y publicarlo como comentario nuevo. Para corregir, cualquier persona puede comentar `Corregir: instrucciones` en el issue, sin comprobar permisos. La Factory conserva thread, rama y PR, abre otro Intento y exige verificación y aceptación nuevas.
 7. **Realizar el merge.** Esperar `Factory / ready-to-merge: success` y los demás controles. Si cambió el candidato, esperar verificación, preview, informe y aceptación nuevos.
 8. **Confirmar el final.** Comprobar el resumen de integración, el issue cerrado y el estado `completed`. La Factory no espera ni comprueba producción.
 
@@ -38,13 +38,17 @@ flowchart TD
     C -->|"No"| E["Consultar fase y causa en el dashboard"]
     C -->|"Sí"| B{"¿Cumple todos los criterios?"}
     B -->|"Tengo dudas"| Q["Preguntar en GitHub<br/>La consulta no acepta"]
-    B -->|"No"| X["Pedir corrección mediante orden reconocida<br/>Requiere intervención"]
+    B -->|"No"| X["Comentar Corregir: instrucciones en el issue<br/>Otro Intento en el mismo thread"]
     B -->|"Sí"| H["Aceptar SHA y preview con comentario nuevo"]
     H --> G{"¿Control favorable y demás requisitos de GitHub?"}
     G -->|"No"| V["Revisar cambios, permisos y observaciones"]
     G -->|"Sí"| M["Hacer merge humano"]
     M --> F["Confirmar resumen, cierre y completed"]
 ```
+
+## Si aparece intervención
+
+Lee el comentario de la Factory y elige una acción disponible. Publica `Reintentar` tras corregir la causa, `Corregir: instrucciones` para encargar una corrección al agente o `Cancelar` para detener y cerrar como no implementado. Basta un comentario humano. Después del merge solo cabe reintentar el resumen y el cierre pendientes.
 
 ## Cómo reconocer un issue terminado
 
