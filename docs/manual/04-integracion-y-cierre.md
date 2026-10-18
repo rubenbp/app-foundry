@@ -28,7 +28,7 @@ sequenceDiagram
     end
 ```
 
-Durante el cierre, `closing_issue` conserva el puesto. El resumen identifica la Ejecución, la base, el candidato, la preview aceptada, quién aceptó, el commit integrado, la PR y quién hizo el merge. La Factory confirma el resumen antes de cerrar el issue.
+Durante el cierre, `closing_issue` conserva el puesto. El comentario final comunica que el código del issue se ha integrado en el producto e incluye el enlace a la PR. La base, el candidato, la aceptación y el commit integrado permanecen en la evidencia de la Ejecución. La Factory confirma el comentario antes de cerrar el issue.
 
 ## Qué significa «completado»
 
@@ -36,7 +36,7 @@ La Ejecución termina como `completed` cuando la integración autorizada, el res
 
 Si el issue ya estaba cerrado después del merge, se publica el mismo resumen y se reconoce el cierre existente. Cerrar el issue manualmente no sustituye la aceptación de preview ni autoriza un merge fuera del contrato.
 
-Si se pierde la respuesta al publicar el resumen o cerrar el issue, la Ejecución conserva el puesto y muestra el error. La siguiente consulta busca el efecto remoto antes de repetirlo para evitar duplicados. Si cambia la petición o falta el resumen requerido, no completa. Un reinicio sigue exigiendo recuperación autorizada.
+Si se pierde la respuesta al publicar el resumen o cerrar el issue, la Ejecución conserva el puesto y muestra el error. La siguiente consulta busca el efecto remoto antes de repetirlo para evitar duplicados. Si falta el resumen requerido o ha cambiado antes del cierre, no completa. Editar el título o cuerpo del issue no reemplaza el encargo capturado ni impide por sí solo el cierre. Un reinicio durante esta fase sigue exigiendo recuperación autorizada.
 
 ## Límite del MVP
 

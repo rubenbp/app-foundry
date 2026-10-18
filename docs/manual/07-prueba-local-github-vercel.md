@@ -179,6 +179,12 @@ La Factory captura el título y cuerpo que observe al admitir. No comprueba perm
 
 La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, abre la causa y las salidas del dashboard antes de seguir; no aceptes para intentar desbloquear una verificación fallida.
 
+### Si el agente pide una aclaración
+
+Abre el issue y responde al comentario «La Factory necesita tu respuesta» con un comentario nuevo. Puedes contestar todas las dudas juntas y usar texto libre. Espera a que la Factory recoja la respuesta y el Dashboard vuelva a mostrar trabajo del agente. Si la información no basta, el agente puede publicar otra solicitud; responde de nuevo después de esa nueva pregunta.
+
+La espera no caduca y conserva el puesto. Para comprobar la recuperación, puedes cerrar la Factory mientras muestra esa espera y arrancarla de nuevo con la misma configuración y carpeta de datos. La pregunta queda pendiente y la siguiente respuesta recupera el mismo thread. El comando `stop` cancela la Ejecución; se utiliza para una parada operativa, no para conservar esta espera. Responder una aclaración no acepta la PR ni sustituye el paso siguiente.
+
 ## 8. Revisar y aceptar
 
 Abre la PR desde el dashboard y lee el informe vigente. Abre su preview con tu sesión Vercel y comprueba:
@@ -220,13 +226,13 @@ Para probar otro cambio crea otro issue con un resultado diferente, una vez comp
 
 ## Si no avanza
 
-| Lo que ves                      | Qué revisar                                                                                                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                 |
-| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.                                                   |
-| `waiting`                       | Pregunta o permiso del agente. La continuación guiada aún no está disponible.                                                                                      |
-| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                       |
-| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                     |
-| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                                                     |
-| Cierre en intervención          | Resumen de integración, petición intacta y permiso de comentar/cerrar. La siguiente consulta concilia efectos sin duplicarlos.                                     |
-| Intervención tras reiniciar     | Si esperaba respuesta humana, responder en el issue para recuperar el mismo thread. En otros estados, inspeccionar procesos y efectos. No borrar datos o reservas. |
+| Lo que ves                      | Qué revisar                                                                                                                                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                                              |
+| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.                                                                                |
+| `waiting`                       | Si hay dudas publicadas por la Factory, responder con un comentario nuevo en el issue. La primera respuesta humana continúa el mismo thread. Los permisos técnicos mantienen sus restricciones. |
+| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                                                    |
+| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                                                  |
+| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                                                                                  |
+| Cierre en intervención          | Resumen de integración vigente y permiso de comentar/cerrar. La siguiente consulta concilia efectos sin duplicarlos.                                                                            |
+| Intervención tras reiniciar     | Si esperaba respuesta humana, responder en el issue para recuperar el mismo thread. En otros estados, inspeccionar procesos y efectos. No borrar datos o reservas.                              |

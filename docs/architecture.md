@@ -55,6 +55,8 @@ En el workflow, cada Issue autorizado conserva una sesión de OpenCode asociada 
 
 La Factory registra la solicitud, publica un comentario identificado y espera. Consulta los comentarios del issue mediante el puerto de conversación; excluye bots y marcas de la Factory y consume únicamente el primer comentario humano creado después de la pregunta publicada. Usa su identidad y orden de creación, sin consultar colaboradores ni permisos. Conserva la pregunta, la respuesta y la confirmación de entrega. Una publicación sin confirmación se concilia buscando el mismo comentario; una entrega al agente incierta queda en intervención sin reenvío automático.
 
+La política de revisión reconoce por ID las respuestas ya entregadas al agente y las excluye de la interpretación de instrucciones de la PR y de las revocaciones al comprobar el merge. Una aclaración puede contener expresiones como «Corrige» o «Acepto» sin convertirse después en una corrección o aceptación del Commit candidato.
+
 El runtime de OpenCode se conserva en un directorio privado por Ejecución dentro de la raíz de datos. La conexión autenticada permite volver a observar un servidor propio todavía vivo; si terminó, se inicia otro con el mismo almacenamiento y se recupera la sesión existente. La Factory no crea una conversación alternativa ni reenvía el encargo inicial al recuperar una espera. Las ejecuciones anteriores sin este protocolo mantienen su tratamiento de reinicio.
 
 La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Factory conserva esa espera; `stop` sigue siendo una cancelación explícita. Los fallos operativos, la aceptación del Commit candidato y la publicación conservan sus contratos.

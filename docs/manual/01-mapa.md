@@ -6,9 +6,9 @@
 
 ```mermaid
 flowchart TB
-    H["Persona responsable"] -->|"Autoriza, acepta y hace merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
+    H["Persona responsable"] -->|"Autoriza, responde dudas, acepta y hace merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
     F["Factory<br/>Coordina y conserva evidencias"] -->|"Lee peticiones y decisiones"| G
-    F -->|"Publica rama, PR, informes y estado"| G
+    F -->|"Publica dudas, rama, PR, informes y estado"| G
     F -->|"Encarga un Intento"| A["Agente de código<br/>OpenCode"]
     A -->|"Edita y crea commits locales"| W["Clon propio del Managed project"]
     F -->|"Prepara y verifica"| W
@@ -21,6 +21,8 @@ flowchart TB
 La persona decide el objetivo y si el resultado es aceptable. El agente propone código. La Factory controla el recorrido y verifica las pruebas. GitHub conserva la conversación y la integración. Vercel construye y sirve las versiones mediante su integración con GitHub.
 
 El dashboard permite entender lo que ocurre, pero no autoriza peticiones, responde preguntas del agente ni acepta resultados.
+
+Las dudas del agente se responden en el issue. Cualquier persona puede aportar esa información sin permisos de escritura; la aceptación del resultado y el merge mantienen sus controles propios.
 
 ## Los dos repositorios
 
@@ -55,8 +57,10 @@ flowchart TD
     A --> Q["Capturar Issue autorizado y poner en cola"]
     Q --> W["Esperar puesto libre"]
     W --> B["Preparar clon y comprobar base"]
-    B --> O["Encargar Intento al agente"]
-    O --> T["Detener edición y verificar árbol del Commit candidato"]
+    B -->|"Encargo inicial"| O["Trabajo del agente<br/>Un thread para este issue"]
+    O -->|"Código terminado"| T["Detener edición y verificar árbol del Commit candidato"]
+    O -->|"Necesita una o varias aclaraciones"| Y["Publicar dudas en el issue<br/>Esperar sin caducidad y mantener puesto"]
+    Y -->|"Primer comentario humano nuevo<br/>Continuar el mismo thread"| O
     T --> R["Publicar rama y PR"]
     R --> V["Esperar y comprobar preview de Vercel"]
     V --> E["Publicar informe y esperar revisión"]
@@ -67,7 +71,6 @@ flowchart TD
     C --> F["Ejecución completada<br/>Liberar puesto y atender siguiente"]
     B -. "Fallo o incertidumbre" .-> X["Intervención"]
     O -. "Fallo" .-> X
-    O -. "Pregunta o permiso" .-> Y["Espera del agente<br/>Inspección humana"]
     T -. "Fallo o evidencia insuficiente" .-> X
     V -. "Deployment fallido" .-> X
     M -. "Merge fuera del contrato" .-> X

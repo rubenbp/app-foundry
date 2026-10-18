@@ -76,7 +76,9 @@ Acepto la versión SHA_COMPLETO y su preview URL_DE_LA_PREVIEW.
 
 ```mermaid
 flowchart TD
-    C["Comentario del issue o conversación principal de PR"] --> O{"¿Es propio de Factory, de bot<br/>o ya está consumido?"}
+    C["Comentario del issue o conversación principal de PR"] --> D{"¿Ya se entregó como respuesta<br/>a una duda del agente?"}
+    D -->|"Sí"| S["Conservar como aclaración<br/>No reinterpretar como revisión de PR"]
+    D -->|"No"| O{"¿Es propio de Factory, de bot<br/>o ya está consumido?"}
     O -->|"Sí"| I["No produce una aceptación nueva"]
     O -->|"No"| K{"¿Qué instrucción contiene?"}
     K -->|"Consulta u otro texto"| Q["No aceptar ni iniciar otro Intento"]
@@ -93,6 +95,8 @@ flowchart TD
 ```
 
 La interpretación reconoce fórmulas concretas; no interpreta cualquier frase libre como una orden. «¿Puedo aceptar?» es una consulta. «Acepto» exige aclaración. Para revocar puede usarse, por ejemplo, un comentario nuevo que empiece por `Revoco` o `Cancela`.
+
+Las respuestas ya entregadas al agente quedan identificadas por su ID y no se reinterpretan durante la revisión ni al comprobar el merge. Por ejemplo, «Corrige el título a Catálogo» puede resolver una duda durante la implementación sin bloquear después la PR. Del mismo modo, aceptar una propuesta del agente durante una aclaración no acepta el Commit candidato: hace falta un comentario posterior al informe con el SHA y la preview vigentes.
 
 Cada ID de comentario se consume una sola vez. Corregir un comentario editándolo no lo convierte en una aceptación válida; hay que publicar otro. La aceptación tampoco sirve si es anterior al informe, señala otra preview, usa una versión antigua o procede de una persona sin escritura acreditada.
 

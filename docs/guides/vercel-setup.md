@@ -1,6 +1,8 @@
 # Configuración inicial de GitHub y Vercel
 
-Guía para el Managed project de App Foundry. Actualizada el 14 de octubre de 2026. El recorrido GitHub → preview → aceptación humana → merge → producción de Rebobina está comprobado. Véase el [registro de evidencias](../evidence/github-vercel/README.md).
+Guía para el Managed project de App Foundry, revisada el 18 de octubre de 2026. El recorrido inicial GitHub → preview → aceptación humana → merge → producción de Rebobina se comprobó el 14 de octubre de 2026. Véase el [registro de evidencias](../evidence/github-vercel/README.md).
+
+El runtime ya incorpora la observación de previews y la continuación del agente mediante comentarios del issue. Para ejecutar el flujo implementado, sigue la [prueba local de la Factory](../manual/07-prueba-local-github-vercel.md). La comprobación inicial de producción descrita aquí pertenece a la preparación de la infraestructura; la Ejecución del MVP termina al confirmar la integración autorizada, su resumen y el cierre del issue.
 
 ## Objetivo
 
@@ -77,7 +79,7 @@ Si después se ejecutan pruebas automáticas sobre previews protegidas, resolver
 7. Esperar el despliegue de Production y comprobar que el commit resultante del merge y el cambio visible corresponden a la versión publicada.
 8. Guardar la URL de producción y las evidencias. Un merge completado y un despliegue fallido son resultados diferentes: registrar ambos.
 
-**Criterio de finalización:** existe evidencia del recorrido rama → preview → aceptación humana → merge → producción, sobre el repositorio y proyecto seleccionados. La Factory deberá poder consultar estado, URL y commit del deployment; la elección del mecanismo de consulta sigue pendiente en el workflow y la visibilidad operativa.
+**Criterio de finalización de esta preparación:** existe evidencia del recorrido rama → preview → aceptación humana → merge → producción sobre el repositorio y proyecto seleccionados. En el runtime actual, la Factory consulta los deployments de GitHub y contrasta proyecto, SHA y marcador servido de la preview mediante la CLI de Vercel. No espera ni comprueba producción después del merge.
 
 ## Skills, MCP y ejecución de la Factory
 
@@ -104,7 +106,7 @@ opencode mcp auth vercel
 
 [Fuente: Vercel MCP con OpenCode](https://vercel.com/docs/agent-resources/vercel-mcp#opencode).
 
-La Factory necesita un mecanismo de observación de despliegues. Podemos elegir señales de GitHub, API/CLI o herramientas MCP según lo que requiera el workflow. El agente de código no necesita decidir cuándo publicar: en el recorrido inicial, la aprobación humana y el merge preceden al despliegue automático.
+La Factory utiliza las señales de GitHub y la CLI de Vercel para observar y acreditar la preview. Su adaptador se describe en la [arquitectura](../architecture.md). El MCP no es una dependencia de ese recorrido. El agente de código tampoco publica: la Factory crea la PR del candidato verificado y la integración Git produce la preview; después, la aceptación y el merge siguen siendo humanos.
 
 ## Datos y evidencias que conservar
 

@@ -12,7 +12,7 @@ Crear el issue en el repositorio del **Managed project**, con un título como «
 Quiero mostrar «Otra partida.» en el pie. La página de inicio debe mostrar ese mensaje y el enlace del pie de la página Sobre debe seguir permitiendo volver al inicio.
 ```
 
-También se pueden usar encabezados de objetivo y criterios, listas o contexto adicional. Son ayudas de escritura, no requisitos del formato. La Factory prepara las comprobaciones técnicas. El agente decide si falta información y pide una aclaración concreta; la solicitud queda en el Dashboard. Hoy no se publica automáticamente en el issue ni se reanuda con una respuesta en GitHub.
+También se pueden usar encabezados de objetivo y criterios, listas o contexto adicional. Son ayudas de escritura, no requisitos del formato. La Factory prepara las comprobaciones técnicas. Si el agente necesita información, la Factory publica sus dudas en el issue y muestra la espera en el Dashboard. El primer comentario humano nuevo posterior a esa solicitud le permite continuar en el mismo thread. Puede reunir varias dudas en cada solicitud y repetir el ciclo cuando lo necesite.
 
 ## Pasos de la persona responsable
 
@@ -31,7 +31,10 @@ También se pueden usar encabezados de objetivo y criterios, listas o contexto a
 flowchart TD
     R["Estoy revisando un issue"] --> A{"¿Se ha admitido ya?"}
     A -->|"No"| P["Comprobar repositorio e issue abierto<br/>y aplicar factory:ready"]
-    A -->|"Sí"| C{"¿Hay informe y preview vigentes?"}
+    A -->|"Sí"| W{"¿El agente espera una respuesta en el issue?"}
+    W -->|"Sí"| J["Responder con un comentario nuevo<br/>Continúa el mismo thread"]
+    J --> E["Consultar fase y causa en el dashboard"]
+    W -->|"No"| C{"¿Hay informe y preview vigentes?"}
     C -->|"No"| E["Consultar fase y causa en el dashboard"]
     C -->|"Sí"| B{"¿Cumple todos los criterios?"}
     B -->|"Tengo dudas"| Q["Preguntar en GitHub<br/>La consulta no acepta"]
@@ -49,6 +52,7 @@ flowchart TD
 | ------------------------------------------ | ----------------------------------------------------------------------- |
 | Issue autorizado                           | Qué contenido se capturó al observar `factory:ready`.                   |
 | Base comprobada                            | Sobre qué versión empezó el trabajo y si ya tenía problemas.            |
+| Dudas y respuestas del issue               | Qué información humana recibió el agente durante el trabajo.            |
 | Diff y verificaciones del Commit candidato | Qué cambió y qué controles técnicos superó.                             |
 | Preview e informe                          | Qué versión se presentó a revisión y con qué evidencia.                 |
 | Comentario de aceptación                   | Qué SHA y preview aceptó una persona con permiso.                       |

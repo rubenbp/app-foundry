@@ -2,11 +2,13 @@
 
 Contrato de preparación del [incremento #13](https://github.com/rubenbp/app-foundry/issues/13), previo a cualquier Ejecución AFK. Complementa la [guía GitHub–Vercel](vercel-setup.md). El Managed project es `rubenbp/appfoundry-site-demo`; la Factory mantiene su repositorio independiente.
 
+La preparación original ya está integrada en el runtime de la Factory. Para operar el recorrido actual, incluidas las aclaraciones por comentarios y la recuperación del mismo thread, sigue el [manual de negocio](../manual/README.md) y la [prueba local](../manual/07-prueba-local-github-vercel.md). Las restricciones del incremento #13 al final de esta guía describen su alcance histórico.
+
 ## Configuración del Managed project
 
-[`config/managed-projects/rebobina.json`](../../config/managed-projects/rebobina.json) conserva identidad, rama, instrucciones, herramientas, comandos y publicación sin credenciales ni rutas personales. Es el contrato declarativo de esta preparación; todavía no existe un runtime de Factory que lo cargue o valide. Su integración corresponde a los incrementos siguientes. No presupone un esquema definitivo del Workflow.
+[`config/managed-projects/rebobina.json`](../../config/managed-projects/rebobina.json) conserva identidad, rama, instrucciones, herramientas, comandos y publicación sin credenciales ni rutas personales. La Factory carga y valida este contrato mediante `managedProjectFile` en su configuración operativa. La [arquitectura actual](../architecture.md) describe los módulos responsables de admisión, preparación, agente, verificación y publicación.
 
-Mantener esta configuración de confianza fuera del clon del candidato. El futuro Workflow debe consumirla sin reglas de negocio específicas de Rebobina. Cambiar de Managed project exige proporcionar su contrato, comprobar accesos y verificar su base; el MVP admite uno configurado y una Ejecución activa.
+Mantener esta configuración de confianza fuera del clon del candidato. El Workflow la consume sin reglas de negocio específicas de Rebobina. Cambiar de Managed project exige proporcionar su contrato, comprobar accesos y verificar su base; el MVP admite uno configurado y una Ejecución activa, también durante las esperas de respuesta humana.
 
 ## Reproducción local
 
@@ -69,7 +71,7 @@ Cada build Astro genera `/version.json`, mediante un [endpoint estático](https:
 5. Una persona realiza el merge en GitHub. Guardar su actor, timestamp y SHA resultante, incluido squash. Preparar y probar código no constituye esa aceptación.
 6. Confirmar que la Factory publica el resumen de integración, cierra el issue y termina como `completed`. El despliegue de producción queda fuera del proceso del MVP.
 
-La sesión de Chrome puede acreditar acceso humano autorizado a Preview; no acredita por sí sola credenciales del futuro proceso de Factory. Para HTTP automatizado protegido, usar la autenticación existente con `vercel curl` cuando la CLI esté disponible. El conector MCP puede tener permisos distintos de los del navegador; registrar fallos de acceso sin inventar resultados.
+La sesión de Chrome puede acreditar acceso humano autorizado a Preview; no acredita por sí sola credenciales del proceso de Factory. Para HTTP automatizado protegido, la Factory utiliza la autenticación existente de la CLI indicada por `vercelCli` y `vercel curl`. El conector MCP puede tener permisos distintos de los del navegador; registrar fallos de acceso sin inventar resultados.
 
 El recorrido termina con la revisión de preview, el merge autorizado, el resumen de integración y el cierre del issue. Las pruebas locales aportan evidencia técnica; la persona acepta el resultado en la preview.
 
@@ -77,4 +79,4 @@ El recorrido termina con la revisión de preview, el merge autorizado, el resume
 
 Conservar en [`docs/evidence/rebobina-preparation/`](../evidence/rebobina-preparation/README.md) el SHA inicial, candidato y merge, comandos, códigos, logs saneados, toolchain, alcance, navegador, modos especiales, protección, preview y decisión humana. Revisar salidas antes de versionarlas; excluir credenciales, estados de autenticación y volcados completos del entorno.
 
-Este incremento corresponde a preparación/construcción. No implementar el texto exacto de introducción ni el filtro de dificultad reservados a #12. No contabilizar este trabajo como Intento AFK ni como resultado de los casos de evaluación. No añadir todavía límites, dashboard, OpenCode, concurrencia, worktrees o backend.
+El incremento #13 correspondió a preparación/construcción. Excluyó el texto exacto de introducción y el filtro de dificultad reservados a #12, y no se contabilizó como Intento AFK ni como resultado de los casos de evaluación. Dashboard, OpenCode y backend se incorporaron en incrementos posteriores; su implementación actual se describe en el manual y la arquitectura.

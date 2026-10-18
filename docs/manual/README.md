@@ -4,16 +4,18 @@ Este manual explica cómo una petición de cambio se convierte en una versión c
 
 La **Factory** organiza el trabajo. El **Managed project** es el producto que desarrolla. Una persona autoriza la petición (issue de github), revisa el resultado (preview en Vercel) y realiza el merge (PR en Github). La Factory prepara, encarga el trabajo al agente, comprueba, publica evidencias y completa el cierre tras el merge autorizado.
 
+Si el agente necesita información, la Factory publica sus dudas en el issue. Cualquier persona puede responder con un comentario nuevo para que continúe en el mismo thread. Esta aclaración no sustituye la aceptación posterior del Commit candidato, que conserva sus requisitos de SHA, preview y permisos.
+
 ## Índice y orden de lectura
 
-| Capítulo                                                                   | Qué permite entender                                                  |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [1. Mapa de la fábrica](01-mapa.md)                                        | Responsabilidades, vocabulario y recorrido completo.                  |
-| [2. Del issue al trabajo del agente](02-issue-y-trabajo.md)                | Preparación del issue, autorización, admisión, cola y ejecución.      |
-| [3. Del Commit candidato a la aceptación](03-verificacion-y-aceptacion.md) | Verificación, PR, preview, revisión humana y decisiones alternativas. |
-| [4. Del merge al cierre](04-integracion-y-cierre.md)                       | Integración humana, resumen y cierre del issue.                       |
-| [5. Variantes e intervención](05-variantes-e-intervencion.md)              | Errores, cambios, cancelación, reinicio y límites actuales.           |
-| [6. Guía práctica de un issue completo](06-guia-de-un-issue.md)            | Ejemplo de petición y pasos de la persona responsable.                |
+| Capítulo                                                                   | Qué permite entender                                                   |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [1. Mapa de la fábrica](01-mapa.md)                                        | Responsabilidades, vocabulario y recorrido completo.                   |
+| [2. Del issue al trabajo del agente](02-issue-y-trabajo.md)                | Admisión, ejecución y aclaraciones por comentarios en el mismo thread. |
+| [3. Del Commit candidato a la aceptación](03-verificacion-y-aceptacion.md) | Verificación, PR, preview, revisión humana y decisiones alternativas.  |
+| [4. Del merge al cierre](04-integracion-y-cierre.md)                       | Integración humana, resumen y cierre del issue.                        |
+| [5. Variantes e intervención](05-variantes-e-intervencion.md)              | Errores, cambios, cancelación, reinicio y límites actuales.            |
+| [6. Guía práctica de un issue completo](06-guia-de-un-issue.md)            | Ejemplo de petición y pasos de la persona responsable.                 |
 
 ## La regla principal
 
@@ -21,8 +23,11 @@ Para ponerla en marcha, sigue [la prueba local contra GitHub y Vercel](07-prueba
 
 ```mermaid
 flowchart LR
-    A["Issue autorizado<br/>Permite empezar"] --> B["Trabajo y comprobaciones"]
-    B --> C["Aceptación del resultado<br/>Permite integrar una versión concreta"]
+    A["Issue autorizado<br/>Permite empezar"] --> B["Trabajo del agente"]
+    B -->|"Faltan datos o una decisión"| Q["Dudas publicadas en el issue"]
+    Q -->|"Comentario humano<br/>Mismo thread"| B
+    B --> V["Verificación, PR y preview"]
+    V --> C["Aceptación del resultado<br/>Permite integrar una versión concreta"]
     C --> D["Merge humano"]
     D --> E["Resumen de integración e issue cerrado<br/>Ejecución completada"]
 ```
@@ -31,14 +36,16 @@ Cada paso responde a una pregunta diferente: «¿queremos este cambio?», «¿fu
 
 ## Alcance y fuentes
 
-| Fuente del repositorio                                                                                                                   | Qué respalda                                                              |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [GLOSSARY.md](../../GLOSSARY.md)                                                                                                         | Significado de conceptos de negocio.                                      |
-| [README operativo](../../README.md)                                                                                                      | Instalación, puesta en marcha, límites y evidencias.                      |
-| [Workflow](../../src/application/workflow.ts) y [Factory](../../src/application/factory.ts)                                              | Admisión, cola, preparación, coordinación, parada y reinicio.             |
-| [Admisión GitHub](../../src/infrastructure/github.ts) y [Issue](../../src/domain/request.ts)                                             | Admisión mediante `factory:ready` y captura del contenido.                |
-| [Verificación](../../src/infrastructure/verification.ts)                                                                                 | Comprobaciones independientes y protección de controles.                  |
-| [Publicación](../../src/application/candidatePublication.ts) y [política de revisión](../../src/application/publication/reviewPolicy.ts) | Preview, informe, aceptación y revocación.                                |
-| [Integración](../../src/application/publication/integration.ts)                                                                          | Merge autorizado, resumen de integración y cierre.                        |
-| [Configuración de Rebobina](../../config/managed-projects/rebobina.json)                                                                 | Ejemplo real de producto, comandos e identidad de preview.                |
-| [Pruebas](../../tests/)                                                                                                                  | Variantes de admisión, verificación, publicación, integración y reinicio. |
+| Fuente del repositorio                                                                                                                   | Qué respalda                                                                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [GLOSSARY.md](../../GLOSSARY.md)                                                                                                         | Significado de conceptos de negocio.                                           |
+| [README operativo](../../README.md)                                                                                                      | Instalación, puesta en marcha, límites y evidencias.                           |
+| [Workflow](../../src/application/workflow.ts) y [Factory](../../src/application/factory.ts)                                              | Admisión, cola, preparación, coordinación, parada y reinicio.                  |
+| [Admisión GitHub](../../src/infrastructure/github.ts) y [Issue](../../src/domain/request.ts)                                             | Admisión mediante `factory:ready` y captura del contenido.                     |
+| [Intervenciones](../../src/application/issueInterventions.ts) y [conversación GitHub](../../src/infrastructure/issueConversation.ts)     | Publicación de dudas y entrega de la primera respuesta humana al mismo thread. |
+| [Verificación](../../src/infrastructure/verification.ts)                                                                                 | Comprobaciones independientes y protección de controles.                       |
+| [Publicación](../../src/application/candidatePublication.ts) y [política de revisión](../../src/application/publication/reviewPolicy.ts) | Preview, informe, aceptación y revocación.                                     |
+| [Integración](../../src/application/publication/integration.ts)                                                                          | Merge autorizado, resumen de integración y cierre.                             |
+| [Configuración de Rebobina](../../config/managed-projects/rebobina.json)                                                                 | Ejemplo real de producto, comandos e identidad de preview.                     |
+| [Pruebas](../../tests/)                                                                                                                  | Variantes de admisión, verificación, publicación, integración y reinicio.      |
+| [Validación de intervenciones](../evidence/issue-interventions/README.md)                                                                | Rondas de aclaraciones, recuperación del thread y alcance de las pruebas.      |
