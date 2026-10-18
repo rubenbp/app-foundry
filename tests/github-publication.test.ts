@@ -9,258 +9,309 @@ import { configureMergeProtection } from "../src/infrastructure/merge-protection
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/workspace.ts";
 
-test("the Workflow crosses the real GitHub/Vercel adapters without exposing credentials and only closes after public production proof", async () => {
-  let remoteHead: string | null = null;
-  let pull: Record<string, unknown> | null = null;
-  let deployment = false;
-  let integrated = false;
-  let requestOpen = true;
-  const integrationSha = "a".repeat(40);
-  let time = Date.now();
-  const comments: Record<string, unknown>[] = [];
-  const issueComments: Record<string, unknown>[] = [];
-  const statuses: Record<string, unknown>[] = [];
-  const writes: string[] = [];
-  const origin = "https://catalogue-random.vercel.app";
-  let access: "good" | "protected" | "wrong project" | "dirty" = "good";
-  const command: RemoteCommand = async (executable, args, body) => {
-    const path = args[1];
-    const context = s.workflow.list()[0];
-    if (executable === "vercel") {
-      if (args.includes("curl")) {
-        assert.ok(args.includes("--max-time"));
-        return access === "protected"
-          ? "Authentication required\n401"
-          : `${JSON.stringify({ sha: remoteHead, dirty: access === "dirty" })}\n200`;
-      }
-      return JSON.stringify({
-        projectId: access === "wrong project" ? "other" : "catalogue",
-        url: new URL(origin).hostname,
-        target: integrated ? "production" : null,
-        readyState: "READY",
-        meta: {
-          githubCommitOrg: s.project.repository.split("/")[0],
-          githubCommitRepo: s.project.repository.split("/")[1],
-          githubCommitSha: integrated ? integrationSha : remoteHead,
-        },
-      });
-    }
-    assert.equal(executable, "gh");
-    assert.ok(!path.includes("/merge"));
-    const prefix = `repos/${s.project.repository}`;
-    if (body) {
-      assert.ok(
-        Object.values(context.publication!.operations).some(
-          (operation) => operation.state === "intent",
-        ),
-        "intent must be durable before remote writes",
-      );
-      writes.push(path);
-      const input = body as Record<string, unknown>;
-      if (path === `${prefix}/pulls`) {
-        assert.doesNotMatch(
-          String(input.body),
-          /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+/i,
-        );
-        pull = {
-          number: 2,
-          html_url: `https://github.com/${s.project.repository}/pull/2`,
-          state: "open",
-          merged: false,
-          head: {
-            sha: remoteHead,
-            ref: context.workspace!.branch,
-            repo: { full_name: s.project.repository },
+for (const gate of [
+  "unchanged",
+  "merge during preview",
+  "revoked after merge",
+  "success only after merge",
+  "revoked before merge",
+]) {
+  test(`the Workflow correlates the merge-time gate (${gate}) through the real GitHub/Vercel adapters`, async () => {
+    let remoteHead: string | null = null;
+    let pull: Record<string, unknown> | null = null;
+    let deployment = false;
+    let integrated = false;
+    let requestOpen = true;
+    const integrationSha = "a".repeat(40);
+    let time = Date.now();
+    const comments: Record<string, unknown>[] = [];
+    const issueComments: Record<string, unknown>[] = [];
+    const statuses: Record<string, unknown>[] = [];
+    const writes: string[] = [];
+    const origin = "https://catalogue-random.vercel.app";
+    let access: "good" | "protected" | "wrong project" | "dirty" = "good";
+    const command: RemoteCommand = async (executable, args, body) => {
+      const path = args[1];
+      const context = s.workflow.list()[0];
+      if (executable === "vercel") {
+        if (args.includes("curl")) {
+          assert.ok(args.includes("--max-time"));
+          return access === "protected"
+            ? "Authentication required\n401"
+            : `${JSON.stringify({ sha: remoteHead, dirty: access === "dirty" })}\n200`;
+        }
+        return JSON.stringify({
+          projectId: access === "wrong project" ? "other" : "catalogue",
+          url: new URL(origin).hostname,
+          target: integrated ? "production" : null,
+          readyState: "READY",
+          meta: {
+            githubCommitOrg: s.project.repository.split("/")[0],
+            githubCommitRepo: s.project.repository.split("/")[1],
+            githubCommitSha: integrated ? integrationSha : remoteHead,
           },
-          base: { ref: "main", repo: { full_name: s.project.repository } },
-        };
-        return JSON.stringify(pull);
+        });
       }
-      if (path === `${prefix}/issues/1`) {
-        assert.ok(context.publication?.production?.report);
-        assert.equal(input.state, "closed");
-        requestOpen = false;
-        return JSON.stringify({ state: "closed" });
+      assert.equal(executable, "gh");
+      assert.ok(!path.includes("/merge"));
+      const prefix = `repos/${s.project.repository}`;
+      if (body) {
+        assert.ok(
+          Object.values(context.publication!.operations).some(
+            (operation) => operation.state === "intent",
+          ),
+          "intent must be durable before remote writes",
+        );
+        writes.push(path);
+        const input = body as Record<string, unknown>;
+        if (path === `${prefix}/pulls`) {
+          assert.doesNotMatch(
+            String(input.body),
+            /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+/i,
+          );
+          pull = {
+            number: 2,
+            html_url: `https://github.com/${s.project.repository}/pull/2`,
+            state: "open",
+            merged: false,
+            head: {
+              sha: remoteHead,
+              ref: context.workspace!.branch,
+              repo: { full_name: s.project.repository },
+            },
+            base: { ref: "main", repo: { full_name: s.project.repository } },
+          };
+          return JSON.stringify(pull);
+        }
+        if (path === `${prefix}/issues/1`) {
+          assert.ok(context.publication?.production?.report);
+          assert.equal(input.state, "closed");
+          requestOpen = false;
+          return JSON.stringify({ state: "closed" });
+        }
+        if (path.endsWith("/comments")) {
+          const issue = path === `${prefix}/issues/1/comments`;
+          const id = comments.length + issueComments.length + 1;
+          const comment = {
+            id,
+            html_url: `https://github.com/${s.project.repository}/${issue ? "issues/1" : "pull/2"}#issuecomment-${id}`,
+            body: input.body,
+            user: { login: "shared", type: "User" },
+            created_at: new Date((time += 1000)).toISOString(),
+            updated_at: new Date(time).toISOString(),
+          };
+          (issue ? issueComments : comments).push(comment);
+          return JSON.stringify(comment);
+        }
+        if (path.includes("/statuses/")) {
+          statuses.unshift({
+            ...input,
+            created_at: new Date((time += 1000)).toISOString(),
+          });
+          return JSON.stringify(input);
+        }
+        assert.fail(`Unexpected mutation ${path}`);
       }
-      if (path.endsWith("/comments")) {
-        const issue = path === `${prefix}/issues/1/comments`;
-        const id = comments.length + issueComments.length + 1;
-        const comment = {
-          id,
-          html_url: `https://github.com/${s.project.repository}/${issue ? "issues/1" : "pull/2"}#issuecomment-${id}`,
-          body: input.body,
-          user: { login: "shared", type: "User" },
-          created_at: new Date((time += 1000)).toISOString(),
-          updated_at: new Date(time).toISOString(),
-        };
-        (issue ? issueComments : comments).push(comment);
-        return JSON.stringify(comment);
+      const paged = (values: unknown[]) => JSON.stringify([values]);
+      if (path === `${prefix}/issues/1`)
+        return JSON.stringify({
+          title: context.request!.title,
+          body: context.request!.body,
+          state: requestOpen ? "open" : "closed",
+        });
+      if (path === `${prefix}/pulls/2`) return JSON.stringify(pull);
+      if (path.includes("/pulls?")) return paged(pull ? [pull] : []);
+      if (path.includes("/git/matching-refs/"))
+        return paged(
+          remoteHead
+            ? [
+                {
+                  ref: `refs/heads/${context.workspace!.branch}`,
+                  object: { sha: remoteHead },
+                },
+              ]
+            : [],
+        );
+      if (path.includes("/issues/1/comments?")) return paged(issueComments);
+      if (path.includes("/issues/2/comments?")) return paged(comments);
+      if (path.includes("/commits/")) {
+        assert.ok(remoteHead, "unpublished commit must not be queried");
+        return paged(statuses);
       }
-      if (path.includes("/statuses/")) {
-        statuses.unshift(input);
-        return JSON.stringify(input);
+      if (
+        path.includes("/deployments?") &&
+        gate === "merge during preview" &&
+        !integrated &&
+        statuses[0]?.state === "success"
+      ) {
+        integrated = true;
+        Object.assign(pull!, {
+          state: "closed",
+          merged: true,
+          merged_at: new Date(time + 1000).toISOString(),
+          merged_by: { login: "maintainer", type: "User" },
+          merge_commit_sha: integrationSha,
+        });
+        return paged([]);
       }
-      assert.fail(`Unexpected mutation ${path}`);
-    }
-    const paged = (values: unknown[]) => JSON.stringify([values]);
-    if (path === `${prefix}/issues/1`)
-      return JSON.stringify({
-        title: context.request!.title,
-        body: context.request!.body,
-        state: requestOpen ? "open" : "closed",
-      });
-    if (path === `${prefix}/pulls/2`) return JSON.stringify(pull);
-    if (path.includes("/pulls?")) return paged(pull ? [pull] : []);
-    if (path.includes("/git/matching-refs/"))
-      return paged(
-        remoteHead
-          ? [
-              {
-                ref: `refs/heads/${context.workspace!.branch}`,
-                object: { sha: remoteHead },
-              },
-            ]
-          : [],
-      );
-    if (path.includes("/issues/1/comments?")) return paged(issueComments);
-    if (path.includes("/issues/2/comments?")) return paged(comments);
-    if (path.includes("/commits/")) {
-      assert.ok(remoteHead, "unpublished commit must not be queried");
-      return paged(statuses);
-    }
-    if (path.includes("/deployments?"))
-      return paged(
-        deployment
-          ? [
-              {
-                id: 9,
-                sha: integrated ? integrationSha : remoteHead,
-                environment: integrated ? "Production" : "Preview",
-                production_environment: false,
-                repository_url: `https://api.github.com/repos/${s.project.repository}`,
-                creator: { login: "vercel[bot]" },
-              },
-            ]
-          : [],
-      );
-    if (path.includes("/deployments/9/statuses?"))
-      return paged([{ id: 10, state: "success", environment_url: origin }]);
-    if (path.includes("/permission"))
-      return JSON.stringify({ permission: "write" });
-    assert.fail(`Unexpected read ${path}`);
-  };
-  // The filesystem and local Git remain real. Only remote transport is replaced.
-  const processPort: typeof execute = async (program, args, settings) => {
-    if (program === "git" && args.includes("push")) {
-      const run = s.workflow.list()[0];
+      if (path.includes("/deployments?"))
+        return paged(
+          deployment
+            ? [
+                {
+                  id: 9,
+                  sha: integrated ? integrationSha : remoteHead,
+                  environment: integrated ? "Production" : "Preview",
+                  production_environment: false,
+                  repository_url: `https://api.github.com/repos/${s.project.repository}`,
+                  creator: { login: "vercel[bot]" },
+                },
+              ]
+            : [],
+        );
+      if (path.includes("/deployments/9/statuses?"))
+        return paged([{ id: 10, state: "success", environment_url: origin }]);
+      if (path.includes("/permission"))
+        return JSON.stringify({ permission: "write" });
+      assert.fail(`Unexpected read ${path}`);
+    };
+    // The filesystem and local Git remain real. Only remote transport is replaced.
+    const processPort: typeof execute = async (program, args, settings) => {
+      if (program === "git" && args.includes("push")) {
+        const run = s.workflow.list()[0];
+        assert.equal(
+          run.publication!.operations[`push:${run.verification!.headSha}`]
+            .state,
+          "intent",
+        );
+        assert.ok(
+          args.includes(`https://github.com/${s.project.repository}.git`),
+        );
+        assert.ok(!args.includes("origin"));
+        assert.equal(settings.env.GIT_CONFIG_VALUE_0, "/dev/null");
+        remoteHead = run.verification!.headSha;
+        writes.push("push");
+        return { code: 0, output: "Pushed exact verified commit" };
+      }
+      return execute(program, args, settings);
+    };
+    // Construct the adapter after the fixture path is available through a lazy port.
+    const s = verificationFixture({
+      production: {
+        inspect: (...args) => adapter.production.inspect(...args),
+        comment: (...args) => adapter.production.comment(...args),
+        closeIssue: (...args) => adapter.production.closeIssue(...args),
+        verify: async (context, head, checks) => ({
+          origin: context.project.publication.productionOrigin,
+          servedHead: head,
+          browser: "Chrome HTTP boundary double",
+          screenshots: [],
+          checks: checks.map((check) => ({
+            check,
+            observed: "Catalogue visible",
+            passed: true,
+          })),
+        }),
+      },
+      body: '## Acceptance criteria\n- Catalogue visible.\n\n## Production checks\n```factory-production\n[{"criterion":1,"path":"/","selector":"h1","text":"Catalogue"}]\n```',
+      publication: {
+        inspect: (...args) => adapter.inspect(...args),
+        push: (...args) => adapter.push(...args),
+        openPull: (...args) => adapter.openPull(...args),
+        comment: (...args) => adapter.comment(...args),
+        status: (...args) => adapter.status(...args),
+        canWrite: (...args) => adapter.canWrite(...args),
+        prepareHead: (...args) => adapter.prepareHead(...args),
+      },
+    });
+    const adapter = new GitHubPublication(s.config.dataDir, {
+      command,
+      process: processPort,
+    });
+    s.project.publication.teamId = "team-test";
+    try {
+      const run = await s.start();
+      s.commit("footer.txt", "Remote candidate", "Footer");
+      s.finish();
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
+      deployment = true;
+      access = "wrong project";
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.publication?.report, undefined);
+      assert.match(s.workflow.view(run.id)!.error!, /identity/);
+      access = "protected";
+      await s.workflow.poll();
       assert.equal(
-        run.publication!.operations[`push:${run.verification!.headSha}`].state,
-        "intent",
+        s.workflow.view(run.id)?.publication?.preview?.access,
+        "protected",
       );
-      assert.ok(
-        args.includes(`https://github.com/${s.project.repository}.git`),
+      access = "dirty";
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.publication?.report, undefined);
+      assert.match(s.workflow.view(run.id)!.error!, /dirty/);
+      access = "good";
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+      const report = s.workflow.view(run.id)!.publication!.report!;
+      const id = 99;
+      comments.push({
+        id,
+        html_url: `https://github.com/${s.project.repository}/pull/2#issuecomment-${id}`,
+        body: `Acepto la versión ${remoteHead} y su preview ${report.preview}.`,
+        user: { login: "shared", type: "User" },
+        created_at: new Date((time += 1000)).toISOString(),
+        updated_at: new Date(time).toISOString(),
+      });
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+      assert.equal(statuses[0].state, "success");
+      assert.equal(writes.filter((write) => write === "push").length, 1);
+      if (gate !== "merge during preview") {
+        integrated = true;
+        Object.assign(pull!, {
+          state: "closed",
+          merged: true,
+          merged_at: new Date(time + 1000).toISOString(),
+          merged_by: { login: "maintainer", type: "User" },
+          merge_commit_sha: integrationSha,
+        });
+      }
+      if (gate === "revoked after merge" || gate === "revoked before merge")
+        statuses.unshift({
+          ...statuses[0],
+          state: "pending",
+          created_at: new Date(
+            time + (gate === "revoked after merge" ? 2000 : 500),
+          ).toISOString(),
+        });
+      if (gate === "success only after merge")
+        for (const status of statuses)
+          if (status.state === "success")
+            status.created_at = new Date(time + 2000).toISOString();
+      await s.workflow.poll();
+      if (
+        gate === "success only after merge" ||
+        gate === "revoked before merge"
+      ) {
+        assert.equal(s.workflow.view(run.id)?.status, "intervention");
+        assert.equal(requestOpen, true);
+        assert.equal(issueComments.length, 0);
+        return;
+      }
+      assert.equal(
+        s.workflow.view(run.id)?.status,
+        "completed",
+        s.workflow.view(run.id)?.error ?? "",
       );
-      assert.ok(!args.includes("origin"));
-      assert.equal(settings.env.GIT_CONFIG_VALUE_0, "/dev/null");
-      remoteHead = run.verification!.headSha;
-      writes.push("push");
-      return { code: 0, output: "Pushed exact verified commit" };
+      assert.equal(requestOpen, false);
+      assert.match(String(issueComments[0].body), /Commit integrado: a{40}/);
+      assert.ok(writes.includes(`repos/${s.project.repository}/issues/1`));
+    } finally {
+      s.close();
     }
-    return execute(program, args, settings);
-  };
-  // Construct the adapter after the fixture path is available through a lazy port.
-  const s = verificationFixture({
-    production: {
-      inspect: (...args) => adapter.production.inspect(...args),
-      comment: (...args) => adapter.production.comment(...args),
-      closeIssue: (...args) => adapter.production.closeIssue(...args),
-      verify: async (context, head, checks) => ({
-        origin: context.project.publication.productionOrigin,
-        servedHead: head,
-        browser: "Chrome HTTP boundary double",
-        screenshots: [],
-        checks: checks.map((check) => ({
-          check,
-          observed: "Catalogue visible",
-          passed: true,
-        })),
-      }),
-    },
-    body: '## Acceptance criteria\n- Catalogue visible.\n\n## Production checks\n```factory-production\n[{"criterion":1,"path":"/","selector":"h1","text":"Catalogue"}]\n```',
-    publication: {
-      inspect: (...args) => adapter.inspect(...args),
-      push: (...args) => adapter.push(...args),
-      openPull: (...args) => adapter.openPull(...args),
-      comment: (...args) => adapter.comment(...args),
-      status: (...args) => adapter.status(...args),
-      canWrite: (...args) => adapter.canWrite(...args),
-      prepareHead: (...args) => adapter.prepareHead(...args),
-    },
   });
-  const adapter = new GitHubPublication(s.config.dataDir, {
-    command,
-    process: processPort,
-  });
-  s.project.publication.teamId = "team-test";
-  try {
-    const run = await s.start();
-    s.commit("footer.txt", "Remote candidate", "Footer");
-    s.finish();
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
-    deployment = true;
-    access = "wrong project";
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.publication?.report, undefined);
-    assert.match(s.workflow.view(run.id)!.error!, /identity/);
-    access = "protected";
-    await s.workflow.poll();
-    assert.equal(
-      s.workflow.view(run.id)?.publication?.preview?.access,
-      "protected",
-    );
-    access = "dirty";
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.publication?.report, undefined);
-    assert.match(s.workflow.view(run.id)!.error!, /dirty/);
-    access = "good";
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-    const report = s.workflow.view(run.id)!.publication!.report!;
-    const id = 99;
-    comments.push({
-      id,
-      html_url: `https://github.com/${s.project.repository}/pull/2#issuecomment-${id}`,
-      body: `Acepto la versión ${remoteHead} y su preview ${report.preview}.`,
-      user: { login: "shared", type: "User" },
-      created_at: new Date((time += 1000)).toISOString(),
-      updated_at: new Date(time).toISOString(),
-    });
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
-    assert.equal(statuses[0].state, "success");
-    assert.equal(writes.filter((write) => write === "push").length, 1);
-    integrated = true;
-    Object.assign(pull!, {
-      state: "closed",
-      merged: true,
-      merged_at: new Date(time + 1000).toISOString(),
-      merged_by: { login: "maintainer", type: "User" },
-      merge_commit_sha: integrationSha,
-    });
-    await s.workflow.poll();
-    assert.equal(
-      s.workflow.view(run.id)?.status,
-      "completed",
-      s.workflow.view(run.id)?.error ?? "",
-    );
-    assert.equal(requestOpen, false);
-    assert.match(String(issueComments[0].body), /Commit integrado: a{40}/);
-    assert.ok(writes.includes(`repos/${s.project.repository}/issues/1`));
-  } finally {
-    s.close();
-  }
-});
+}
 
 test("merge protection preserves existing checks and restrictions while requiring a PR, updated branch, Vercel and Factory", async () => {
   const s = verificationFixture();

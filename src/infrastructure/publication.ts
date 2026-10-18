@@ -419,8 +419,15 @@ export class GitHubPublication implements PublicationPort {
     let pull = candidates[0] ?? null;
     if (pull?.merged)
       pull = this.pull(await this.api(`${path}/pulls/${pull.number}`), context);
-    const preview =
-      options.preview && !pull?.merged ? await this.deployment(context) : null;
+    let preview: Preview | null = null;
+    let previewError: unknown;
+    if (options.preview && !pull?.merged) {
+      try {
+        preview = await this.deployment(context);
+      } catch (error) {
+        previewError = error;
+      }
+    }
     const ref = refs
       .map(record)
       .find((value) => value.ref === `refs/heads/${context.workspace.branch}`);
@@ -444,15 +451,31 @@ export class GitHubPublication implements PublicationPort {
           this.conversation(value, context, "pull", pull.number),
         ),
       );
-    const status = statusValues
+    // Preview lookup can outlive the human merge. Reconcile the PR after all
+    // dependent reads before treating a retired preview as a candidate failure.
+    if (pull && options.preview && !pull.merged)
+      pull = this.pull(await this.api(`${path}/pulls/${pull.number}`), context);
+    if (pull?.merged) preview = null;
+    else if (previewError) throw previewError;
+    const statuses = statusValues
       .map(record)
-      .find((value) => value.context === mergeContext);
-    const state = status?.state;
-    if (
-      status &&
-      !["pending", "success", "failure", "error"].includes(text(state))
-    )
-      throw new Error("Unknown commit status");
+      .filter((value) => value.context === mergeContext)
+      .map((value): NonNullable<PublicationFacts["mergeStatus"]> => {
+        const state = text(value.state);
+        if (
+          state !== "pending" &&
+          state !== "success" &&
+          state !== "failure" &&
+          state !== "error"
+        )
+          throw new Error("Unknown commit status");
+        return { head: context.head, state, at: timestamp(value.created_at) };
+      });
+    const status = statuses[0] ?? null;
+    const mergeStatus = pull?.mergedAt
+      ? (statuses.find((value) => value.at <= pull.mergedAt!) ?? null)
+      : null;
+
     return {
       request: {
         title: text(request.title),
@@ -463,12 +486,8 @@ export class GitHubPublication implements PublicationPort {
       pull,
       comments,
       preview,
-      status: status
-        ? {
-            head: context.head,
-            state: state as NonNullable<PublicationFacts["status"]>["state"],
-          }
-        : null,
+      status,
+      mergeStatus,
     };
   }
   readonly production: ProductionPort = {

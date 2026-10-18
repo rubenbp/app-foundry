@@ -13,6 +13,7 @@ import type {
   ConversationComment,
   Preview,
   PullCandidate,
+  Publication,
 } from "../domain/publication.ts";
 
 import {
@@ -53,6 +54,11 @@ export interface PublicationFacts {
   pull: PullCandidate | null;
   comments: ConversationComment[];
   preview: Preview | null;
+  mergeStatus?: {
+    head: string;
+    state: "pending" | "success" | "failure" | "error";
+    at: number;
+  } | null;
   status: {
     head: string;
     state: "pending" | "success" | "failure" | "error";
@@ -76,6 +82,16 @@ export interface PublicationPort {
   ): Promise<void>;
   canWrite(repository: string, author: string): Promise<boolean>;
   prepareHead(context: PublicationContext, head: string): Promise<void>;
+}
+
+class StatusSkippedAfterMerge extends Error {}
+
+class ObservedMerge extends Error {
+  readonly facts: PublicationFacts;
+  constructor(facts: PublicationFacts) {
+    super("Human merge observed during candidate publication");
+    this.facts = facts;
+  }
 }
 
 export class CandidatePublication {
@@ -155,7 +171,16 @@ export class CandidatePublication {
     return result;
   }
   private async facts(run: Run, preview = true) {
-    return this.port.inspect(this.context(run), { preview });
+    const facts = await this.port.inspect(this.context(run), { preview });
+    // Every pre-integration read can race with the human merge. Transition before
+    // treating the closed PR or retired preview as a candidate invalidation.
+    if (
+      facts.pull?.merged &&
+      !run.publication!.integratedAcceptance &&
+      !run.publication!.recoveryRequired
+    )
+      throw new ObservedMerge(facts);
+    return facts;
   }
   private isOwn(run: Run, comment: ConversationComment) {
     return (
@@ -164,9 +189,11 @@ export class CandidatePublication {
       !comment.human
     );
   }
-  private reportIntact(run: Run, facts: PublicationFacts) {
-    const report = run.publication!.report;
-
+  private reportIntact(
+    run: Run,
+    facts: PublicationFacts,
+    report: Publication["report"] = run.publication!.report,
+  ) {
     return Boolean(
       report &&
       [report, ...report.evidence].every((expected) =>
@@ -233,26 +260,37 @@ export class CandidatePublication {
     state: "pending" | "success" | "failure" | "error",
   ) {
     const context = this.context(run);
-    await this.effect(
-      run,
-      `status:${context.head}:${state}`,
-      async () => {
-        const facts = await this.facts(run, state === "success");
-        if (state === "success" && !(await this.canMerge(run, facts)))
-          throw new Error(
-            "Candidate changed before favorable merge status; acceptance revoked",
-          );
-        const status = facts.status;
+    try {
+      await this.effect(
+        run,
+        `status:${context.head}:${state}`,
+        async () => {
+          const facts = await this.facts(run, state === "success");
+          if (facts.pull?.merged) throw new StatusSkippedAfterMerge();
+          if (state === "success" && !(await this.canMerge(run, facts)))
+            throw new Error(
+              "Candidate changed before favorable merge status; acceptance revoked",
+            );
+          const status = facts.status;
 
-        return status?.head === context.head && status.state === state
-          ? true
-          : undefined;
-      },
-      async () => {
-        await this.port.status(context, state);
-        return true;
-      },
-    );
+          return status?.head === context.head && status.state === state
+            ? true
+            : undefined;
+        },
+        async () => {
+          await this.port.status(context, state);
+          return true;
+        },
+      );
+    } catch (error) {
+      if (!(error instanceof StatusSkippedAfterMerge)) throw error;
+      this.factory.record(
+        run,
+        "status-skipped",
+        `${state}: PR already integrated; no status effect confirmed`,
+      );
+      this.save(run);
+    }
   }
   private async comment(run: Run, key: string, text: string) {
     const origin = `<!-- app-foundry:${run.id}:${key} -->`;
@@ -377,6 +415,8 @@ export class CandidatePublication {
   private async observeMerge(run: Run, facts: PublicationFacts) {
     const publication = run.publication!;
     const pull = facts.pull!;
+    publication.pull = pull;
+    publication.observedAt = this.factory.now();
     // Keep the observed integration even when it violates the contract.
     if (publication.mergeSha && publication.mergeSha !== pull.mergeSha) {
       publication.blocked =
@@ -387,8 +427,30 @@ export class CandidatePublication {
     publication.mergeSha = pull.mergeSha;
     this.save(run);
     if (publication.blocked) throw new Error(publication.blocked);
-    const accepted = publication.integratedAcceptance ?? publication.acceptance;
+    // A remote status write cannot be atomic with a human merge. Reconstruct
+    // the accepted snapshot at integration from durable history and GitHub's
+    // last gate at that time, even if a later local revocation cleared it.
+    const accepted =
+      publication.integratedAcceptance ??
+      publication.acceptance ??
+      (run.status === "intervention"
+        ? undefined
+        : publication.acceptances
+            .toReversed()
+            .find(
+              (acceptance) =>
+                acceptance.head === pull.head &&
+                acceptance.at < (facts.mergeStatus?.at ?? 0),
+            ));
     if (!publication.integratedAcceptance) {
+      const report = publication.reports
+        .toReversed()
+        .find(
+          (report) =>
+            report.head === accepted?.head &&
+            report.preview === accepted.preview &&
+            report.at < accepted.at,
+        );
       const comment = facts.comments.find(
         (comment) => comment.id === accepted?.commentId,
       );
@@ -414,7 +476,8 @@ export class CandidatePublication {
         accepted.at >= pull.mergedAt ||
         facts.request.title !== run.request!.title ||
         facts.request.body !== run.request!.body ||
-        !this.reportIntact(run, facts) ||
+        !report ||
+        !this.reportIntact(run, facts, report) ||
         !comment ||
         this.isOwn(run, comment) ||
         comment.author !== accepted.author ||
@@ -424,8 +487,10 @@ export class CandidatePublication {
         intent.head !== accepted.head ||
         intent.preview !== accepted.preview ||
         conflicting ||
-        facts.status?.head !== accepted.head ||
-        facts.status.state !== "success" ||
+        facts.mergeStatus?.head !== accepted.head ||
+        facts.mergeStatus.state !== "success" ||
+        facts.mergeStatus.at <= accepted.at ||
+        facts.mergeStatus.at > pull.mergedAt ||
         !(await this.port.canWrite(run.request!.repository, accepted.author)) ||
         !(await this.port.canWrite(run.request!.repository, pull.mergedBy))
       ) {
@@ -435,6 +500,7 @@ export class CandidatePublication {
         throw new Error(publication.blocked);
       }
       this.evidence(run);
+      publication.report = report;
       publication.integratedAcceptance = accepted;
       delete publication.acceptance;
       this.factory.record(
@@ -461,6 +527,8 @@ export class CandidatePublication {
     if (!this.production)
       throw new Error("Production adapter required after observed merge");
     run.status = "checking_production";
+    run.error = null;
+    publication.observationError = null;
     run.endedAt = null;
     this.save(run);
     const deployment = await this.production.inspect(
@@ -756,9 +824,9 @@ export class CandidatePublication {
         context.project.publication.previewEnvironment ?? "Preview",
       );
       if (!previewValid) {
+        await this.setStatus(run, "pending");
         delete publication.acceptance;
         delete publication.report;
-        await this.setStatus(run, "pending");
         run.status = "awaiting_preview";
         if (
           facts.preview?.state === "failure" ||
@@ -776,6 +844,7 @@ export class CandidatePublication {
           publication.report.head !== publication.head ||
           !this.reportIntact(run, facts))
       ) {
+        await this.setStatus(run, "pending");
         delete publication.report;
         delete publication.acceptance;
       }
@@ -847,11 +916,11 @@ export class CandidatePublication {
       // Re-read the mutable facts and permissions immediately before publishing success.
       const final = await this.facts(run);
       const valid = await this.canMerge(run, final);
-      if (!valid) delete publication.acceptance;
       await this.setStatus(
         run,
         valid ? "success" : publication.blocked ? "failure" : "pending",
       );
+      if (!valid) delete publication.acceptance;
       run.status = publication.blocked
         ? "intervention"
         : valid
@@ -860,11 +929,19 @@ export class CandidatePublication {
       run.error = publication.blocked ?? null;
       this.save(run);
     } catch (error) {
+      let failure = error;
+      if (error instanceof ObservedMerge) {
+        try {
+          await this.observeMerge(run, error.facts);
+          return;
+        } catch (mergeError) {
+          failure = mergeError;
+        }
+      }
       this.factory.assertWritable();
       this.factory.assertRunning(run.id);
       const accepted = Boolean(publication.acceptance);
-      delete publication.acceptance;
-      publication.observationError = this.factory.clean(String(error)).text;
+      publication.observationError = this.factory.clean(String(failure)).text;
       if (publication.production) {
         publication.production.status = "intervention";
         publication.production.error = publication.observationError;
@@ -877,6 +954,14 @@ export class CandidatePublication {
         try {
           await this.setStatus(run, "error");
         } catch (revocationError) {
+          if (revocationError instanceof ObservedMerge) {
+            try {
+              await this.observeMerge(run, revocationError.facts);
+              return;
+            } catch (mergeError) {
+              run.error = this.factory.clean(String(mergeError)).text;
+            }
+          }
           this.factory.assertWritable();
           this.factory.record(
             run,
@@ -886,6 +971,8 @@ export class CandidatePublication {
           this.save(run);
         }
       }
+      delete publication.acceptance;
+      this.save(run);
     }
   }
   async stop(id: string) {

@@ -26,12 +26,15 @@ export function publicationFixture(
   let writer = true;
   let observationError = false;
   let uncertain: string | null = null;
+  let statusAt = clock;
   let inspections = 0;
+  let onInspect: ((inspection: number) => PublicationFacts | void) | undefined;
   const port: PublicationPort = {
     async inspect() {
       inspections++;
+      const observed = onInspect?.(inspections);
       if (observationError) throw new Error("GitHub unavailable");
-      return structuredClone(facts);
+      return structuredClone(observed ?? facts);
     },
     async push(context) {
       writes.push({ kind: "push" });
@@ -79,6 +82,7 @@ export function publicationFixture(
     async status(context, state) {
       writes.push({ kind: state });
       facts.status = { head: context.head, state };
+      statusAt = clock += 1000;
       if (uncertain === "status") {
         uncertain = null;
         throw new Error("Lost status response");
@@ -183,7 +187,14 @@ export function publicationFixture(
     },
     writes,
     facts,
+    onInspect(callback: (inspection: number) => PublicationFacts | void) {
+      onInspect = callback;
+    },
     merge() {
+      facts.mergeStatus = facts.status
+        ? { ...facts.status, at: statusAt }
+        : null;
+      facts.preview = null;
       Object.assign(facts.pull!, {
         merged: true,
         open: false,
