@@ -4,9 +4,9 @@
 
 ## El merge lo hace una persona
 
-`Factory / ready-to-merge: success` indica que la Factory acredita una aceptación vigente para el candidato. No ejecuta el merge. La persona integra en GitHub respetando los demás controles del repositorio.
+`Factory / ready-to-merge: success` indica que la Factory acredita una aceptación vigente para el Commit candidato. No ejecuta el merge. La persona integra en GitHub respetando los demás controles del repositorio.
 
-La Factory observa el merge y conserva por separado base, candidato aceptado y commit integrado. Un squash puede generar otro SHA; producción debe corresponder al integrado.
+La Factory observa el merge y conserva por separado base, Commit candidato aceptado y commit integrado. Un squash puede generar otro SHA; producción debe corresponder al integrado.
 
 ```mermaid
 flowchart TD
@@ -31,7 +31,7 @@ sequenceDiagram
     participant V as Vercel
     participant F as Factory
     participant P as Dominio público
-    H->>G: Hacer merge del candidato aceptado
+    H->>G: Hacer merge del Commit candidato aceptado
     G->>V: La integración Git activa producción
     F->>G: Observar merge, versión integrada y control histórico
     F->>G: Buscar deployment del commit integrado

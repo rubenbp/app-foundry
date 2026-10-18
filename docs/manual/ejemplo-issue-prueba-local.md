@@ -48,7 +48,7 @@ No cambiar la introducción editorial, el catálogo, los filtros, las fichas de 
 ]
 ```
 
-## Entrega del candidato
+## Entrega del Commit candidato
 
 Ejecutar las verificaciones configuradas y dejar todos los cambios en commits locales, sin archivos pendientes. Resumir el cambio, las comprobaciones y cualquier bloqueo real.
 

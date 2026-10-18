@@ -8,7 +8,7 @@ Fecha: 16 de octubre de 2026, Europe/Madrid. Issue: [#13](https://github.com/rub
 
 - Factory inicial: `2a188b1ee0eceb7dc0c0e6ac35e601ce27bd5181`.
 - Managed project: [rubenbp/appfoundry-site-demo](https://github.com/rubenbp/appfoundry-site-demo), base `8f35d44e1a6992330598cb2878c0e6765330ecd5`.
-- Primer candidato verificado: `2c72e7b12b68ab2716dd6330f11d341256d2e218`.
+- Primer Commit candidato verificado: `2c72e7b12b68ab2716dd6330f11d341256d2e218`.
 - Candidato final tras corregir indentación: `46c40730d5ed70c755642438f9c4394587cc5d0b`; contrato completo y Preview comprobados de nuevo.
 - PR de preparación: [#2](https://github.com/rubenbp/appfoundry-site-demo/pull/2), rama `codex/prepare-rebobina-base`, destino `main`.
 - Configuración de confianza: [`rebobina.json`](../../../config/managed-projects/rebobina.json). [Guía de reproducción y publicación](../../guides/rebobina-preparation.md).

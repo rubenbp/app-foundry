@@ -323,7 +323,7 @@ test("una petición modificada, un permiso revocado o una corrección revocan el
   }
 });
 
-test("el Workflow publica un candidato verificado y solo permite la integración humana tras aceptar después su SHA y su vista previa", async () => {
+test("el Workflow publica un Commit candidato verificado y solo permite la integración humana tras aceptar después su SHA y su vista previa", async () => {
   const writes: string[] = [];
   const facts: PublicationFacts = {
     request: {

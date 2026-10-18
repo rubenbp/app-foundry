@@ -448,7 +448,7 @@ export class GitHubPublication implements PublicationPort {
     return this.pull(
       await this.api(`repos/${context.repository}/pulls`, {
         title: `Factory: candidate for issue #${context.issue}`,
-        body: `Petición: https://github.com/${context.repository}/issues/${context.issue}\nEjecución: ${context.runId}\n\nLa Factory publicará el informe cuando la preview del candidato esté verificada. El merge y la publicación requieren aceptación humana de esa versión.`,
+        body: `Issue: https://github.com/${context.repository}/issues/${context.issue}\nEjecución: ${context.runId}\n\nLa Factory publicará el informe cuando la preview del Commit candidato esté verificada. El merge y la publicación requieren aceptación humana de esa versión.`,
         head: context.workspace.branch,
         base: context.project.baseBranch,
       }),

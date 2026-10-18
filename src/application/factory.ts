@@ -1,4 +1,4 @@
-import type { AuthorizedRequest, Workspace } from "../domain/request.ts";
+import type { AuthorizedIssue, Workspace } from "../domain/request.ts";
 import { randomUUID } from "node:crypto";
 import type { RunRepository } from "./runRepository.ts";
 import { sanitizer, sanitizedRecord } from "./sanitize.ts";
@@ -106,7 +106,7 @@ export class Factory {
     }
   }
 
-  enqueue(task: string, request?: AuthorizedRequest) {
+  enqueue(task: string, request?: AuthorizedIssue) {
     this.assertWritable();
     if (!task.trim()) {
       throw new Error("Task required");
@@ -235,7 +235,7 @@ export class Factory {
     if (!run || run.status === "stopped" || run.status === "completed") {
       return;
     }
-    // Las observaciones tardías del agente no pueden devolver a edición un candidato verificado de forma independiente.
+    // Las observaciones tardías del agente no pueden devolver a edición un Commit candidato verificado de forma independiente.
     if (
       (run.phase === "verification" || run.phase === "publication") &&
       fact.type !== "part" &&

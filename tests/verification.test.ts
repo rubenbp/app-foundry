@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/process.ts";
 
-test("el Workflow detiene la edición antes de fijar un candidato completo con varios commits y guarda evidencias independientes", async () => {
+test("el Workflow detiene la edición antes de fijar un árbol del Commit candidato con varios commits y guarda evidencias independientes", async () => {
   const s = verificationFixture();
   try {
     const run = await s.start();
@@ -152,7 +152,7 @@ test("las evidencias truncadas de un comando no pueden aprobar un candidato, aun
   }
 });
 
-test("los cambios versionados sin confirmar, preparados y sin seguimiento no pueden formar un candidato verificado", async () => {
+test("los cambios versionados sin confirmar, preparados y sin seguimiento no pueden formar un Commit candidato verificado", async () => {
   for (const mode of ["tracked", "staged", "untracked"]) {
     const s = verificationFixture();
     try {

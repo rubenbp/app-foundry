@@ -22,7 +22,7 @@ Comprobación realizada el 18 de octubre de 2026:
 | Issues abiertos con `factory:ready` | Ninguno en la consulta realizada.                                                              |
 | `factory.local.json` existente      | Modo manual de lectura, sin `managedProjectFile`. No usarlo para esta prueba.                  |
 
-Los accesos remotos pueden cambiar. Estas observaciones no acreditan todavía una Ejecución nueva ni un candidato desplegado.
+Los accesos remotos pueden cambiar. Estas observaciones no acreditan todavía una Ejecución nueva ni un Commit candidato desplegado.
 
 ## 2. Preparar la terminal
 
@@ -163,7 +163,7 @@ Si la etiqueta no existe, créala una sola vez:
 
 ```sh
 gh label create factory:ready --repo rubenbp/appfoundry-site-demo \
-  --description "Petición revisada y autorizada para la Factory" --color 0E8A16
+  --description "Issue revisado y autorizado para la Factory" --color 0E8A16
 ```
 
 Aplica la autorización cuando el título y cuerpo ya estén definitivos:
@@ -195,7 +195,7 @@ Acepto la versión SHA_COMPLETO y su preview URL_EXACTA_DEL_INFORME.
 
 Puedes hacerlo desde la web de GitHub. No edites el comentario después, no uses solo «Approve» y no sustituyas el SHA por el número de PR.
 
-Espera `awaiting_merge` y `Factory / ready-to-merge: success`. Si cambia el candidato, hay que revisar y aceptar el nuevo SHA.
+Espera `awaiting_merge` y `Factory / ready-to-merge: success`. Si cambia el Commit candidato, hay que revisar y aceptar el nuevo SHA.
 
 ## 9. Hacer merge y comprobar el cierre
 
@@ -211,7 +211,7 @@ curl --fail --silent --show-error -H 'Cache-Control: no-cache' \
   https://rebobina-appfoundry.vercel.app/version.json
 ```
 
-El `sha` debe ser el commit integrado, que puede diferir del candidato si usaste squash. Debe mostrar `dirty: false`. El marcador por sí solo no sustituye los criterios ni el informe de producción.
+El `sha` debe ser el commit integrado, que puede diferir del Commit candidato si usaste squash. Debe mostrar `dirty: false`. El marcador por sí solo no sustituye los criterios ni el informe de producción.
 
 ## 10. Detener y repetir con otra petición
 

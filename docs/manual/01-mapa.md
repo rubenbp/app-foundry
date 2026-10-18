@@ -1,6 +1,6 @@
 # 1. Mapa de la fábrica
 
-[Índice](README.md) · [Siguiente: del issue al agente](02-peticion-y-trabajo.md)
+[Índice](README.md) · [Siguiente: del issue al agente](02-issue-y-trabajo.md)
 
 ## Quién hace qué
 
@@ -37,16 +37,16 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 
 | Término                      | Significado práctico                                                                                                                                                        |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Petición autorizada**      | Objetivo y criterios aprobados por una persona. Permite empezar, pero no acepta el resultado.                                                                               |
+| **Issue autorizado**         | Objetivo y criterios aprobados por una persona. Permite empezar, pero no acepta el resultado.                                                                               |
 | **Ejecución**                | Recorrido completo para atender esa petición, incluidas esperas, integración y publicación.                                                                                 |
 | **Intento**                  | Trabajo encargado al agente dentro de la Ejecución. El modelo permite varios; hoy no existe continuación guiada ni reintento automático.                                    |
-| **Aceptación del resultado** | Decisión humana sobre un commit candidato concreto y su preview. Autoriza su integración y publicación.                                                                     |
+| **Aceptación del resultado** | Decisión humana sobre un Commit candidato concreto y su preview. Autoriza su integración y publicación.                                                                     |
 | **Base**                     | Versión de partida del producto, identificada por su SHA.                                                                                                                   |
-| **Commit candidato**         | Versión propuesta y verificada. Puede acumular varios commits desde la base.                                                                                                |
+| **Commit candidato**         | `HEAD` de la rama de trabajo que dejó el agente. La Factory verifica todos los cambios acumulados desde la base antes de presentarlo para aceptación.                       |
 | **SHA**                      | Identificador completo de una versión de Git. Permite saber exactamente qué se comprobó y aceptó.                                                                           |
 | **PR**                       | Propuesta de integración en GitHub, con los cambios y la conversación de revisión.                                                                                          |
-| **Preview**                  | Versión de prueba desplegada para revisar el candidato antes de integrarlo.                                                                                                 |
-| **Commit integrado**         | Versión resultante del merge. Su SHA puede diferir del candidato, por ejemplo con squash.                                                                                   |
+| **Preview**                  | Versión de prueba desplegada para revisar el Commit candidato antes de integrarlo.                                                                                          |
+| **Commit integrado**         | Versión resultante del merge. Su SHA puede diferir del Commit candidato, por ejemplo con squash.                                                                            |
 | **Intervención**             | Situación que requiere inspección o decisión porque falta una garantía o hay un fallo. Conserva el puesto de trabajo mientras no se resuelva o detenga de forma confirmada. |
 
 ## Recorrido completo
@@ -56,11 +56,11 @@ flowchart TD
     I["Issue con objetivo, criterios y comprobaciones públicas"] --> A["Una persona con escritura aplica factory:ready"]
     A --> D{"¿Autorización y contenido acreditados?"}
     D -->|"No"| N["No se admite<br/>Aclarar y volver a autorizar"]
-    D -->|"Sí"| Q["Capturar Petición autorizada y poner en cola"]
+    D -->|"Sí"| Q["Capturar Issue autorizado y poner en cola"]
     Q --> W["Esperar puesto libre"]
     W --> B["Preparar clon y comprobar base"]
     B --> O["Encargar Intento al agente"]
-    O --> T["Detener edición y verificar candidato completo"]
+    O --> T["Detener edición y verificar árbol del Commit candidato"]
     T --> R["Publicar rama y PR"]
     R --> V["Esperar y comprobar preview de Vercel"]
     V --> E["Publicar informe y esperar revisión"]
@@ -87,7 +87,7 @@ Este es el camino favorable. [Las variantes](05-variantes-e-intervencion.md) exp
 flowchart LR
     B["Base<br/>Versión de partida"] --> C["Candidato<br/>Versión comprobada y aceptada"]
     C -->|"Merge humano, incluido squash"| M["Integrado<br/>Versión que debe servir producción"]
-    C --> V["Preview debe servir el SHA candidato"]
+    C --> V["Preview debe servir el SHA del Commit candidato"]
     M --> P["Producción debe servir el SHA integrado"]
 ```
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RequestDetails } from "./request.tsx";
+import { IssueDetails } from "./issue.tsx";
 import { VerificationDetails } from "./verification.tsx";
 import { ProductionDetails } from "./production.tsx";
 import { PublicationDetails } from "./publication.tsx";
@@ -247,11 +247,11 @@ function App() {
                 </dl>
                 <p className="verification-note">
                   {run.verification?.status === "passed"
-                    ? "Contrato técnico comprobado. Consulta la evidencia y el estado de revisión humana del candidato."
+                    ? "Contrato técnico comprobado. Consulta la evidencia y el estado de revisión humana del Commit candidato."
                     : "El resultado requiere verificación independiente. El estado idle y el texto del agente no acreditan éxito."}
                 </p>
               </section>
-              <RequestDetails run={run} />
+              <IssueDetails run={run} />
               <VerificationDetails run={run} />
               <PublicationDetails run={run} />
               <ProductionDetails run={run} />

@@ -65,7 +65,7 @@ test("el panel guía la revisión y la integración humana con enlaces a la PR, 
   }
 });
 
-test("el panel distingue el candidato aceptado, la integración y la producción pública verificada en el historial completado", async ({
+test("el panel distingue el Commit candidato aceptado, la integración y la producción pública verificada en el historial completado", async ({
   page,
 }) => {
   const s = publicationFixture();

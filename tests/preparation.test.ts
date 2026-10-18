@@ -145,7 +145,7 @@ function fixture(options: { stopConfirmed?: boolean } = {}) {
   };
 }
 
-test("una Petición autorizada verifica su base en una rama propia antes de entregar todos los criterios", async () => {
+test("un Issue autorizado verifica su base en una rama propia antes de entregar todos los criterios", async () => {
   const s = fixture();
   try {
     await s.workflow.observe([s.issue]);

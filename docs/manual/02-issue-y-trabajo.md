@@ -28,7 +28,7 @@ flowchart TD
     P -->|"No o no se puede comprobar"| N["No admitir<br/>Revisar permiso y autorización"]
     P -->|"Sí"| C{"¿Título y cuerpo completos y estables<br/>vinculados a esa autorización?"}
     C -->|"No o ambiguo"| E["Estabilizar el contenido<br/>y volver a aplicar la etiqueta"]
-    C -->|"Sí"| A["Capturar Petición autorizada<br/>Crear Ejecución en cola"]
+    C -->|"Sí"| A["Capturar Issue autorizado<br/>Crear Ejecución en cola"]
 ```
 
 La Factory consulta eventos, permisos, ediciones y una segunda lectura del issue. Una edición simultánea o posterior puede impedir acreditar la autorización; incluso otra actividad que actualice el issue puede exigir autorizar de nuevo. La comprobación es conservadora y no elimina todas las carreras posibles con GitHub.
@@ -37,7 +37,7 @@ La Factory consulta eventos, permisos, ediciones y una segunda lectura del issue
 
 ## Qué queda fijado
 
-La Petición autorizada conserva título, cuerpo, autor, evento y persona que autoriza, huella del contenido, configuración del Managed project y selección del agente. La Ejecución trabaja sobre esa captura; editar el issue no actualiza su objetivo automáticamente.
+El Issue autorizado conserva título, cuerpo, autor, evento y persona que autoriza, huella del contenido, configuración del Managed project y selección del agente. La Ejecución trabaja sobre esa captura; editar el issue no actualiza su objetivo automáticamente.
 
 Cada issue se consume una sola vez dentro del historial persistido. Retirar y volver a aplicar la etiqueta después de admitirlo no crea otra Ejecución. Reabrirlo tampoco es un mecanismo de reintento. Retirar la etiqueta no cancela el trabajo ya admitido.
 
@@ -47,7 +47,7 @@ Solo hay una Ejecución activa. El puesto sigue ocupado durante las esperas de r
 
 ```mermaid
 flowchart TD
-    Q["Petición admitida en cola"] --> A{"¿Hay una Ejecución activa?"}
+    Q["Issue autorizado admitido en cola"] --> A{"¿Hay una Ejecución activa?"}
     A -->|"Sí"| W["Conservar petición y esperar"]
     W --> A
     A -->|"No"| R["Reservar Managed project"]
@@ -90,7 +90,7 @@ sequenceDiagram
     end
 ```
 
-Comprobar primero la base permite distinguir un problema anterior de una regresión introducida por el candidato. Si la base falla, la Factory conserva la causa y el puesto; no encarga al agente arreglarla automáticamente.
+Comprobar primero la base permite distinguir un problema anterior de una regresión introducida por el Commit candidato. Si la base falla, la Factory conserva la causa y el puesto; no encarga al agente arreglarla automáticamente.
 
 El agente recibe la petición fijada, las instrucciones de la base y los comandos permitidos. Puede cambiar el producto y crear commits locales. La Factory conserva el control del push, la PR, los informes y los estados remotos. No entrega al agente las credenciales de publicación.
 

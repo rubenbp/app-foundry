@@ -31,7 +31,7 @@ La configuración del repositorio define formato y comprobaciones mecánicas. Pa
 - Elige entidades cuando importen identidad y ciclo de vida; objetos de valor cuando importen significado e igualdad por valor. Combina datos simples y funciones cuando esa representación proteja las mismas reglas con menos complejidad.
 - Mantén las decisiones de dominio independientes de transporte, persistencia, frameworks y proveedores. Traduce sus formatos en los límites; los DTO y los registros de almacenamiento representan contratos externos al modelo de dominio.
 - Define el límite de consistencia según las invariantes. Cuando varias escrituras deban confirmarse juntas, usa una operación atómica; protege las precondiciones frente a cambios concurrentes mediante mecanismos efectivos de persistencia o coordinación.
-- Conserva las distinciones del negocio: una Petición autorizada permite iniciar el trabajo y la Aceptación del resultado se refiere a un commit candidato concreto. Las comprobaciones técnicas no sustituyen esas decisiones humanas.
+- Conserva las distinciones del negocio: un Issue autorizado permite iniciar el trabajo y la Aceptación del resultado se refiere a un Commit candidato concreto. Las comprobaciones técnicas no sustituyen esas decisiones humanas.
 
 ## Contratos y principio de menor sorpresa
 

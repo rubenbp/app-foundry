@@ -36,7 +36,7 @@ pnpm test:unit
 pnpm test:e2e
 ```
 
-Ejecutar los cinco comandos, incluso si uno falla, y conservar código de salida y salida saneada de cada uno. Una comprobación ausente, no ejecutada o con resultado desconocido no es favorable. Repetir sobre el candidato completo de la PR y registrar también la base; no limitarlo al último commit.
+Ejecutar los cinco comandos, incluso si uno falla, y conservar código de salida y salida saneada de cada uno. Una comprobación ausente, no ejecutada o con resultado desconocido no es favorable. Repetir sobre el árbol del Commit candidato de la PR y registrar también la base; no limitarlo al último commit.
 
 ## Alcance y servidor E2E
 

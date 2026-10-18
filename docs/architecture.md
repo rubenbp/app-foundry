@@ -6,7 +6,7 @@ La Factory usa arquitectura hexagonal. Las reglas y los contratos de las Ejecuci
 
 | Ubicación             | Responsabilidad                                                                      | Dependencias internas permitidas                |
 | --------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| `src/domain/`         | Petición autorizada, Ejecución, cola, verificación, publicación y producción         | Dominio                                         |
+| `src/domain/`         | Issue autorizado, Ejecución, cola, verificación, publicación y producción            | Dominio                                         |
 | `src/application/`    | Coordinación de casos de uso, puertos, saneamiento y consulta del estado             | Dominio y aplicación                            |
 | `src/infrastructure/` | OpenCode, GitHub, Git, Vercel, procesos, SQLite, archivos y transporte HTTP          | Dominio, aplicación e infraestructura           |
 | `src/composition/`    | Construcción de la Factory y del workflow, conexión de adaptadores y arranque/parada | Todas las capas del backend                     |
@@ -19,7 +19,7 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 
 - `application/agent.ts` define las observaciones y operaciones del agente. OpenCode implementa ese contrato; sus mensajes nativos se traducen en `infrastructure/opencode/observer.ts`.
 - `application/runRepository.ts` define persistencia de Ejecuciones, observaciones y evidencias. `infrastructure/persistence/store.ts` conserva SQLite y artefactos atómicos. Un fallo de escritura sigue bloqueando nuevos efectos.
-- `application/verification.ts` define la verificación independiente del candidato. El adaptador ejecuta comandos y comunica progreso, evidencias y cancelación.
+- `application/verification.ts` define la verificación independiente del Commit candidato. El adaptador ejecuta comandos y comunica progreso, evidencias y cancelación.
 - `application/ports.ts` define admisión desde GitHub, preparación del workspace y propiedad exclusiva del workflow.
 - `application/publication/ports.ts` define observación y efectos de publicación y producción. No ofrece una operación de merge: la integración sigue siendo humana.
 - `composition/factory.ts` crea el repositorio persistente e inyecta el puerto en la Factory. `composition/workflow.ts` conecta propiedad, persistencia y verificación. Las pruebas de integración usan estas mismas funciones con adaptadores externos controlados.
@@ -28,13 +28,13 @@ La configuración operativa tiene un contrato propio en `application/configurati
 
 ## Responsabilidades de publicación
 
-`application/publication.ts` coordina el avance del candidato y la espera de revisión. Delega responsabilidades con motivos de cambio distintos:
+`application/publication.ts` coordina el avance del Commit candidato y la espera de revisión. Delega responsabilidades con motivos de cambio distintos:
 
 - `publication/runtime.ts` registra intención y confirmación, reconcilia efectos remotos, observa merges concurrentes e impide efectos nuevos durante una parada.
 - `publication/evidence.ts` exige evidencia técnica completa del SHA vigente.
 - `publication/reviewReport.ts` construye y fragmenta el informe de revisión.
-- `publication/reviewPolicy.ts` comprueba integridad del informe, identidad del candidato, aceptación y permisos efectivos.
-- `publication/production.ts` reconstruye la aceptación vigente al integrar, comprueba producción, publica evidencia y cierra la Petición autorizada.
+- `publication/reviewPolicy.ts` comprueba integridad del informe, identidad del Commit candidato, aceptación y permisos efectivos.
+- `publication/production.ts` reconstruye la aceptación vigente al integrar, comprueba producción, publica evidencia y cierra el Issue autorizado.
 
 Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comandos y el acceso autenticado a Vercel. Las credenciales y respuestas nativas permanecen en infraestructura.
 

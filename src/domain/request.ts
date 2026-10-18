@@ -50,7 +50,7 @@ export interface AgentConfiguration {
   auth: "opencode";
   opencodeCli?: string;
 }
-export interface AuthorizedRequest extends ReadyIssue {
+export interface AuthorizedIssue extends ReadyIssue {
   capturedAt: number;
   contentHash: string;
   configuration: ManagedProject;
@@ -68,7 +68,7 @@ export function authorize(
   config: ManagedProject,
   at: number,
   runtime: AgentConfiguration,
-): AuthorizedRequest {
+): AuthorizedIssue {
   if (
     issue.repository !== config.repository ||
     !Number.isSafeInteger(issue.number) ||

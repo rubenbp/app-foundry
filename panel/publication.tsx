@@ -20,7 +20,7 @@ export function PublicationDetails({ run }: { run: Run }) {
       <h2 id="publication-title">Preview y aceptación</h2>
       <dl className="usage">
         <div>
-          <dt>SHA candidato vigente</dt>
+          <dt>SHA del Commit candidato vigente</dt>
           <dd>{publication.head}</dd>
         </div>
         <div>
@@ -71,7 +71,7 @@ export function PublicationDetails({ run }: { run: Run }) {
           ) : null}
         </>
       ) : (
-        <p>Esperando el deployment Preview del SHA candidato.</p>
+        <p>Esperando el deployment Preview del SHA del Commit candidato.</p>
       )}
       <h3>Informe y evidencia</h3>
       {publication.report ? (

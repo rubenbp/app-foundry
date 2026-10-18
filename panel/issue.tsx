@@ -1,6 +1,6 @@
 import type { Run } from "../src/domain/run.ts";
 
-export function RequestDetails({ run }: { run: Run }) {
+export function IssueDetails({ run }: { run: Run }) {
   if (!run.request) {
     return null;
   }
@@ -69,7 +69,7 @@ export function RequestDetails({ run }: { run: Run }) {
         </dl>
       </section>
       <details className="card">
-        <summary>Petición autorizada</summary>
+        <summary>Issue autorizado</summary>
         <p>
           <a href={request.url} target="_blank" rel="noreferrer">
             Issue #{request.number}: {request.title} ↗
@@ -93,9 +93,9 @@ export function RequestDetails({ run }: { run: Run }) {
         </dl>
         <pre tabIndex={0}>{request.body}</pre>
         <p className="small muted">
-          Petición fija. Retirar factory:ready no cancela. Para cambiar el
-          objetivo o los criterios, cancela y autoriza otro issue. Los secretos
-          se omiten; los criterios no se truncan.
+          El Issue autorizado queda fijado. Retirar factory:ready no cancela.
+          Para cambiar el objetivo o los criterios, cancela y autoriza otro
+          issue. Los secretos se omiten; los criterios no se truncan.
         </p>
         <details>
           <summary>Configuración e instrucciones capturadas</summary>

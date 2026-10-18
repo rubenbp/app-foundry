@@ -29,7 +29,7 @@ export function candidateEvidence(factory: Factory, run: Run) {
     );
   }
   return [
-    `Petición: ${run.request!.title}\n${run.request!.body}`,
+    `Issue: ${run.request!.title}\n${run.request!.body}`,
     `Diff acumulado completo ${verification.baseSha}..${verification.headSha}\n${output(verification.diffPartId)}`,
     `Configuración\n${output(verification.configurationPartId)}`,
     ...verification.checks.map(

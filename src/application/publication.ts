@@ -117,7 +117,7 @@ export class CandidatePublication {
         facts.request.body === run.request.body;
       if (!intact) {
         publication.blocked =
-          "Petición alterada o cerrada; se requiere intervención y una nueva autorización.";
+          "Issue autorizado alterado o cerrado; se requiere intervención y una nueva autorización.";
       }
       if (facts.pull && !facts.pull.open) {
         publication.blocked =
@@ -296,7 +296,7 @@ export class CandidatePublication {
             await this.runtime.comment(
               run,
               `clarify:${comment.id}`,
-              `La referencia no identifica un candidato aceptado. Para confirmar la versión vigente, publica un comentario nuevo:\n\n${fenced(`Acepto la versión ${publication.head} y su preview ${publication.report!.preview}.`)}`,
+              `La referencia no identifica un Commit candidato aceptado. Para confirmar la versión vigente, publica un comentario nuevo:\n\n${fenced(`Acepto la versión ${publication.head} y su preview ${publication.report!.preview}.`)}`,
             );
           }
         }

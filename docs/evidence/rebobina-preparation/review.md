@@ -15,6 +15,6 @@ Cero hallazgos. Los cambios respetan ambos `AGENTS.md`, `GLOSSARY.md` y las guí
 
 Cero hallazgos accionables. Contrato, marcador estático, alcance Astro/TS/JS, servidor E2E propio y evidencias son coherentes con #13. No se implementan los casos AFK, runtime, backend, concurrencia o worktrees. Revisión/aceptación humana, merge y producción pendientes se declaran expresamente; no acreditan cierre.
 
-La revisión es estática y no sustituye verificaciones ni aceptación humana. El registro local identifica el candidato verificado. Las actualizaciones posteriores de este paquete de evidencia no cambian el código revisado del Managed project.
+La revisión es estática y no sustituye verificaciones ni aceptación humana. El registro local identifica el Commit candidato verificado. Las actualizaciones posteriores de este paquete de evidencia no cambian el código revisado del Managed project.
 
 Resultado: Standards 0; Spec 0. Sin hallazgo prioritario en ninguno de los dos ejes.

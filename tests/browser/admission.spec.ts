@@ -107,7 +107,7 @@ test("el panel sigue una Petición en cola durante la preparación de la base, l
         .getByRole("region", { name: "Cola de peticiones" })
         .getByRole("listitem"),
     ).toHaveCount(2);
-    await page.getByText("Petición autorizada", { exact: true }).click();
+    await page.getByText("Issue autorizado", { exact: true }).click();
     await expect(
       page.getByText("Mostrar todos los juegos y conservar el teclado.", {
         exact: false,

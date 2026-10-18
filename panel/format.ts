@@ -7,7 +7,7 @@ export const labels: Record<RunStatus, string> = {
   running: "En curso",
   waiting: "Espera humana",
   awaiting_verification: "Resultado sin verificar",
-  verifying: "Verificando candidato",
+  verifying: "Verificando Commit candidato",
   awaiting_preview: "Verificado · Preview pendiente",
   awaiting_review: "Esperando revisión humana",
   awaiting_merge: "Esperando merge humano",

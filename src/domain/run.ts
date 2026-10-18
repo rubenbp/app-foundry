@@ -1,4 +1,4 @@
-import type { AuthorizedRequest, Workspace } from "./request.ts";
+import type { AuthorizedIssue, Workspace } from "./request.ts";
 import type { Verification } from "./verification.ts";
 import type { Publication } from "./publication.ts";
 export type RunStatus =
@@ -52,7 +52,7 @@ export interface Run {
   id: string;
   attempt: number;
   task: string;
-  request?: AuthorizedRequest;
+  request?: AuthorizedIssue;
   workspace?: Workspace;
   verification?: Verification;
   publication?: Publication;

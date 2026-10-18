@@ -31,8 +31,8 @@ flowchart TD
 | Fallan clonación, instalación o comprobaciones de base                                | Intervención de preparación; no empieza el agente.                          | Corregir la causa y revisar los efectos ya realizados. No hay recuperación guiada actual. |
 | El agente pide permiso o formula una pregunta                                         | `waiting`, con solicitud visible y puesto ocupado.                          | Inspeccionar y detener si procede. El panel no permite responder.                         |
 | Falla el agente, la autenticación o su proceso                                        | Intervención, sin reenvío ni cambio automático de modelo.                   | Revisar el error y el estado del proceso.                                                 |
-| Quedan cambios sin commit o no se confirma la parada del agente                       | No se fija un candidato acreditado.                                         | Resolver la incertidumbre; no aceptar el resultado como verificado.                       |
-| Cambian controles protegidos o fallan comandos                                        | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el candidato. No se encarga una corrección automática.                            |
+| Quedan cambios sin commit o no se confirma la parada del agente                       | No se fija un Commit candidato acreditado.                                  | Resolver la incertidumbre; no aceptar el resultado como verificado.                       |
+| Cambian controles protegidos o fallan comandos                                        | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el Commit candidato. No se encarga una corrección automática.                     |
 | Evidencia truncada, informe E2E ausente, cero pruebas u omisiones                     | No se aprueba técnicamente aunque el comando devuelva cero.                 | Obtener evidencia suficiente mediante una recuperación deliberada.                        |
 
 ## Variantes de PR, preview y revisión
@@ -64,11 +64,11 @@ Cerrar manualmente el issue antes del merge impide mantener una aceptación efec
 | Situación                                                                                  | Resultado                                                                                                                              |
 | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Merge sin aceptación vigente, sin control favorable o por identidad sin permiso acreditado | Incidencia de integración; no acreditar el ciclo como correcto.                                                                        |
-| Squash con SHA diferente del candidato                                                     | Variante válida: conservar ambas versiones y comprobar producción contra el SHA integrado.                                             |
+| Squash con SHA diferente del Commit candidato                                              | Variante válida: conservar ambas versiones y comprobar producción contra el SHA integrado.                                             |
 | Merge mientras la Factory estaba consultando o intentando revocar                          | Contrastar aceptación, informe y control históricos anteriores al merge. No asumir que el orden de observación local es el orden real. |
 | Deployment de producción pendiente o `inactive`                                            | Mantener `checking_production` y esperar otra observación.                                                                             |
 | Deployment de otro SHA, proyecto, repositorio o entorno                                    | Intervención; no usarlo como prueba del resultado.                                                                                     |
-| Plan `factory-production` ausente, inválido o incompleto                                   | Intervención; el plan no se inventa después ni se cambia silenciosamente la Petición autorizada.                                       |
+| Plan `factory-production` ausente, inválido o incompleto                                   | Intervención; el plan no se inventa después ni se cambia silenciosamente el Issue autorizado.                                          |
 | Dominio público sirve otra versión, exige acceso, redirige o falla un criterio             | Guardar la evidencia disponible; intervención sin cierre automático por éxito.                                                         |
 | Error o incertidumbre operativa después del merge                                          | Conservar hechos y evidencia; no reanudar efectos de producción automáticamente.                                                       |
 | Issue cerrado manualmente                                                                  | Seguir exigiendo evidencia completa. Si ya estaba cerrado, no atribuirle un cierre verificado hasta comprobar producción e informar.   |
@@ -110,7 +110,7 @@ Si falla la persistencia, bloquea nuevos efectos propios. La persona debe inspec
 
 | Señal                                 | Significado                                                             |
 | ------------------------------------- | ----------------------------------------------------------------------- |
-| `queued`                              | Petición capturada, esperando puesto.                                   |
+| `queued`                              | Issue autorizado capturado, esperando puesto.                           |
 | `preparing` / `starting` / `running`  | Preparación, arranque o trabajo del agente.                             |
 | `waiting`                             | Pregunta o permiso pendiente del agente.                                |
 | `awaiting_verification` / `verifying` | Resultado recibido, pendiente de comprobar o en comprobación.           |

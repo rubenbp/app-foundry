@@ -1,11 +1,8 @@
-import type { AuthorizedRequest, Workspace } from "../domain/request.ts";
+import type { AuthorizedIssue, Workspace } from "../domain/request.ts";
 
-export function requestContext(
-  request: AuthorizedRequest,
-  workspace: Workspace,
-) {
+export function requestContext(request: AuthorizedIssue, workspace: Workspace) {
   return [
-    "Implement this fixed Petición autorizada. The issue body below contains the complete acceptance criteria.",
+    "Implement only this fixed authorized GitHub issue. The issue body below contains the complete acceptance criteria.",
     `Repository: ${request.repository}\nIssue: ${request.url}\nAuthor: ${request.author}\nAuthorized by: ${request.authorization.actor} at ${request.authorization.at}\nContent SHA256: ${request.contentHash}`,
     `Base: ${workspace.baseSha}\nBranch: ${workspace.branch}\nDirectory: ${workspace.directory}`,
     `Title: ${request.title}\n\n${request.body}`,

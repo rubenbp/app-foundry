@@ -28,7 +28,7 @@ export interface Production {
   error?: string;
 }
 
-// La Petición autorizada fija las comprobaciones, nunca código ejecutable.
+// El Issue autorizado fija las comprobaciones, nunca código ejecutable.
 // El comportamiento no compatible requiere intervención humana, no una comprobación HTTP satisfactoria.
 export function publicChecks(
   body: string,
@@ -39,7 +39,7 @@ export function publicChecks(
   ];
   if (blocks.length !== 1) {
     throw new Error(
-      "One factory-production check plan required in the authorized request",
+      "One factory-production check plan required in the authorized GitHub issue",
     );
   }
   const checks: unknown = JSON.parse(blocks[0][1]);

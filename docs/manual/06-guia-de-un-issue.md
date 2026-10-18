@@ -48,10 +48,10 @@ El número `criterion` sigue el orden de la lista. La sección separada evita qu
 1. **Revisar la petición.** Confirmar objetivo, criterios observables y comprobaciones públicas. Si el comportamiento no se puede expresar con el plan actual, ampliar la capacidad de verificación antes de usarlo para cerrar ese trabajo.
 2. **Autorizar en GitHub.** Una persona con escritura aplica `factory:ready` al contenido estable. Si aún no se admite por ambigüedad, revisar la causa y volver a aplicar la etiqueta tras estabilizarlo.
 3. **Seguir la Ejecución.** Abrir el panel local y comprobar si espera turno, prepara, trabaja o requiere intervención. Una petición admitida no se cancela quitando la etiqueta.
-4. **Revisar la PR y su informe.** Leer el diff completo, resultados y lagunas. Confirmar que el SHA informado es el del candidato vigente.
+4. **Revisar la PR y su informe.** Leer el diff completo, resultados y lagunas. Confirmar que el SHA informado es el del Commit candidato vigente.
 5. **Probar la preview.** Revisar cada criterio en la URL del informe. Comprobar el resultado visible y la navegación, además de las pruebas técnicas.
 6. **Aceptar o pedir corrección.** Si el resultado es correcto, copiar el ejemplo del informe con SHA completo y URL. Publicarlo como comentario nuevo en el issue o la conversación principal de la PR. Si no es correcto, una orden reconocida como `Corrige el texto del pie.` revoca el control y requiere intervención; hoy no lanza otro Intento.
-7. **Realizar el merge.** Esperar `Factory / ready-to-merge: success` y los demás controles exigidos. Hacer el merge en GitHub. Si cambió el candidato, esperar verificación, preview, informe y aceptación nuevos.
+7. **Realizar el merge.** Esperar `Factory / ready-to-merge: success` y los demás controles exigidos. Hacer el merge en GitHub. Si cambió el Commit candidato, esperar verificación, preview, informe y aceptación nuevos.
 8. **Esperar la comprobación pública.** La Factory debe acreditar el deployment del commit integrado y los criterios en el dominio público. No cerrar manualmente para saltarse este paso.
 9. **Confirmar el final.** Comprobar informe de producción en el issue y estado `completed` de la Ejecución. El puesto queda libre para la siguiente petición.
 
@@ -75,15 +75,15 @@ flowchart TD
 
 ## Cómo reconocer un issue terminado
 
-| Evidencia                           | Qué demuestra                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------- |
-| Petición capturada                  | Qué se autorizó y quién lo autorizó.                                    |
-| Base comprobada                     | Sobre qué versión empezó el trabajo y si ya tenía problemas.            |
-| Diff y verificaciones del candidato | Qué cambió y qué controles técnicos superó.                             |
-| Preview e informe                   | Qué versión se presentó a revisión y con qué evidencia.                 |
-| Comentario de aceptación            | Qué SHA y preview aceptó una persona con permiso.                       |
-| Merge y control histórico           | Qué candidato se integró, por quién y bajo qué aceptación.              |
-| Marcador y comprobaciones públicas  | Qué commit sirve producción y si pasan las aserciones declaradas.       |
-| Informe en el issue y `completed`   | Que la Factory conservó la evidencia y completó el recorrido de cierre. |
+| Evidencia                                  | Qué demuestra                                                           |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| Issue autorizado                           | Qué se autorizó y quién lo autorizó.                                    |
+| Base comprobada                            | Sobre qué versión empezó el trabajo y si ya tenía problemas.            |
+| Diff y verificaciones del Commit candidato | Qué cambió y qué controles técnicos superó.                             |
+| Preview e informe                          | Qué versión se presentó a revisión y con qué evidencia.                 |
+| Comentario de aceptación                   | Qué SHA y preview aceptó una persona con permiso.                       |
+| Merge y control histórico                  | Qué candidato se integró, por quién y bajo qué aceptación.              |
+| Marcador y comprobaciones públicas         | Qué commit sirve producción y si pasan las aserciones declaradas.       |
+| Informe en el issue y `completed`          | Que la Factory conservó la evidencia y completó el recorrido de cierre. |
 
-La cobertura final se limita a las aserciones declaradas y al juicio humano sobre el candidato. El informe debe conservar esa limitación; no acredita comportamientos del producto que nadie haya comprobado.
+La cobertura final se limita a las aserciones declaradas y al juicio humano sobre el Commit candidato. El informe debe conservar esa limitación; no acredita comportamientos del producto que nadie haya comprobado.

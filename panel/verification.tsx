@@ -24,7 +24,7 @@ export function VerificationDetails({ run }: { run: Run }) {
   return (
     <section className="card verification" aria-labelledby="verification-title">
       <h2 id="verification-title">Verificación independiente</h2>
-      <p>Árbol completo del candidato y diff acumulado desde la base.</p>
+      <p>Árbol completo del Commit candidato y diff acumulado desde la base.</p>
       <dl className="usage">
         <div>
           <dt>Base</dt>
@@ -96,7 +96,7 @@ export function VerificationDetails({ run }: { run: Run }) {
       </ol>
       {report.e2e ? (
         <>
-          <h3>E2E del build candidato</h3>
+          <h3>E2E del build del Commit candidato</h3>
           <p>
             {report.e2e.executedTests} pruebas ejecutadas ·{" "}
             {report.e2e.skippedTests} omitidas.
