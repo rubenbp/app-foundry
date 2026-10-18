@@ -4,7 +4,7 @@ Este manual explica cómo una petición de cambio se convierte en una versión c
 
 La **Factory** organiza el trabajo. El **Managed project** es el producto que desarrolla. Una persona autoriza la petición (issue de github), revisa el resultado (preview en Vercel) y realiza el merge (PR en Github). La Factory prepara, encarga el trabajo al agente, comprueba, publica evidencias y completa el cierre tras el merge autorizado.
 
-Si el agente necesita información, la Factory publica sus dudas en el issue. Cualquier persona puede responder con un comentario nuevo para que continúe en el mismo thread. Esta aclaración no sustituye la aceptación posterior del Commit candidato, que conserva sus requisitos de SHA, preview y permisos.
+Si el agente necesita información, la Factory publica sus dudas en el issue. Cualquier persona puede responder con un comentario nuevo para que continúe en el mismo thread. Esta aclaración no sustituye la aceptación posterior del Commit candidato, que se expresa mediante el merge humano de la PR verificada.
 
 Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disponibles: `Reintentar`, `Corregir: instrucciones` y `Cancelar`. Basta un comentario humano, sin comprobar permisos. La corrección conserva conversación, rama y PR; vuelve a pasar por verificación y aceptación. Cancelar cierra como no implementado tras confirmar la parada. Después del merge solo cabe reintentar el resumen y el cierre pendientes.
 
@@ -29,8 +29,7 @@ flowchart LR
     B -->|"Faltan datos o una decisión"| Q["Dudas publicadas en el issue"]
     Q -->|"Comentario humano<br/>Mismo thread"| B
     B --> V["Verificación, PR y preview"]
-    V --> C["Aceptación del resultado<br/>Permite integrar una versión concreta"]
-    C --> D["Merge humano"]
+    V --> D["Revisión de preview y merge humano<br/>Aceptación del resultado"]
     D --> E["Resumen de integración e issue cerrado<br/>Ejecución completada"]
 ```
 

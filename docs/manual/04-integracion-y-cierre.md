@@ -4,11 +4,11 @@
 
 ## El merge lo hace una persona
 
-`Factory / ready-to-merge: success` indica que la Factory acredita una aceptación vigente para el Commit candidato. La persona integra en GitHub respetando los demás controles del repositorio. El creador del issue se responsabiliza de conseguir la revisión del preview; cualquier persona con permiso efectivo de escritura puede aceptar la versión concreta.
+`Factory / ready-to-merge: success` acredita verificaciones, preview e informe vigentes del Commit candidato. El merge humano constituye la aceptación. La persona integra en GitHub respetando los demás controles del repositorio. El creador del issue se responsabiliza de conseguir la revisión del preview; cualquier persona con permiso efectivo de escritura puede aceptar la versión concreta.
 
-La Factory observa el merge y conserva por separado base, Commit candidato aceptado y commit integrado. Un squash puede generar otro SHA. Comprueba la rama destino, los permisos, el informe y la aceptación anteriores al merge y el control favorable vigente al integrar. Un merge fuera de este contrato queda en intervención, aunque el issue ya esté cerrado.
+La Factory observa el merge y conserva por separado base, Commit candidato aceptado y commit integrado. Un squash puede generar otro SHA. Comprueba la rama destino, los permisos, el informe anterior al merge y el control favorable vigente al integrar. Un merge fuera de este contrato queda en intervención, aunque el issue ya esté cerrado.
 
-La observación puede coincidir con el merge. El historial del informe, la aceptación y el control de GitHub permite reconstruir qué estaba aceptado al integrar. Una preview retirada después del merge no necesita seguir activa.
+La observación puede coincidir con el merge. El historial del informe y el control de GitHub permite reconstruir qué versión estaba preparada al integrar. Una preview retirada después del merge no necesita seguir activa.
 
 ## Secuencia hasta completar
 
@@ -17,7 +17,7 @@ sequenceDiagram
     actor H as Persona
     participant G as GitHub
     participant F as Factory
-    H->>G: Hacer merge del Commit candidato aceptado
+    H->>G: Revisar y aceptar mediante merge del Commit candidato
     F->>G: Observar merge, versión integrada y control histórico
     alt Integración autorizada
         F->>G: Publicar resumen de integración en el issue
@@ -34,7 +34,7 @@ Durante el cierre, `closing_issue` conserva el puesto. El comentario final comun
 
 La Ejecución termina como `completed` cuando la integración autorizada, el resumen y el cierre del issue quedan confirmados. Entonces se libera el puesto y puede empezar la siguiente petición.
 
-Si el issue ya estaba cerrado después del merge, se publica el mismo resumen y se reconoce el cierre existente. Cerrar el issue manualmente no sustituye la aceptación de preview ni autoriza un merge fuera del contrato.
+Si el issue ya estaba cerrado después del merge, se publica el mismo resumen y se reconoce el cierre existente. Cerrar el issue manualmente no sustituye la aceptación mediante merge ni autoriza un merge fuera del contrato.
 
 Si se pierde la respuesta al publicar el resumen o cerrar el issue, la Ejecución conserva el puesto y muestra el error. La siguiente consulta busca el efecto remoto antes de repetirlo para evitar duplicados. Si falta el resumen requerido o ha cambiado antes del cierre, no completa. Editar el título o cuerpo del issue no reemplaza el encargo capturado ni impide por sí solo el cierre. Un reinicio durante esta fase sigue exigiendo recuperación explícita. La persona puede comentar `Reintentar` en el issue para completar el resumen y el cierre pendientes. Después del merge no se admiten `Corregir: instrucciones` ni `Cancelar`; los cambios adicionales requieren otro issue.
 

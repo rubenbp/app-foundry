@@ -46,9 +46,7 @@ export interface Publication {
   };
   deployments: { at: number; preview: Preview }[];
   reports: NonNullable<Publication["report"]>[];
-  acceptances: NonNullable<Publication["acceptance"]>[];
   acceptance?: {
-    commentId: string;
     author: string;
     at: number;
     head: string;
@@ -63,7 +61,6 @@ export interface Publication {
   mergeSha?: string;
   integrationReport?: Pick<ConversationComment, "id" | "url">;
   closedAt?: number;
-  integratedAcceptance?: NonNullable<Publication["acceptance"]>;
   recoveryRequired?: boolean;
   limitations: string[];
 }
@@ -77,7 +74,6 @@ export function publicationPlan(head: string): Publication {
     ownComments: [],
     deployments: [],
     reports: [],
-    acceptances: [],
     operations: {},
     observedAt: null,
     observationError: null,
@@ -89,16 +85,10 @@ export function publicationPlan(head: string): Publication {
   };
 }
 
-// Este intérprete no tiene herramientas ni efectos. Solo las instrucciones
-// afirmativas y completas de la gramática mostrada pueden proponer la aceptación;
-// la autorización se decide después.
-export function interpretComment(
-  body: string,
-):
-  | { kind: "accept"; head: string; preview: string }
-  | { kind: "clarify" }
-  | { kind: "invalidate" }
-  | { kind: "query" } {
+// Los comentarios pueden bloquear la revisión, pero solo el merge humano acepta el resultado.
+export function interpretComment(body: string): {
+  kind: "invalidate" | "query";
+} {
   const text = body.trim();
   if (
     new RegExp(
@@ -108,31 +98,6 @@ export function interpretComment(
     ).test(text)
   ) {
     return { kind: "invalidate" };
-  }
-  const accepted =
-    text.match(
-      new RegExp(
-        "^Acepto la versi[oó]n ([a-f0-9]{40}) y su preview " +
-          "(https:\\/\\/[^\\s]+?)\\.?$",
-        "i",
-      ),
-    ) ??
-    text.match(
-      new RegExp(
-        "^I accept version ([a-f0-9]{40}) and its preview " +
-          "(https:\\/\\/[^\\s]+?)\\.?$",
-        "i",
-      ),
-    );
-  if (accepted) {
-    return {
-      kind: "accept",
-      head: accepted[1].toLowerCase(),
-      preview: accepted[2],
-    };
-  }
-  if (/^(?:acepto|apruebo|i accept)\b/i.test(text) && !/[?¿]/.test(text)) {
-    return { kind: "clarify" };
   }
   return { kind: "query" };
 }

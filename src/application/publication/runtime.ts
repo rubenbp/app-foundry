@@ -6,7 +6,7 @@ import type {
   PublicationFacts,
   PublicationPort,
 } from "./ports.ts";
-import { canMerge } from "./reviewPolicy.ts";
+import { readyToMerge } from "./reviewPolicy.ts";
 
 class StatusSkippedAfterMerge extends Error {}
 
@@ -100,7 +100,7 @@ export class PublicationRuntime {
     // considerar que la PR cerrada o la vista previa retirada invalidan el candidato.
     if (
       facts.pull?.merged &&
-      !run.publication!.integratedAcceptance &&
+      !run.publication!.acceptance &&
       !run.publication!.recoveryRequired
     ) {
       throw new ObservedMerge(facts);
@@ -122,9 +122,9 @@ export class PublicationRuntime {
           if (facts.pull?.merged) {
             throw new StatusSkippedAfterMerge();
           }
-          if (state === "success" && !(await canMerge(run, facts, this.port))) {
+          if (state === "success" && !readyToMerge(run, facts)) {
             throw new Error(
-              "Candidate changed before favorable merge status; acceptance revoked",
+              "Candidate changed before favorable merge status; readiness revoked",
             );
           }
           const status = facts.status;

@@ -435,7 +435,7 @@ export class GitHubPublication implements PublicationPort {
     return this.pull(
       await this.api(`repos/${context.repository}/pulls`, {
         title: `Factory: candidate for issue #${context.issue}`,
-        body: `Issue: https://github.com/${context.repository}/issues/${context.issue}\nEjecución: ${context.runId}\n\nLa Factory publicará el informe cuando la preview del Commit candidato esté verificada. El merge y la publicación requieren aceptación humana de esa versión.`,
+        body: `Issue: https://github.com/${context.repository}/issues/${context.issue}\nEjecución: ${context.runId}\n\nLa Factory publicará el informe cuando la preview del Commit candidato esté verificada. Revisa la preview y haz merge de esta PR para aceptar los cambios.`,
         head: context.workspace.branch,
         base: context.project.baseBranch,
       }),
@@ -467,8 +467,8 @@ export class GitHubPublication implements PublicationPort {
       context: mergeContext,
       description:
         state === "success"
-          ? "SHA y preview aceptados; merge humano pendiente"
-          : "Aceptación vigente y evidencia completa requeridas",
+          ? "Verificaciones y preview listas; revisión y merge humanos pendientes"
+          : "Verificaciones, preview e informe vigentes requeridos",
       target_url:
         context.pull?.url ??
         `https://github.com/${context.repository}/issues/${context.issue}`,

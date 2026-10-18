@@ -16,10 +16,7 @@ export function IntegrationDetails({ run }: { run: Run }) {
         </div>
         <div>
           <dt>Candidato aceptado</dt>
-          <dd>
-            {publication.integratedAcceptance?.head ??
-              "Sin aceptación acreditada"}
-          </dd>
+          <dd>{publication.acceptance?.head ?? "Sin aceptación acreditada"}</dd>
         </div>
         <div>
           <dt>Commit integrado</dt>

@@ -1,7 +1,6 @@
 import type { Factory } from "./factory.ts";
 import type { PublicationPort } from "./publication/ports.ts";
 import {
-  fenced,
   interpretComment,
   publicationPlan,
   validPreview,
@@ -12,7 +11,7 @@ import {
   isOwn,
   isInterventionResponse,
   reportIntact,
-  canMerge,
+  readyToMerge,
 } from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
 import { IntegratedPublication } from "./publication/integration.ts";
@@ -63,7 +62,6 @@ export class CandidatePublication {
     ) {
       publication.previousHead = publication.head;
       publication.head = run.verification.headSha;
-      delete publication.acceptance;
       delete publication.report;
       delete publication.preview;
     }
@@ -134,7 +132,6 @@ export class CandidatePublication {
         changedHead !== publication.head &&
         changedHead !== publication.previousHead
       ) {
-        delete publication.acceptance;
         delete publication.report;
         delete publication.preview;
         publication.head = changedHead;
@@ -160,13 +157,12 @@ export class CandidatePublication {
         this.runtime.factory.record(
           run,
           "candidate-invalidated",
-          `New head ${changedHead}; checks, preview, report and acceptance required again`,
+          `New head ${changedHead}; checks, preview and review report required again`,
         );
         this.runtime.save(run);
         return;
       }
       if (publication.blocked) {
-        delete publication.acceptance;
         this.runtime.save(run);
         await this.runtime.setStatus(run, "failure");
         throw new Error(publication.blocked);
@@ -200,7 +196,7 @@ export class CandidatePublication {
         () => this.runtime.port.openPull(this.runtime.context(run)),
       );
       this.runtime.save(run);
-      if (!publication.acceptance) {
+      if (!publication.report) {
         await this.runtime.setStatus(run, "pending");
       }
       facts = await this.runtime.facts(run);
@@ -219,7 +215,6 @@ export class CandidatePublication {
       );
       if (!previewValid) {
         await this.runtime.setStatus(run, "pending");
-        delete publication.acceptance;
         delete publication.report;
         run.status = "awaiting_preview";
         if (
@@ -240,7 +235,6 @@ export class CandidatePublication {
       ) {
         await this.runtime.setStatus(run, "pending");
         delete publication.report;
-        delete publication.acceptance;
       }
       if (!publication.report) {
         await this.report.publish(run);
@@ -254,7 +248,8 @@ export class CandidatePublication {
         if (publication.consumed.some((entry) => entry.id === comment.id)) {
           continue;
         }
-        let reason = "Consulta sin aceptación";
+        let reason =
+          "Comentario informativo; la aceptación se realiza mediante merge";
         const own = isOwn(run, comment);
         if (isInterventionResponse(run, comment)) {
           reason = "Aclaración ya entregada a la conversación del agente";
@@ -269,46 +264,9 @@ export class CandidatePublication {
               comment.author,
             ))
           ) {
-            delete publication.acceptance;
             publication.blocked =
               "Corrección o cancelación recibida; control revocado. Se requiere intervención.";
             reason = publication.blocked;
-          } else if (intent.kind === "accept") {
-            const report = publication.report!;
-            if (comment.createdAt <= report.at) {
-              reason = "Aceptación anterior al informe";
-            } else if (comment.updatedAt !== comment.createdAt) {
-              reason = "Comentario editado; publica una instrucción nueva";
-            } else if (
-              intent.head !== publication.head ||
-              intent.preview !== report.preview
-            ) {
-              reason = "Aceptación de una versión o preview obsoleta";
-            } else if (
-              !(await this.runtime.port.canWrite(
-                context.repository,
-                comment.author,
-              ))
-            ) {
-              reason = "Permiso de escritura no acreditado";
-            } else {
-              publication.acceptance = {
-                commentId: comment.id,
-                author: comment.author,
-                at: comment.createdAt,
-                head: intent.head,
-                preview: intent.preview,
-              };
-              publication.acceptances.push(publication.acceptance);
-              reason = "Aceptación del resultado acreditada";
-            }
-          } else if (intent.kind === "clarify") {
-            reason = "Referencia ambigua; se requiere SHA y preview explícitos";
-            await this.runtime.comment(
-              run,
-              `clarify:${comment.id}`,
-              `La referencia no identifica un Commit candidato aceptado. Para confirmar la versión vigente, publica un comentario nuevo:\n\n${fenced(`Acepto la versión ${publication.head} y su preview ${publication.report!.preview}.`)}`,
-            );
           }
         }
         publication.consumed.push({ id: comment.id, reason });
@@ -319,21 +277,18 @@ export class CandidatePublication {
         );
         this.runtime.save(run);
       }
-      // Vuelve a leer los datos mutables y los permisos justo antes de publicar el éxito.
+      // Vuelve a leer los datos mutables justo antes de publicar el éxito.
       const final = await this.runtime.facts(run);
-      const valid = await canMerge(run, final, this.runtime.port);
+      const valid = readyToMerge(run, final);
       await this.runtime.setStatus(
         run,
         valid ? "success" : publication.blocked ? "failure" : "pending",
       );
-      if (!valid) {
-        delete publication.acceptance;
-      }
       run.status = publication.blocked
         ? "intervention"
         : valid
-          ? "awaiting_merge"
-          : "awaiting_review";
+          ? "awaiting_review"
+          : "awaiting_preview";
       run.error = publication.blocked ?? null;
       this.runtime.save(run);
     } catch (error) {
@@ -348,7 +303,9 @@ export class CandidatePublication {
       }
       this.runtime.factory.assertWritable();
       this.runtime.factory.assertRunning(run.id);
-      const accepted = Boolean(publication.acceptance);
+      const wasReady = Boolean(
+        publication.operations[`status:${publication.head}:success`],
+      );
       publication.observationError = this.runtime.factory.clean(
         String(failure),
       ).text;
@@ -356,7 +313,7 @@ export class CandidatePublication {
       run.status = "intervention";
       this.runtime.factory.record(run, "publication-error", run.error);
       this.runtime.save(run);
-      if (accepted) {
+      if (wasReady) {
         try {
           await this.runtime.setStatus(run, "error");
         } catch (revocationError) {
@@ -377,7 +334,6 @@ export class CandidatePublication {
           this.runtime.save(run);
         }
       }
-      delete publication.acceptance;
 
       this.runtime.save(run);
     }
@@ -404,7 +360,6 @@ export class CandidatePublication {
     if (!run.publication) {
       return;
     }
-    delete run.publication.acceptance;
     delete run.publication.report;
     delete run.publication.preview;
     delete run.publication.blocked;
@@ -440,9 +395,8 @@ export class CandidatePublication {
       if (!run?.publication) {
         return;
       }
-      delete run.publication.acceptance;
       run.publication.blocked =
-        "Detención local solicitada; aceptación revocada.";
+        "Detención local solicitada; control de merge revocado.";
       run.status = "intervention";
       run.error = run.publication.blocked;
       this.runtime.save(run);

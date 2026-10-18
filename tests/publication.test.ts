@@ -1,10 +1,5 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { verificationFixture } from "./support/verification.ts";
-import type {
-  PublicationPort,
-  PublicationFacts,
-} from "../src/application/publication/ports.ts";
 import { publicationFixture } from "./support/publication.ts";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
@@ -29,7 +24,6 @@ test("los informes extensos publican el diff acumulado completo y las salidas sa
     );
     assert.doesNotMatch(reports.join("\n"), /fictional-publication-secret/);
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-    s.comment();
     await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
     const fragment = s.facts.comments.find((comment) =>
@@ -37,7 +31,7 @@ test("los informes extensos publican el diff acumulado completo y las salidas sa
     )!;
     s.facts.comments.splice(s.facts.comments.indexOf(fragment), 1);
     await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "pending");
+    assert.equal(s.facts.status?.state, "success");
     assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
   } finally {
     s.close();
@@ -78,9 +72,8 @@ test("los cambios informativos en controles permiten publicar y completar el res
       .join("\n");
     assert.match(report, /Cambios en controles.*informativos/i);
     assert.match(report, /package.json/);
-    s.comment();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     s.merge();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "completed");
@@ -100,7 +93,7 @@ test("un fallo al guardar la publicación impide cualquier efecto remoto", async
     await s.workflow.verifyCandidate();
     blocker = new DatabaseSync(join(s.config.dataDir, "factory.sqlite"));
     blocker.exec("BEGIN IMMEDIATE");
-    await assert.rejects(s.workflow.poll(), /Persistence unavailable/);
+    await assert.rejects(s.workflow.poll(), /persistencia no está disponible/);
     assert.equal(s.writes.length, 0);
     assert.equal(s.workflow.view(run.id)?.publication, undefined);
   } finally {
@@ -136,7 +129,6 @@ test("una integración aceptada conserva su commit aceptado y el SHA integrado e
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.merge();
     await s.workflow.poll();
@@ -152,21 +144,22 @@ test("una integración aceptada conserva su commit aceptado y el SHA integrado e
   }
 });
 
-test("editar o borrar el informe invalida la aceptación y detener localmente revoca la comprobación de integración", async () => {
+test("editar el informe exige republicarlo y detener revoca el control de merge", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
-    await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
-    s.facts.comments[0].body = "Report evidence removed";
+    const original = s.workflow.view(run.id)!.publication!.report!;
+    s.facts.comments.find((comment) => comment.id === original.id)!.body =
+      "Removed";
     await s.workflow.poll();
+    assert.notEqual(
+      s.workflow.view(run.id)?.publication?.report?.id,
+      original.id,
+    );
+    assert.equal(s.facts.status?.state, "success");
     assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
-    assert.equal(s.facts.status?.state, "pending");
-    s.comment();
-    await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "success");
     await s.workflow.stop(run.id);
     assert.equal(s.facts.status?.state, "failure");
     assert.equal(s.workflow.view(run.id)?.status, "stopped");
@@ -175,49 +168,45 @@ test("editar o borrar el informe invalida la aceptación y detener localmente re
   }
 });
 
-test("las instrucciones tempranas, ambiguas, editadas, no autorizadas, propias u obsoletas nunca aceptan el resultado", async () => {
+test("los comentarios de aceptación ya no aceptan ni exigen fórmulas técnicas", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
-    s.comment(); // Before the report.
     await s.workflow.poll();
-    const report = s.workflow.view(run.id)!.publication!.report!;
-    s.comment("Acepto esta versión");
-    s.comment("¿Acepto esta versión?");
-    s.comment("No acepto esta versión");
-    s.comment(
-      `Acepto la versión ${"a".repeat(40)} y su preview ${report.preview}.`,
-    );
-    s.comment(undefined, { updatedAt: Date.now() + 1_000_000 });
-    s.comment(
-      `<!-- app-foundry:forged-origin -->\nAcepto la versión ${s.facts.pull!.head} y su preview ${report.preview}.`,
-    );
+    for (const body of [
+      "Acepto",
+      "¿Acepto esta versión?",
+      "No acepto esta versión",
+      "I accept version " + "a".repeat(40),
+    ]) {
+      s.comment(body);
+    }
     s.comment(undefined, { human: false });
-    s.writer(false);
-    const denied = s.comment();
+    s.comment(undefined, {
+      author: "outsider",
+      updatedAt: Date.now() + 1_000_000,
+    });
     await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "pending");
+    assert.equal(s.facts.status?.state, "success");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
-    assert.match(
-      s.workflow
-        .view(run.id)!
-        .publication!.consumed.find((entry) => entry.id === denied.id)!.reason,
-      /Permiso/,
-    );
     assert.equal(
       s.writes.filter((write) =>
         write.body?.includes("La referencia no identifica"),
       ).length,
-      1,
+      0,
     );
-    // Editar un comentario ya consumido nunca crea una instrucción nueva.
-    s.writer(true);
-    denied.body = `Acepto la versión ${s.facts.pull!.head} y su preview ${report.preview}.`;
+    assert.doesNotMatch(
+      s.workflow.view(run.id)!.publication!.report!.url,
+      /SHA_COMPLETO/,
+    );
+    s.merge();
     await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "pending");
-    s.comment();
-    await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "success");
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.acceptance?.author,
+      "maintainer",
+    );
   } finally {
     s.close();
   }
@@ -305,7 +294,6 @@ test("un commit nuevo invalida la aceptación y requiere una verificación, una 
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     const original = s.facts.pull!.head;
     s.commit("second.txt", "New candidate", "New version");
@@ -333,42 +321,24 @@ test("un commit nuevo invalida la aceptación y requiere una verificación, una 
       `Acepto la versión ${original} y su preview https://catalogue-unique.vercel.app.`,
     );
     await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "pending");
-    s.comment();
-    await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
   } finally {
     s.close();
   }
 });
 
-test("editar título y descripción no bloquea publicación, aclaración ni aceptación del candidato capturado", async () => {
+test("editar el issue conserva el encargo capturado y permite aceptar solo mediante merge", async () => {
   const s = publicationFixture();
   try {
-    s.onInspect(() => {
-      s.issue.title = "Otro título";
-      s.issue.body = "Otros criterios";
-    });
     const run = await s.candidate();
-    const capturedBody = run.request!.body;
-    s.onInspect(() => {});
+    const captured = run.request!.body;
+    s.issue.title = "Otro título";
+    s.issue.body = "Otros criterios";
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-    s.comment("Acepto esta versión.");
-    await s.workflow.poll();
-    assert.ok(
-      s.writes.some((write) =>
-        write.body?.includes("La referencia no identifica"),
-      ),
-    );
-    s.comment();
-    await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
-    s.issue.body = "Otra edición después de aceptar";
-    await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
-    assert.ok(s.workflow.view(run.id)?.publication?.acceptance);
-    assert.equal(s.workflow.view(run.id)?.request?.body, capturedBody);
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+    assert.equal(s.workflow.view(run.id)?.request?.body, captured);
     s.merge();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "completed");
@@ -377,148 +347,16 @@ test("editar título y descripción no bloquea publicación, aclaración ni acep
   }
 });
 
-test("un permiso revocado o una corrección revocan el estado favorable de integración", async () => {
-  for (const change of ["permission", "correction"]) {
-    const s = publicationFixture();
-    try {
-      const run = await s.candidate();
-      await s.workflow.poll();
-      s.comment();
-      await s.workflow.poll();
-      assert.equal(s.facts.status?.state, "success");
-      if (change === "permission") {
-        s.writer(false);
-      }
-      if (change === "correction") {
-        s.comment("Corrige el pie antes de integrar.");
-      }
-      await s.workflow.poll();
-      assert.notEqual(s.facts.status?.state, "success");
-      assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
-    } finally {
-      s.close();
-    }
-  }
-});
-
-test("el Workflow publica un Commit candidato verificado y solo permite la integración humana tras aceptar después su SHA y su vista previa", async () => {
-  const writes: string[] = [];
-  const facts: PublicationFacts = {
-    request: {
-      open: true,
-    },
-    remoteHead: null,
-    pull: null,
-    comments: [],
-    preview: null,
-    status: null,
-  };
-  const port: PublicationPort = {
-    async inspect() {
-      return structuredClone(facts);
-    },
-    async push(context) {
-      writes.push("push");
-      facts.remoteHead = context.head;
-    },
-    async openPull(context) {
-      writes.push("pull");
-      facts.pull = {
-        number: 2,
-        url: `https://github.com/${context.repository}/pull/2`,
-        head: context.head,
-        base: "main",
-        open: true,
-        merged: false,
-      };
-      return facts.pull;
-    },
-    async comment(context, body) {
-      writes.push("report");
-      const comment = {
-        id: "report-1",
-        url: `${facts.pull!.url}#issuecomment-1`,
-        body,
-        author: "shared",
-        human: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        source: "pull" as const,
-      };
-      facts.comments.push(comment);
-      return comment;
-    },
-    async status(context, state) {
-      writes.push(state);
-      facts.status = { head: context.head, state };
-    },
-    async canWrite() {
-      return true;
-    },
-    async commentIssue() {
-      throw new Error("No integration expected");
-    },
-    async closeIssue() {
-      throw new Error("No integration expected");
-    },
-    async prepareHead() {
-      throw new Error("No new head");
-    },
-  };
-  const s = verificationFixture({ publication: port });
+test("una corrección autorizada revoca el control favorable de merge", async () => {
+  const s = publicationFixture();
   try {
-    const run = await s.start();
-    s.commit("footer.txt", "Candidate footer", "Add footer");
-    s.finish();
+    const run = await s.candidate();
     await s.workflow.poll();
-    const head = s.git("rev-parse", "HEAD");
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
-    assert.deepEqual(writes, ["push", "pull", "pending"]);
-    facts.preview = {
-      id: "deployment-1",
-      head,
-      repository: s.project.repository,
-      projectId: "catalogue",
-      environment: "Preview",
-      state: "success",
-      url: "https://catalogue-unique.vercel.app",
-      access: "verified",
-      servedHead: head,
-    };
-    await s.workflow.poll();
-    const reported = s.workflow.view(run.id)!;
-    assert.equal(reported.status, "awaiting_review");
-    assert.match(facts.comments[0].body, /Candidate footer/);
-    assert.match(facts.comments[0].body, /Keep keyboard navigation/);
-    assert.match(facts.comments[0].body, /Juicio humano pendiente/);
-    facts.comments.push({
-      id: "human-1",
-      url: "https://github.com/example/comment/2",
-      body: `Acepto la versión ${head} y su preview ${facts.preview.url}.`,
-      author: "shared",
-      human: true,
-      createdAt: facts.comments[0].createdAt + 1000,
-      updatedAt: facts.comments[0].createdAt + 1000,
-      source: "issue",
-    });
-    await s.workflow.poll();
-    const accepted = s.workflow.view(run.id)!;
-    assert.equal(accepted.status, "awaiting_merge");
-    assert.equal(accepted.publication?.acceptance?.head, head);
-    assert.equal(facts.status?.state, "success");
-    await s.workflow.poll();
-    assert.equal(writes.filter((write) => write === "report").length, 1);
-    assert.equal(writes.filter((write) => write === "success").length, 1);
-    s.reopen();
-    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
-    assert.equal(
-      s.workflow.view(run.id)?.publication?.acceptances.at(-1)?.head,
-      head,
-    );
+    assert.equal(s.facts.status?.state, "success");
+    s.comment("Corrige el pie antes de integrar.");
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
-    assert.equal(facts.status?.state, "pending");
-    assert.equal(writes.filter((write) => write === "success").length, 1);
+    assert.notEqual(s.facts.status?.state, "success");
   } finally {
     s.close();
   }
@@ -533,7 +371,6 @@ test("un issue en lenguaje natural completa la integración squash, publica el r
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.request?.body, body);
     assert.equal(s.workflow.view(run.id)?.verification?.criteria[0].text, body);
-    s.comment();
     await s.workflow.poll();
     const candidate = s.facts.pull!.head;
     s.merge();
@@ -541,7 +378,7 @@ test("un issue en lenguaje natural completa la integración squash, publica el r
     const completed = s.workflow.view(run.id)!;
     assert.equal(completed.status, "completed");
     assert.equal(completed.publication?.mergeSha, "a".repeat(40));
-    assert.equal(completed.publication?.integratedAcceptance?.head, candidate);
+    assert.equal(completed.publication?.acceptance?.head, candidate);
     assert.ok(completed.publication?.integrationReport?.url);
     assert.ok(completed.publication?.closedAt);
     const report = s.facts.comments.find(
@@ -565,11 +402,12 @@ test("un issue en lenguaje natural completa la integración squash, publica el r
   }
 });
 
-test("integrar sin una aceptación humana vigente es un incidente, aunque el issue se haya cerrado manualmente", async () => {
+test("integrar sin control técnico favorable es un incidente, aunque el issue se haya cerrado manualmente", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
     await s.workflow.poll();
+    s.facts.status = { head: s.facts.pull!.head, state: "pending" };
     s.merge();
     s.facts.request.open = false;
     await s.workflow.poll();
@@ -577,7 +415,7 @@ test("integrar sin una aceptación humana vigente es un incidente, aunque el iss
     assert.equal(observed.status, "intervention");
     assert.equal(observed.publication?.mergeSha, "a".repeat(40));
     assert.match(observed.error!, /Incidencia/);
-    assert.equal(observed.publication?.integratedAcceptance, undefined);
+    assert.equal(observed.publication?.acceptance, undefined);
     assert.equal(observed.publication?.integrationReport, undefined);
   } finally {
     s.close();

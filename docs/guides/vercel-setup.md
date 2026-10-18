@@ -60,7 +60,7 @@ En GitHub, configurar reglas de `main` que exijan una pull request y las comprob
 
 La persona responsable revisa la preview y los resultados del commit vigente antes del merge. Para una demostración con un solo usuario, concretar un mecanismo de aceptación y merge humano que funcione con esa identidad. Si el agente y la persona comparten credenciales con capacidad de merge, las reglas de rama por sí solas no prueban que haya intervenido una persona: el workflow debe preservar ese punto de decisión y su evidencia.
 
-El mecanismo exacto de aceptación se resolverá en el ticket del workflow. Cualquier cambio posterior del commit requiere revisar nuevamente lo que se va a publicar.
+La aceptación del resultado se expresa mediante el merge humano de la PR, después de revisar la preview. `Factory / ready-to-merge` acredita preparación técnica, no una aceptación por comentario. Cualquier cambio posterior del commit requiere revisar nuevamente lo que se va a publicar.
 
 ## Paso 6. Comprobar el acceso a previews
 
@@ -74,8 +74,8 @@ Si después se ejecutan pruebas automáticas sobre previews protegidas, resolver
 2. Publicar el commit y abrir una pull request hacia `main`.
 3. Esperar el despliegue de Preview. Comprobar el cambio y que el commit desplegado coincide con el de la pull request.
 4. Guardar URL, identificador del despliegue, SHA y captura. Confirmar que producción sigue mostrando la versión anterior.
-5. Revisar los checks y registrar la aceptación humana del cambio vigente.
-6. Mergear la pull request. Esta acción inicia la publicación acordada.
+5. Revisar los checks y la preview del cambio vigente.
+6. Mergear la pull request. Esta acción acepta el resultado e inicia la publicación acordada.
 7. Esperar el despliegue de Production y comprobar que el commit resultante del merge y el cambio visible corresponden a la versión publicada.
 8. Guardar la URL de producción y las evidencias. Un merge completado y un despliegue fallido son resultados diferentes: registrar ambos.
 

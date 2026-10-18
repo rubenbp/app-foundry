@@ -110,9 +110,7 @@ export function publicationFixture(
     },
   };
   port.commentIssue = async (context, body) => {
-    assert.ok(
-      s.workflow.view(context.runId)!.publication?.integratedAcceptance,
-    );
+    assert.ok(s.workflow.view(context.runId)!.publication?.acceptance);
     const comment = await port.comment(context, body);
     comment.source = "issue";
     comment.url = `https://github.com/${context.repository}/issues/${context.issue}#issuecomment-${comment.id}`;

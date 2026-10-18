@@ -42,8 +42,8 @@ La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: i
 - `publication/runtime.ts` registra intención y confirmación, reconcilia efectos remotos, observa merges concurrentes e impide efectos nuevos durante una parada.
 - `publication/evidence.ts` exige evidencia técnica completa del SHA vigente.
 - `publication/reviewReport.ts` construye y fragmenta el informe de revisión.
-- `publication/reviewPolicy.ts` comprueba integridad del informe, identidad del Commit candidato, aceptación y permisos efectivos.
-- `publication/integration.ts` reconstruye la aceptación vigente al integrar, publica el resumen de integración y confirma el cierre del issue.
+- `publication/reviewPolicy.ts` comprueba integridad del informe, identidad del Commit candidato, preview e instrucciones pendientes.
+- `publication/integration.ts` registra la aceptación mediante merge humano, publica el resumen de integración y confirma el cierre del issue.
 
 Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comandos y el acceso autenticado a Vercel. Las credenciales y respuestas nativas permanecen en infraestructura.
 
@@ -55,7 +55,7 @@ Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comand
 
 `tests/architecture.test.ts` recorre los imports TypeScript, incluidos los imports de tipos. Impide dependencias inversas entre capas, adquisición directa de efectos en dominio/aplicación e imports de adaptadores del backend desde el navegador. Se ejecuta con `npm run test:unit`.
 
-Las pruebas de comportamiento siguen cubriendo persistencia fallida, reinicio sin reenvío, propiedad exclusiva, cancelación de procesos, candidatos alterados, evidencia incompleta, aceptación por SHA y preview, merges concurrentes y cierre condicionado al merge autorizado y al resumen publicado. Los registros anteriores que esperaban producción se leen como cierre pendiente; el reinicio conserva la intervención y la evidencia histórica. El MVP no consulta producción después del merge.
+Las pruebas de comportamiento siguen cubriendo persistencia fallida, reinicio sin reenvío, propiedad exclusiva, cancelación de procesos, candidatos alterados, evidencia incompleta, aceptación mediante merge de la versión preparada, merges concurrentes y cierre condicionado al merge autorizado y al resumen publicado. Los registros anteriores que esperaban producción se leen como cierre pendiente; el reinicio conserva la intervención y la evidencia histórica. El MVP no consulta producción después del merge.
 
 ## Continuación de la conversación del agente
 
@@ -73,6 +73,6 @@ La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Fa
 
 `domain/recovery.ts` reconoce únicamente las órdenes completas `Reintentar`, `Corregir: instrucciones` y `Cancelar`, y determina las acciones disponibles según el estado y la integración. `application/issueRecovery.ts` publica el aviso de intervención, consume comentarios humanos del issue sin comprobar permisos y delega la operación en el workflow. Los IDs consumidos quedan persistidos y se excluyen de la revisión posterior de la PR. No hay cola de notificaciones ni protocolo adicional para recuperar comunicaciones con GitHub.
 
-El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y aceptación vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview, informe y aceptación.
+El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y control favorable vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview, informe y aceptación.
 
 Cancelar reutiliza la parada operativa y cierra el issue con `state_reason: not_planned` solo después de confirmar la parada. La CLI `stop` conserva su contrato de parada local. Después del merge, la recuperación queda limitada al resumen y al cierre pendientes; no corrige código ni cancela lo integrado.

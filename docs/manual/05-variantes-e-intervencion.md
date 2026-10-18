@@ -13,7 +13,7 @@ flowchart TD
     I --> N["Publicar causa y acciones en el issue"]
     N -->|"Reintentar"| R["Repetir fase fallida<br/>Mantener Ejecución y reserva"]
     N -->|"Corregir: instrucciones<br/>Antes del merge"| A["Otro Intento en el mismo thread y rama<br/>Nueva verificación y aceptación"]
-    N -->|"Cancelar<br/>Antes del merge"| C["Revocar aceptación y detener procesos propios"]
+    N -->|"Cancelar<br/>Antes del merge"| C["Retirar control de merge y detener procesos propios"]
     C --> V{"¿Parada y limpieza confirmadas?"}
     V -->|"Sí"| F["stopped<br/>Cerrar issue como no implementado y liberar puesto"]
     V -->|"No"| I
@@ -28,7 +28,7 @@ La Factory publica un comentario por incidencia con la causa, la fase, el trabaj
 | Orden                     | Comportamiento                                                                                                                                                                                                                                                                                                    |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Reintentar`              | Repite la fase fallida dentro de la misma Ejecución. En preparación reutiliza el clon existente y repite las comprobaciones de base. En verificación repite el contrato completo. Si el fallo pertenece al agente y ya existe thread, abre otro Intento en ese thread. En publicación continúa el paso pendiente. |
-| `Corregir: instrucciones` | Durante intervención o revisión, antes del merge y con thread y workspace disponibles, abre otro Intento conservando conversación, rama y PR. Revoca aceptación y exige nueva verificación, preview, informe y aceptación.                                                                                        |
+| `Corregir: instrucciones` | Durante intervención o revisión, antes del merge y con thread y workspace disponibles, abre otro Intento conservando conversación, rama y PR. Retira el control de merge y exige nueva verificación, preview, informe y aceptación.                                                                               |
 | `Cancelar`                | Antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`). Si no confirma la parada, mantiene intervención, issue abierto y reserva. No elimina rama ni PR.                                                                                                                      |
 
 Cuando falla una verificación, el aviso identifica el Commit candidato, el comando afectado y su código de salida, o indica que ese código no está confirmado. Explica cómo abrir la salida completa en el Dashboard y si quedaron comandos posteriores sin ejecutar. Los procesos con parada o limpieza inciertas requieren inspección local antes de recuperar.
@@ -65,38 +65,37 @@ Si hay que arreglar credenciales o procesos locales, lo hace el operador antes d
 
 ## Variantes de PR, preview y revisión
 
-| Situación                                                              | Resultado y continuación                                                                                                                                            |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Deployment aún no observado, `pending` o `inactive`                    | Esperar; no declarar build fallida.                                                                                                                                 |
-| Preview protegida o con acceso sin acreditar                           | No habilitar aceptación efectiva ni merge; resolver el acceso conservando la protección.                                                                            |
-| Deployment declara `failure` o `error`                                 | Intervención. La observación posterior puede detectar nuevos hechos antes del merge; no hay reparación automática de código.                                        |
-| Error al consultar GitHub o Vercel                                     | Registrar falta de observación. Si había aceptación, intentar retirar el control favorable y mostrar si la revocación no se confirmó.                               |
-| Push, PR o comentario ocurrió, pero se perdió su confirmación          | Consultar si el efecto ya existe antes de repetirlo para evitar duplicados. Un reinicio impone además recuperación autorizada.                                      |
-| Cambia el SHA publicado                                                | Invalidar evidencia y aceptación anteriores; obtener el nuevo head y repetir verificación, preview e informe.                                                       |
-| Se edita o elimina informe o fragmento                                 | Retirar aceptación; volver a publicar informe vigente y exigir otra aceptación posterior.                                                                           |
-| Aceptación temprana, editada, ambigua, antigua o sin permiso           | No aceptar. Si es ambigua, pedir un comentario nuevo que identifique SHA y preview.                                                                                 |
-| Comentario propio, de bot o ya consumido                               | No genera una aceptación nueva. Una cuenta compartida no acredita separación técnica entre persona y Factory.                                                       |
-| Una persona hace una consulta                                          | No acepta ni inicia otro Intento.                                                                                                                                   |
-| Se retira el permiso de quien aceptó o se altera su comentario         | Revocar la aceptación vigente al observarlo; hace falta otra aceptación válida.                                                                                     |
-| Una persona comenta `Corregir: instrucciones` o `Cancelar` en el issue | Sin comprobar permisos: revocar aceptación y ejecutar la corrección o la cancelación solicitada. Cancelar requiere parada confirmada y cierra como no implementado. |
-| Cambia título o cuerpo de la petición                                  | No bloquea el avance, la aceptación ni el cierre. El encargo capturado no cambia y el issue no se readmite.                                                         |
-| Se cierra la PR sin merge                                              | Intervención; no completar ni asumir que se publicó.                                                                                                                |
-| Se retira `factory:ready` después de la admisión                       | El trabajo ya admitido no se cancela.                                                                                                                               |
+| Situación                                                              | Resultado y continuación                                                                                                                                                     |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deployment aún no observado, `pending` o `inactive`                    | Esperar; no declarar build fallida.                                                                                                                                          |
+| Preview protegida o con acceso sin acreditar                           | No habilitar merge; resolver el acceso conservando la protección.                                                                                                            |
+| Deployment declara `failure` o `error`                                 | Intervención. La observación posterior puede detectar nuevos hechos antes del merge; no hay reparación automática de código.                                                 |
+| Error al consultar GitHub o Vercel                                     | Registrar falta de observación. Si había control favorable, intentar retirar el control favorable y mostrar si la revocación no se confirmó.                                 |
+| Push, PR o comentario ocurrió, pero se perdió su confirmación          | Consultar si el efecto ya existe antes de repetirlo para evitar duplicados. Un reinicio impone además recuperación autorizada.                                               |
+| Cambia el SHA publicado                                                | Invalidar evidencia y preparación anteriores; obtener el nuevo head y repetir verificación, preview e informe.                                                               |
+| Se edita o elimina informe o fragmento                                 | Retirar aceptación; volver a publicar informe vigente y exigir otra aceptación posterior.                                                                                    |
+| Comentario que expresa aceptación                                      | Informativo; solo el merge humano de la PR acepta el resultado.                                                                                                              |
+| Comentario propio, de bot o ya consumido                               | No activa instrucciones nuevas. La cuenta compartida no demuestra separación técnica de identidades.                                                                         |
+| Una persona hace una consulta                                          | No acepta ni inicia otro Intento.                                                                                                                                            |
+| Una persona comenta `Corregir: instrucciones` o `Cancelar` en el issue | Sin comprobar permisos: retirar el control de merge y ejecutar la corrección o la cancelación solicitada. Cancelar requiere parada confirmada y cierra como no implementado. |
+| Cambia título o cuerpo de la petición                                  | No bloquea el avance, la aceptación ni el cierre. El encargo capturado no cambia y el issue no se readmite.                                                                  |
+| Se cierra la PR sin merge                                              | Intervención; no completar ni asumir que se publicó.                                                                                                                         |
+| Se retira `factory:ready` después de la admisión                       | El trabajo ya admitido no se cancela.                                                                                                                                        |
 
 Para encargar un cambio adicional, crea otro issue con `factory:ready`. Editar el issue admitido no reemplaza el encargo capturado. Los comentarios ordinarios se envían al agente únicamente cuando espera una respuesta a sus dudas. `Corregir: instrucciones` es una orden explícita que puede iniciar otro Intento durante intervención o revisión, incluso con PR y preview publicadas.
 
-Cerrar manualmente el issue antes del merge impide mantener una aceptación efectiva para integrar y puede dejar la publicación en intervención. No equivale a detener la Ejecución ni libera su puesto. El caso de cierre manual después del merge se trata a continuación.
+Cerrar manualmente el issue antes del merge impide mantener el control favorable de merge y puede dejar la publicación en intervención. No equivale a detener la Ejecución ni libera su puesto. El caso de cierre manual después del merge se trata a continuación.
 
 ## Variantes después de integrar
 
-| Situación                                                                                  | Resultado                                                                                                                              |
-| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Merge sin aceptación vigente, sin control favorable o por identidad sin permiso acreditado | Incidencia de integración; no acreditar el ciclo como correcto.                                                                        |
-| Squash con SHA diferente del Commit candidato                                              | Variante válida: conservar ambas versiones en el resumen de integración.                                                               |
-| Merge mientras la Factory estaba consultando o intentando revocar                          | Contrastar aceptación, informe y control históricos anteriores al merge. No asumir que el orden de observación local es el orden real. |
-| Error o incertidumbre operativa después del merge                                          | Conservar hechos y error. Conciliar el resumen y el cierre antes de repetir efectos.                                                   |
-| Issue cerrado manualmente                                                                  | Publicar el resumen y confirmar la integración autorizada; reconocer el cierre existente.                                              |
-| Fallo al publicar informe o cerrar issue                                                   | No marcar `completed` sin confirmar lo necesario. Conservar efectos para inspección, sin repetirlos a ciegas.                          |
+| Situación                                                                                 | Resultado                                                                                                                  |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Merge sin evidencia vigente, sin control favorable o por identidad sin permiso acreditado | Incidencia de integración; no acreditar el ciclo como correcto.                                                            |
+| Squash con SHA diferente del Commit candidato                                             | Variante válida: conservar ambas versiones en el resumen de integración.                                                   |
+| Merge mientras la Factory estaba consultando o intentando revocar                         | Contrastar informe y control históricos anteriores al merge. No asumir que el orden de observación local es el orden real. |
+| Error o incertidumbre operativa después del merge                                         | Conservar hechos y error. Conciliar el resumen y el cierre antes de repetir efectos.                                       |
+| Issue cerrado manualmente                                                                 | Publicar el resumen y confirmar la integración autorizada; reconocer el cierre existente.                                  |
+| Fallo al publicar informe o cerrar issue                                                  | No marcar `completed` sin confirmar lo necesario. Conservar efectos para inspección, sin repetirlos a ciegas.              |
 
 ## Parar no deshace lo ocurrido
 
@@ -106,7 +105,7 @@ La parada operativa se solicita desde la CLI, identificando la Ejecución:
 npm start -- stop --config factory.local.json --id ID_DE_EJECUCION
 ```
 
-La Factory intenta revocar la aceptación, interrumpir la sesión y detener el grupo de procesos propio. Durante verificación también espera el cierre del comando y comprueba la limpieza del servidor de pruebas.
+La Factory intenta retirar el control de merge, interrumpir la sesión y detener el grupo de procesos propio. Durante verificación también espera el cierre del comando y comprueba la limpieza del servidor de pruebas.
 
 Solo libera el puesto si confirma la parada necesaria. Si hay procesos o efectos inciertos, o la limpieza de la verificación requiere una terminación forzada, mantiene intervención y reserva. Un fallo de revocación remota puede impedir completar la parada normal de publicación; hay que inspeccionar el estado real.
 
@@ -122,7 +121,7 @@ flowchart TD
     S -->|"Esperaba una respuesta humana"| W["Conservar espera y thread<br/>Continuar al recibir un comentario nuevo"]
     S -->|"Otros trabajos iniciados"| I["Marcar intervención<br/>Mantener puesto y no reenviar tarea"]
     I --> P{"¿Había publicación iniciada?"}
-    P -->|"Sí"| O["Observar efectos remotos ya ocurridos<br/>Revocar aceptación activa y exigir recuperación"]
+    P -->|"Sí"| O["Observar efectos remotos ya ocurridos<br/>Retirar control de merge activa y exigir recuperación"]
     P -->|"No"| C["Inspeccionar procesos y efectos locales"]
     O --> H["Sin reanudar automáticamente<br/>Publicar aviso y esperar Reintentar"]
 ```
@@ -142,8 +141,7 @@ Si falla la persistencia, bloquea nuevos efectos propios. La persona debe inspec
 | `waiting`                             | Pregunta o permiso pendiente del agente.                                |
 | `awaiting_verification` / `verifying` | Resultado recibido, pendiente de comprobar o en comprobación.           |
 | `awaiting_preview`                    | Candidato verificado; publicación o preview todavía sin acreditar.      |
-| `awaiting_review`                     | Informe disponible; falta aceptación válida.                            |
-| `awaiting_merge`                      | Aceptación acreditada y control favorable; falta merge humano.          |
+| `awaiting_review`                     | Informe y preview disponibles; falta revisión y merge humano.           |
 | `closing_issue`                       | Merge autorizado observado; falta confirmar resumen y cierre.           |
 | `intervention`                        | Fallo, garantía ausente o efectos inciertos; revisar la causa concreta. |
 | `stopped` / `completed`               | Parada confirmada / recorrido completo acreditado.                      |

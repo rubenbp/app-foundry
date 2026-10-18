@@ -118,9 +118,8 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     const branch = run.workspace!.branch;
     const oldHead = s.facts.remoteHead;
     s.writer(false);
@@ -162,9 +161,8 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     s.writer(true);
-    s.comment();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     s.merge();
     await s.workflow.poll();
     assert.equal(
@@ -222,7 +220,6 @@ for (const command of ["Cancelar", "Corregir: Otro cambio"]) {
     try {
       const run = await s.candidate();
       await s.workflow.poll();
-      s.comment();
       await s.workflow.poll();
       s.merge();
       conversation.add(command);
@@ -309,13 +306,12 @@ test("Reintentar después del merge completa el cierre pendiente sin repetir el 
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.merge();
     s.uncertainEffect("integration-report");
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
-    assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
+    assert.ok(s.workflow.view(run.id)?.publication?.acceptance);
     conversation.add("Reintentar");
     await s.workflow.poll();
     assert.equal(

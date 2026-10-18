@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart TB
-    H["Persona responsable"] -->|"Autoriza, responde, recupera, acepta y hace merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
+    H["Persona responsable"] -->|"Autoriza, responde, recupera y acepta mediante merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
     F["Factory<br/>Coordina y conserva evidencias"] -->|"Lee peticiones y decisiones"| G
     F -->|"Publica dudas, rama, PR, informes y estado"| G
     F -->|"Encarga un Intento"| A["Agente de código<br/>OpenCode"]
@@ -22,7 +22,7 @@ La persona decide el objetivo y si el resultado es aceptable. El agente propone 
 
 El dashboard permite entender lo que ocurre, pero no autoriza peticiones, responde preguntas del agente ni acepta resultados.
 
-Las dudas del agente se responden en el issue. Cualquier persona puede aportar esa información sin permisos de escritura; la aceptación del resultado y el merge mantienen sus controles propios.
+Las dudas del agente se responden en el issue. Cualquier persona puede aportar esa información sin permisos de escritura; la aceptación mediante merge conserva sus controles de permisos.
 
 ## Los dos repositorios
 
@@ -40,7 +40,7 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 | **Issue autorizado**         | Issue admitido al observar `factory:ready`, con su contenido capturado como encargo inicial. Permite empezar, pero no acepta el resultado.                                  |
 | **Ejecución**                | Recorrido completo para atender esa petición, incluidas esperas, integración y cierre del issue.                                                                            |
 | **Intento**                  | Trabajo encargado al agente dentro de la Ejecución. Puede incluir varias rondas de aclaraciones en el mismo thread; no hay reintento automático.                            |
-| **Aceptación del resultado** | Decisión humana sobre un Commit candidato concreto y su preview. Autoriza su integración y publicación.                                                                     |
+| **Aceptación del resultado** | Decisión humana sobre un Commit candidato concreto, expresada mediante el merge de su PR tras revisar la preview.                                                           |
 | **Base**                     | Versión de partida del producto, identificada por su SHA.                                                                                                                   |
 | **Commit candidato**         | `HEAD` de la rama de trabajo que dejó el agente. La Factory verifica todos los cambios acumulados desde la base antes de presentarlo para aceptación.                       |
 | **SHA**                      | Identificador completo de una versión de Git. Permite saber exactamente qué se comprobó y aceptó.                                                                           |
@@ -64,9 +64,8 @@ flowchart TD
     T --> R["Publicar rama y PR"]
     R --> V["Esperar y comprobar preview de Vercel"]
     V --> E["Publicar informe y esperar revisión"]
-    E --> H["Persona acepta SHA y preview"]
-    H --> G["Factory habilita su control de merge"]
-    G --> M["Persona hace merge en GitHub"]
+    E --> G["Factory habilita su control de merge"]
+    G --> M["Persona revisa la preview y acepta mediante merge"]
     M --> C["Publicar resumen de integración y cerrar issue"]
     C --> F["Ejecución completada<br/>Liberar puesto y atender siguiente"]
     B -. "Fallo o incertidumbre" .-> X["Intervención"]

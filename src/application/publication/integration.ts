@@ -29,34 +29,16 @@ export class IntegratedPublication {
     if (publication.blocked) {
       throw new Error(publication.blocked);
     }
-    // Una escritura de estado remoto no puede ser atómica con una integración humana. Reconstruye
-    // la instantánea aceptada en el momento de integrar a partir del historial duradero y de la
-    // última barrera de GitHub en ese momento, aunque una revocación local posterior la haya borrado.
-    const accepted =
-      publication.integratedAcceptance ??
-      publication.acceptance ??
-      (run.status === "intervention"
-        ? undefined
-        : publication.acceptances
-            .toReversed()
-            .find(
-              (acceptance) =>
-                acceptance.head === pull.head &&
-                acceptance.at < (facts.mergeStatus?.at ?? 0),
-            ));
-    if (!publication.integratedAcceptance) {
+    // El merge acepta el resultado. El historial acredita qué informe y control estaban
+    // disponibles antes de integrar, aunque una observación posterior retire la preview.
+    if (!publication.acceptance) {
       const report = publication.reports
         .toReversed()
         .find(
           (report) =>
-            report.head === accepted?.head &&
-            report.preview === accepted.preview &&
-            report.at < accepted.at,
+            report.head === pull.head &&
+            report.at <= (facts.mergeStatus?.at ?? 0),
         );
-      const comment = facts.comments.find(
-        (comment) => comment.id === accepted?.commentId,
-      );
-      const intent = comment ? interpretComment(comment.body) : null;
       const invalidations = facts.comments.filter(
         (comment) =>
           !isOwn(run, comment) &&
@@ -76,58 +58,46 @@ export class IntegratedPublication {
         }
       }
       if (
-        !accepted ||
+        run.status === "intervention" ||
+        publication.recoveryRequired ||
         !pull.mergeSha ||
         !pull.mergedAt ||
         !pull.mergedBy ||
         pull.base !== run.request!.configuration.baseBranch ||
-        pull.head !== accepted.head ||
-        accepted.head !== publication.head ||
-        accepted.at >= pull.mergedAt ||
+        pull.head !== publication.head ||
         !report ||
         !reportIntact(run, facts, report) ||
-        !comment ||
-        isOwn(run, comment) ||
-        comment.author !== accepted.author ||
-        comment.createdAt !== accepted.at ||
-        comment.updatedAt !== comment.createdAt ||
-        intent?.kind !== "accept" ||
-        intent.head !== accepted.head ||
-        intent.preview !== accepted.preview ||
         conflicting ||
-        facts.mergeStatus?.head !== accepted.head ||
+        !publication.operations[`status:${publication.head}:success`] ||
+        facts.mergeStatus?.head !== publication.head ||
         facts.mergeStatus.state !== "success" ||
-        facts.mergeStatus.at <= accepted.at ||
         facts.mergeStatus.at > pull.mergedAt ||
-        !(await this.runtime.port.canWrite(
-          run.request!.repository,
-          accepted.author,
-        )) ||
         !(await this.runtime.port.canWrite(
           run.request!.repository,
           pull.mergedBy,
         ))
       ) {
         publication.blocked =
-          "Incidencia: merge externo fuera del contrato de aceptación humana vigente.";
+          "Incidencia: merge externo sin verificaciones, informe o autorización humana vigentes.";
         this.runtime.save(run);
         throw new Error(publication.blocked);
       }
       candidateEvidence(this.runtime.factory, run);
       publication.report = report;
-      publication.integratedAcceptance = accepted;
-      delete publication.acceptance;
+      publication.acceptance = {
+        author: pull.mergedBy,
+        at: pull.mergedAt,
+        head: pull.head,
+        preview: report.preview,
+      };
       this.runtime.factory.record(
         run,
         "merge-observed",
-        `Base ${run.workspace!.baseSha}; accepted candidate ${accepted.head}; integrated ${pull.mergeSha}; merged by ${pull.mergedBy}`,
+        `Base ${run.workspace!.baseSha}; accepted candidate ${pull.head}; integrated ${pull.mergeSha}; merged by ${pull.mergedBy}`,
       );
       this.runtime.save(run);
     }
-    if (
-      pull.head !== publication.integratedAcceptance!.head ||
-      !pull.mergeSha
-    ) {
+    if (pull.head !== publication.acceptance.head || !pull.mergeSha) {
       throw new Error("Integrated candidate changed; issue closure blocked");
     }
     run.status = "closing_issue";

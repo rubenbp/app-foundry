@@ -10,17 +10,15 @@ export function IssueDetails({ run }: { run: Run }) {
       ? "Completada"
       : run.publication?.mergeSha
         ? "Integración y cierre"
-        : run.status === "awaiting_merge"
-          ? "Merge humano"
-          : run.status === "queued"
-            ? "Cola"
-            : run.phase === "preparation"
-              ? "Preparación de la base"
-              : run.phase === "verification"
-                ? "Verificación"
-                : run.phase === "publication"
-                  ? "Preview y aceptación"
-                  : "Implementación";
+        : run.status === "queued"
+          ? "Cola"
+          : run.phase === "preparation"
+            ? "Preparación de la base"
+            : run.phase === "verification"
+              ? "Verificación"
+              : run.phase === "publication"
+                ? "Preview y aceptación"
+                : "Implementación";
 
   return (
     <>
@@ -33,7 +31,6 @@ export function IssueDetails({ run }: { run: Run }) {
             "Implementación",
             "Verificación",
             "Preview y aceptación",
-            "Merge humano",
             "Integración y cierre",
             "Completada",
           ].map((phase) => (

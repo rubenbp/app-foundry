@@ -263,18 +263,7 @@ for (const gate of [
       access = "good";
       await s.workflow.poll();
       assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-      const report = s.workflow.view(run.id)!.publication!.report!;
-      const id = 99;
-      comments.push({
-        id,
-        html_url: `https://github.com/${s.project.repository}/pull/2#issuecomment-${id}`,
-        body: `Acepto la versión ${remoteHead} y su preview ${report.preview}.`,
-        user: { login: "shared", type: "User" },
-        created_at: new Date((time += 1000)).toISOString(),
-        updated_at: new Date(time).toISOString(),
-      });
-      await s.workflow.poll();
-      assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
       assert.equal(statuses[0].state, "success");
       assert.equal(writes.filter((write) => write === "push").length, 1);
       if (gate !== "merge during preview") {

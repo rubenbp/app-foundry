@@ -6,13 +6,13 @@ El comportamiento implementado se describe en el [manual de negocio](manual/READ
 
 El agente puede mantener las pruebas existentes, actualizar dependencias, lockfiles, scripts y configuración del producto y ejecutar los comandos de desarrollo necesarios dentro del clon. Los cambios en archivos relacionados con la verificación se muestran como información para revisar, sin bloquear el contrato técnico ni la publicación. La configuración externa y las credenciales de la Factory siguen separadas. El MVP presupone operadores y repositorios de confianza y no ofrece aislamiento del sistema operativo.
 
-Se mantienen verificación independiente, revisión de la preview, aceptación explícita y merge humano. La recuperación utiliza los comandos existentes; no incorpora bucles automáticos de corrección ni reanudación general tras reinicios. Consulta [el contrato de verificación](manual/03-verificacion-y-aceptacion.md) y [la arquitectura](architecture.md#autonomía-local-del-managed-project).
+Se mantienen verificación independiente, revisión de la preview, aceptación mediante merge humano. La recuperación utiliza los comandos existentes; no incorpora bucles automáticos de corrección ni reanudación general tras reinicios. Consulta [el contrato de verificación](manual/03-verificacion-y-aceptacion.md) y [la arquitectura](architecture.md#autonomía-local-del-managed-project).
 
 ## Continuación del agente por el issue
 
 La Factory publica las dudas del agente en un comentario del issue. Puede reunir varias preguntas en una solicitud. Cualquier persona responde con un comentario nuevo, sin comandos ni comprobación de permisos para esa aclaración; la primera respuesta humana vuelve al mismo thread. El agente puede repetir el ciclo durante la implementación.
 
-La espera no caduca, conserva el puesto y sobrevive al reinicio de la Factory. Cuando el agente termina el código, continúan la verificación, la PR y la preview de Vercel. La aceptación del resultado y el merge conservan sus controles propios.
+La espera no caduca, conserva el puesto y sobrevive al reinicio de la Factory. Cuando el agente termina el código, continúan la verificación, la PR y la preview de Vercel. La aceptación mediante merge conserva sus controles de permisos.
 
 - [Flujo de preguntas y respuestas](manual/02-issue-y-trabajo.md#aclaraciones-por-comentarios).
 - [Distinción entre aclaración y aceptación de una PR](manual/03-verificacion-y-aceptacion.md#árbol-de-decisión-de-los-comentarios).

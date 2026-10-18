@@ -87,48 +87,18 @@ export function PublicationDetails({ run }: { run: Run }) {
         </p>
       )}
       <h3>Aceptación del resultado</h3>
-      {(publication.acceptance ?? publication.integratedAcceptance) ? (
-        <>
-          <p>
-            {publication.integratedAcceptance
-              ? "Aceptación integrada de "
-              : "Aceptación vigente de "}
-            {
-              (publication.acceptance ?? publication.integratedAcceptance)!
-                .author
-            }
-            .
-          </p>
-          <p>
-            SHA aceptado:{" "}
-            {(publication.acceptance ?? publication.integratedAcceptance)!.head}
-          </p>
-          <p>
-            Preview aceptada:{" "}
-            {
-              (publication.acceptance ?? publication.integratedAcceptance)!
-                .preview
-            }
-          </p>
-        </>
+      {publication.acceptance ? (
+        <p>Aceptado mediante merge por {publication.acceptance.author}.</p>
       ) : (
         <p>
-          Sin aceptación vigente. La persona debe revisar los criterios y
-          confirmar SHA y preview en un comentario nuevo.
+          Sin aceptación registrada. Para aceptar los cambios, revisa la preview
+          y haz merge de la PR en GitHub.
         </p>
       )}
-      {run.status === "awaiting_merge" ? (
+      {run.status === "awaiting_review" ? (
         <p className="notice" role="status">
-          Esperando merge humano en GitHub. La Factory ha emitido Factory /
-          ready-to-merge favorable.
-        </p>
-      ) : null}
-      {publication.report &&
-      !publication.acceptance &&
-      !publication.mergeSha ? (
-        <p>
-          Acción pendiente: revisa el informe y responde en GitHub con el
-          ejemplo de aceptación mostrado allí.
+          Esperando revisión y merge humano en GitHub. Factory / ready-to-merge
+          acredita las verificaciones y la preview.
         </p>
       ) : null}
       {publication.observationError ? (

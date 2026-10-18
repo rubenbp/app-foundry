@@ -32,9 +32,7 @@ export function recoveryActions(run: Run): RecoveryCommand["kind"][] {
   if (
     run.sessionId &&
     run.workspace &&
-    (run.status === "intervention" ||
-      run.status === "awaiting_review" ||
-      run.status === "awaiting_merge")
+    (run.status === "intervention" || run.status === "awaiting_review")
   ) {
     actions.push("correct");
   }

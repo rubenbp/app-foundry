@@ -195,17 +195,11 @@ Abre la PR desde el dashboard y lee el informe vigente. Abre su preview con tu s
 
 Publica un comentario nuevo en el issue o la conversación principal de la PR, copiando SHA completo y URL del informe:
 
-```text
-Acepto la versión SHA_COMPLETO y su preview URL_EXACTA_DEL_INFORME.
-```
-
-Puedes hacerlo desde la web de GitHub. No edites el comentario después, no uses solo «Approve» y no sustituyas el SHA por el número de PR.
-
-Espera `awaiting_merge` y `Factory / ready-to-merge: success`. Si cambia el Commit candidato, hay que revisar y aceptar el nuevo SHA.
+No publiques un comentario de aceptación. Espera `awaiting_review` y `Factory / ready-to-merge: success`: el control acredita las comprobaciones técnicas; la aceptación humana se expresa al hacer merge. Si cambia el candidato, revisa la nueva preview y el informe vigente.
 
 ## 9. Hacer merge y comprobar el cierre
 
-Haz el merge manualmente en GitHub cuando estén favorables los controles de Factory y Vercel. Mantén encendida la Factory.
+Para aceptar los cambios, haz el merge manualmente en GitHub cuando estén favorables los controles de Factory y Vercel. Mantén encendida la Factory.
 
 La Factory debe publicar el resumen de integración en el issue, confirmar su cierre y pasar a `completed`. Puede mostrar brevemente `closing_issue` mientras confirma esos efectos. El resumen conserva el Commit candidato aceptado y el commit integrado, que pueden diferir si usaste squash.
 
@@ -233,6 +227,5 @@ Para probar otro cambio crea otro issue con un resultado diferente, una vez comp
 | `waiting`                       | Si hay dudas publicadas por la Factory, responder con un comentario nuevo en el issue. La primera respuesta humana continúa el mismo thread. Los permisos técnicos mantienen sus restricciones.                                           |
 | Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                                                                                              |
 | Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                                                                                            |
-| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                                                                                                                            |
 | Cierre en intervención          | Resumen de integración vigente y permiso de comentar/cerrar. Comentar `Reintentar` permite continuar el resumen y el cierre pendientes; después del merge no se admite corregir ni cancelar.                                              |
 | Intervención tras reiniciar     | Si esperaba respuesta humana, responder en el issue para recuperar el mismo thread. En otros estados, leer el aviso, inspeccionar procesos y efectos y solicitar `Reintentar` cuando la causa esté corregida. No borrar datos o reservas. |

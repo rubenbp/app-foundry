@@ -60,7 +60,6 @@ export class Factory {
           "La Factory se reinició. El estado del trabajo o del proceso no está confirmado; no se reenvió la tarea. Comprueba el PID propio antes de recuperar.";
         if (run.publication) {
           run.publication.recoveryRequired = true;
-          delete run.publication.acceptance;
         }
         if (run.verification?.status === "running") {
           run.verification.effectsUncertain = run.verification.checks.some(

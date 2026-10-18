@@ -12,7 +12,6 @@ export type RunStatus =
   | "verifying"
   | "awaiting_preview"
   | "awaiting_review"
-  | "awaiting_merge"
   | "closing_issue"
   | "completed"
   | "intervention"

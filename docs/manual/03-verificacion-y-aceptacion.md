@@ -30,94 +30,51 @@ Las pruebas de navegador usan un servidor propio para el build del Commit candid
 
 ## Publicar PR y comprobar preview
 
+La Factory publica la rama y abre una PR que referencia el issue sin cerrarlo automáticamente. La integración Git de Vercel genera la preview. La Factory comprueba repositorio, proyecto, entorno, SHA desplegado y marcador de versión servido. Abrir un enlace no basta: debe corresponder al Commit candidato verificado.
+
+El acceso protegido se comprueba con las credenciales configuradas, conservando Deployment Protection. Un 401, 403 o redirección deja el acceso sin acreditar. `pending` e `inactive` significan espera; `failure` y `error` requieren intervención. Un error de consulta no demuestra que haya fallado la build.
+
 ```mermaid
 sequenceDiagram
     participant F as Factory
     participant G as GitHub
     participant V as Vercel
     actor H as Persona revisora
-    F->>G: Publicar rama y abrir PR del Commit candidato verificado
-    Note over F,G: La PR referencia el issue sin cierre automático
-    G->>V: La integración Git activa el deployment de preview
-    F->>G: Observar PR, SHA y deployment asociado
-    F->>V: Contrastar proyecto, entorno y versión servida
-    alt Preview acreditada para el Commit candidato
-        F->>G: Publicar informe de revisión y evidencias
-        G-->>H: Mostrar cambios, criterios, lagunas y preview
-        H->>V: Revisar la preview
-        H->>G: Publicar aceptación con SHA completo y URL
-        F->>G: Releer hechos, comentario y permisos
-        F->>G: Marcar Factory / ready-to-merge como success
-    else Preview pendiente o acceso sin acreditar
-        F->>F: Mantener espera sin habilitar merge
-    else Deployment fallido
-        F->>F: Registrar causa y exigir intervención
-    end
+    F->>G: Publicar rama y abrir PR
+    G->>V: Generar preview mediante integración Git
+    F->>V: Comprobar identidad, acceso y versión servida
+    F->>G: Publicar informe y evidencias
+    F->>G: Habilitar Factory / ready-to-merge
+    H->>V: Revisar comportamiento y criterios
+    H->>G: Aceptar mediante merge de la PR
+    F->>G: Observar merge, autor y control histórico
+    F->>G: Publicar resumen y cerrar issue
 ```
-
-La preview debe coincidir con el Commit candidato, el repositorio, el proyecto Vercel y el entorno configurado. Además, debe estar desplegada correctamente y servir el SHA de ese commit en su marcador. Un enlace que abre, pero apunta a otra versión o proyecto, no cumple.
-
-La Factory usa acceso autenticado a Vercel cuando corresponde y conserva Deployment Protection. Un 401, 403 o redirección deja el acceso sin acreditar. `pending` e `inactive` significan espera; `failure` y `error` del deployment exigen intervención. Un error al consultar el proveedor significa falta de observación, no prueba que la build haya fallado.
 
 ## Qué debe revisar una persona
 
-El informe de la PR reúne el Issue autorizado, la Ejecución, la base, el Commit candidato, el diff acumulado, las verificaciones, los cambios informativos en controles del producto, la evidencia por criterio, las lagunas y la preview. La persona revisora también debe valorar si las pruebas cambiadas siguen comprobando el comportamiento solicitado; pasar la suite no acredita por sí solo esa calidad. Si no cabe en un comentario, se divide en fragmentos enlazados; no se recorta el diff para aparentar evidencia completa.
+El informe de la PR reúne el Issue autorizado, la Ejecución, la base, el Commit candidato, el diff acumulado, las verificaciones, los cambios informativos en controles del producto, las evidencias por criterio, las lagunas y la preview. Si no cabe en un comentario, se divide en fragmentos enlazados sin truncar evidencia. La persona valora también si las pruebas modificadas siguen comprobando el comportamiento solicitado.
 
-La persona revisa el comportamiento en preview y decide si satisface los criterios. Para aceptar, publica un comentario nuevo en el issue o en la conversación principal de la PR, usando el ejemplo exacto del informe:
+Para aceptar los cambios, **revisa la preview y haz merge de la PR en GitHub** cuando estén favorables `Factory / ready-to-merge` y los demás controles requeridos. No hace falta escribir un comentario de aceptación, copiar un SHA ni usar una fórmula especial. El merge de una persona con permiso efectivo de escritura registra la Aceptación del resultado para ese Commit candidato.
 
-```text
-Acepto la versión SHA_COMPLETO y su preview URL_DE_LA_PREVIEW.
-```
-
-`SHA_COMPLETO` se sustituye por los 40 caracteres del Commit candidato. La URL debe coincidir con la del informe. Se puede usar también la frase equivalente en inglés que reconoce el sistema. Una review de GitHub con «Approve», un comentario inline o un mensaje genérico no sustituyen este comentario de aceptación.
+`Factory / ready-to-merge: success` acredita preparación técnica: verificaciones completas, preview válida e informe íntegro de la versión vigente. No acredita que la persona haya revisado el resultado. La Ejecución permanece en `awaiting_review` hasta el merge; no hay una espera de aceptación seguida de otra espera de merge.
 
 ## Árbol de decisión de los comentarios
 
-```mermaid
-flowchart TD
-    C["Comentario del issue o conversación principal de PR"] --> D{"¿Ya se entregó como respuesta<br/>a una duda del agente?"}
-    D -->|"Sí"| S["Conservar como aclaración<br/>No reinterpretar como revisión de PR"]
-    D -->|"No"| O{"¿Es propio de Factory, de bot<br/>o ya está consumido?"}
-    O -->|"Sí"| I["No produce una aceptación nueva"]
-    O -->|"No"| K{"¿Qué instrucción contiene?"}
-    K -->|"Consulta u otro texto"| Q["No aceptar ni iniciar otro Intento"]
-    K -->|"Aceptación ambigua"| L["Pedir comentario nuevo con SHA y preview"]
-    K -->|"Orden explícita en el issue:<br/>Reintentar, Corregir: instrucciones, Cancelar"| RC["Ejecutar acción disponible sin comprobar permisos<br/>Corregir y Cancelar solo antes del merge"]
-    K -->|"Revocación o fórmula anterior de bloqueo"| P{"¿Autor con escritura?"}
-    P -->|"No"| I
-    P -->|"Sí"| X["Revocar control y exigir intervención"]
-    K -->|"Aceptación explícita"| V{"¿Posterior al informe, sin editar,<br/>SHA y URL vigentes y autor con escritura?"}
-    V -->|"No"| N["No aceptar<br/>Registrar motivo"]
-    V -->|"Sí"| A["Registrar Aceptación del resultado"]
-    A --> R{"¿Petición, PR, preview, informe<br/>y permisos siguen válidos?"}
-    R -->|"No"| B["Mantener o revocar control favorable"]
-    R -->|"Sí"| M["Habilitar control de merge<br/>Esperar merge humano"]
-```
+Las aclaraciones ya entregadas al agente no se reinterpretan como instrucciones de revisión. Los comentarios propios o de bots se excluyen. Los demás comentarios ordinarios, incluidas fórmulas anteriores de aceptación, son informativos: solo el merge acepta el resultado.
 
-La interpretación reconoce fórmulas concretas; no interpreta cualquier frase libre como una orden. «¿Puedo aceptar?» es una consulta. «Acepto» exige aclaración. Para revocar puede usarse, por ejemplo, un comentario nuevo que empiece por `Revoco`. Las órdenes operativas se escriben completas en el issue: `Reintentar`, `Corregir: instrucciones` o `Cancelar`. Estas tres órdenes no comprueban permisos; la aceptación y el merge mantienen los suyos. Las fórmulas anteriores como «Corrige el pie» o «Cancela» conservan el bloqueo de revisión y no sustituyen las órdenes operativas.
+Para pedir cambios, publica `Corregir: instrucciones` en el **issue**. Abre otro Intento en la misma conversación y rama y exige nuevas verificaciones, preview e informe antes de otro merge. `Cancelar` detiene el trabajo antes de integrar. Estas órdenes operativas no comprueban permisos del autor. `Reintentar` recupera una fase fallida según el aviso de intervención.
 
-Las órdenes de recuperación consumidas y las respuestas ya entregadas al agente quedan identificadas por su ID y no se reinterpretan durante la revisión ni al comprobar el merge. Por ejemplo, «Corrige el título a Catálogo» puede resolver una duda durante la implementación sin bloquear después la PR. Del mismo modo, aceptar una propuesta del agente durante una aclaración no acepta el Commit candidato: hace falta un comentario posterior al informe con el SHA y la preview vigentes.
-
-Cada ID de comentario se consume una sola vez. Corregir un comentario editándolo no lo convierte en una aceptación válida; hay que publicar otro. La aceptación tampoco sirve si es anterior al informe, señala otra preview, usa una versión antigua o procede de una persona sin escritura acreditada.
+Las fórmulas anteriores de bloqueo, como «Corrige el pie», «Cancela» o «Revoco», siguen retirando el control favorable si proceden de una persona con escritura. No sustituyen las órdenes operativas completas. Cada ID se consume una vez. Editar un comentario procesado no lo convierte en una nueva orden.
 
 ## Si algo cambia antes de integrar
 
-```mermaid
-flowchart TD
-    A["Candidato publicado o aceptado"] --> C{"¿Qué cambia?"}
-    C -->|"Nuevo SHA en la rama o PR"| V["Invalidar comprobaciones, preview,<br/>informe y aceptación anteriores"]
-    V --> F["Obtener nuevo head en el mismo clon"]
-    F --> T["Verificar árbol del Commit candidato de nuevo"]
-    T --> R["Exigir nueva preview, informe y aceptación"]
-    C -->|"Preview deja de ser válida"| P["Retirar aceptación y esperar preview válida"]
-    C -->|"Informe o fragmento editado o eliminado"| I["Invalidar informe y aceptación<br/>Publicar informe vigente y pedir nueva aceptación"]
-    C -->|"Permiso retirado o aceptación alterada"| H["Revocar aceptación<br/>Requerir una aceptación válida"]
-    C -->|"PR se cierra sin merge"| X["Intervención y aviso en el issue"]
-    C -->|"Corregir: instrucciones en el issue"| O["Revocar aceptación; otro Intento<br/>Misma conversación, rama y PR"]
-    O --> T
-    C -->|"Cancelar en el issue"| Z["Confirmar parada y cerrar como no implementado"]
-```
+- Un nuevo SHA invalida las comprobaciones, la preview y el informe vigentes. La Factory obtiene ese head en el mismo clon, verifica de nuevo y publica la nueva entrega para revisión.
+- Una preview sin acreditar retira el control favorable y vuelve a `awaiting_preview`.
+- Un informe o fragmento editado o eliminado exige republicar evidencia íntegra antes de volver a habilitar merge.
+- Una corrección o cancelación retira el control favorable y sigue la recuperación correspondiente.
+- Una PR cerrada sin merge requiere intervención. Cerrar el issue tampoco acepta ni detiene el trabajo.
 
-Un nuevo SHA provoca reverificación automática del Commit candidato publicado; no crea otro Intento del agente. Editar el título o el cuerpo del issue no actualiza el encargo capturado ni invalida la aceptación. El issue ya consumido no vuelve a entrar por quitar y poner la etiqueta.
+Editar el título o cuerpo del issue no actualiza el encargo capturado. El issue admitido no vuelve a entrar al retirar y volver a poner la etiqueta de autorización.
 
-La Factory observa por consultas periódicas. La revocación no es instantánea y un fallo de red puede impedir confirmar su escritura en GitHub. El dashboard conserva esa incertidumbre. El control favorable debe combinarse con las protecciones de la rama y el merge humano.
+La Factory observa por consultas periódicas. La retirada del control no es instantánea y un fallo de red puede impedir confirmarla. El Dashboard conserva esa incertidumbre. Deben mantenerse las protecciones de rama y el merge humano. La Factory no acredita qué preview abrió realmente la persona; registra el autor, la fecha y la versión del merge.

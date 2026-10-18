@@ -148,9 +148,8 @@ test("varias rondas de dudas usan el mismo thread y terminan en código verifica
       ),
       false,
     );
-    s.comment();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "awaiting_merge");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     s.merge();
     await s.workflow.poll();
     assert.equal(
@@ -280,7 +279,7 @@ test("un fallo al entregar la respuesta mantiene el error sin reenviarla automá
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
     assert.match(
       s.workflow.view(run.id)?.error ?? "",
-      /continuation unconfirmed/,
+      /No se pudo confirmar la continuación/,
     );
     await s.workflow.poll();
     assert.equal(attempts, 1);

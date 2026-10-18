@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import type { Run } from "../../domain/run.ts";
-import { interpretComment, validPreview } from "../../domain/publication.ts";
+import { validPreview } from "../../domain/publication.ts";
 import type {
   ConversationComment,
   Publication,
 } from "../../domain/publication.ts";
-import type { PublicationFacts, PublicationPort } from "./ports.ts";
+import type { PublicationFacts } from "./ports.ts";
 
 export function isOwn(run: Run, comment: ConversationComment) {
   return (
@@ -45,26 +45,13 @@ export function reportIntact(
     ),
   );
 }
-export async function canMerge(
-  run: Run,
-  facts: PublicationFacts,
-  port: PublicationPort,
-) {
+export function readyToMerge(run: Run, facts: PublicationFacts) {
   const publication = run.publication!;
   const report = publication.report;
-  const acceptance = publication.acceptance;
-  if (!report || !acceptance || publication.blocked) {
+  if (!report || publication.blocked || publication.recoveryRequired) {
     return false;
   }
-  const context = {
-    repository: run.request!.repository,
-    project: run.request!.configuration,
-  };
-  const comment = facts.comments.find(
-    (comment) => comment.id === acceptance.commentId,
-  );
-  const intent = comment ? interpretComment(comment.body) : null;
-  const unchangedReport = reportIntact(run, facts);
+  const project = run.request!.configuration;
   const newInstructions = facts.comments.some(
     (comment) =>
       !isOwn(run, comment) &&
@@ -72,32 +59,22 @@ export async function canMerge(
   );
 
   return Boolean(
-    unchangedReport &&
+    report.head === publication.head &&
+    reportIntact(run, facts) &&
     !newInstructions &&
     facts.request.open &&
     facts.pull?.open &&
     !facts.pull.merged &&
+    facts.pull.base === project.baseBranch &&
     facts.pull.head === publication.head &&
     facts.remoteHead === publication.head &&
     validPreview(
       facts.preview,
       publication.head,
-      context.repository,
-      context.project.publication.projectId,
-      context.project.publication.previewEnvironment ?? "Preview",
+      run.request!.repository,
+      project.publication.projectId,
+      project.publication.previewEnvironment ?? "Preview",
     ) &&
-    facts.preview?.url === report.preview &&
-    acceptance.head === publication.head &&
-    acceptance.preview === report.preview &&
-    comment &&
-    !isOwn(run, comment) &&
-    comment.author === acceptance.author &&
-    comment.createdAt > report.at &&
-    comment.createdAt === acceptance.at &&
-    comment.updatedAt === comment.createdAt &&
-    intent?.kind === "accept" &&
-    intent.head === publication.head &&
-    intent.preview === report.preview &&
-    (await port.canWrite(context.repository, acceptance.author)),
+    facts.preview?.url === report.preview,
   );
 }

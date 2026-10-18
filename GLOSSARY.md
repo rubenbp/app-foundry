@@ -37,5 +37,5 @@ Commit `HEAD` que el agente deja en la rama de trabajo del Issue autorizado. La 
 _Avoid_: candidato
 
 **Aceptación del resultado**:
-Decisión humana que acepta el cambio de un Commit candidato concreto tras revisar sus evidencias y preview, y autoriza su integración y publicación. Si cambia el Commit candidato antes de integrar, se requiere una nueva aceptación.
+Decisión humana expresada al integrar la PR de un Commit candidato concreto tras revisar sus evidencias y preview. Las comprobaciones técnicas permiten presentar el resultado; el merge humano lo acepta.
 _Avoid_: Issue autorizado, pruebas superadas

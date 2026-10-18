@@ -20,7 +20,7 @@ test("el dashboard guía la revisión y la integración humana con enlaces a la 
     await expect(section).toContainText(s.facts.pull!.head);
     await expect(section).toContainText("deployment-1 · Preview · Correcto");
     await expect(section).toContainText("Autorizado y comprobado");
-    await expect(section).toContainText("Sin aceptación vigente");
+    await expect(section).toContainText("Sin aceptación registrada");
     const report = section.getByRole("link", {
       name: "Revisar informe y evidencia completa en GitHub",
     });
@@ -33,14 +33,13 @@ test("el dashboard guía la revisión y la integración humana con enlaces a la 
     await expect(
       section.getByRole("link", { name: "Abrir preview en Vercel" }),
     ).toHaveAttribute("href", s.facts.preview!.url!);
-    s.comment();
     await s.workflow.poll();
-    await expect(page.locator(".badge.awaiting_merge")).toHaveText(
-      "Esperando merge humano",
+    await expect(page.locator(".badge.awaiting_review")).toHaveText(
+      "Esperando revisión y merge humano",
     );
-    await expect(section).toContainText("Aceptación vigente de shared");
+    await expect(section).toContainText("Sin aceptación registrada");
     await expect(section.getByRole("status")).toContainText(
-      "Esperando merge humano en GitHub",
+      "Esperando revisión y merge humano en GitHub",
     );
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
@@ -71,7 +70,6 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y el 
   const s = publicationFixture();
   const run = await s.candidate();
   await s.workflow.poll();
-  s.comment();
   await s.workflow.poll();
   s.merge();
   await s.workflow.poll();

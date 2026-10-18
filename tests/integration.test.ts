@@ -9,7 +9,6 @@ test("una corrección no autorizada antes de integrar no puede invalidar una int
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.comment("Corrige el catálogo.", { author: "outsider" });
     s.merge();
@@ -26,7 +25,6 @@ for (const inspection of [2, 3, 4, 5, 6, 7]) {
     try {
       const run = await s.candidate();
       await s.workflow.poll();
-      s.comment();
       await s.workflow.poll();
       const before = s.inspections;
       const writes = s.writes.length;
@@ -41,7 +39,7 @@ for (const inspection of [2, 3, 4, 5, 6, 7]) {
         "completed",
         s.workflow.view(run.id)?.error ?? "",
       );
-      assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
+      assert.ok(s.workflow.view(run.id)?.publication?.acceptance);
       assert.equal(
         s.writes
           .slice(writes)
@@ -62,7 +60,6 @@ test("una PR abierta obsoleta con una vista previa retirada no puede borrar la a
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     const before = s.inspections;
     const writes = s.writes.length;
@@ -79,7 +76,7 @@ test("una PR abierta obsoleta con una vista previa retirada no puede borrar la a
       "completed",
       s.workflow.view(run.id)?.error ?? "",
     );
-    assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
+    assert.ok(s.workflow.view(run.id)?.publication?.acceptance);
     assert.equal(
       s.writes
         .slice(writes)
@@ -98,7 +95,6 @@ test("tras observar una integración, la recuperación omite cambios de estado s
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.merge();
     const before = s.workflow.view(run.id)!.publication!.operations;
@@ -107,7 +103,7 @@ test("tras observar una integración, la recuperación omite cambios de estado s
     await s.workflow.poll();
     const current = s.workflow.view(run.id)!;
     assert.equal(current.status, "intervention");
-    assert.equal(current.publication?.integratedAcceptance, undefined);
+    assert.equal(current.publication?.acceptance, undefined);
     assert.equal(s.facts.status?.state, "success");
     assert.deepEqual(current.publication?.operations, before);
     assert.equal(s.writes.length, writes);
@@ -122,7 +118,6 @@ test("una revocación registrada tras una integración concurrente conserva el i
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     const before = s.inspections;
     s.onInspect((count) => {
@@ -144,7 +139,7 @@ test("una revocación registrada tras una integración concurrente conserva el i
       "completed",
       s.workflow.view(run.id)?.error ?? "",
     );
-    assert.ok(s.workflow.view(run.id)?.publication?.integratedAcceptance);
+    assert.ok(s.workflow.view(run.id)?.publication?.acceptance);
     assert.ok(s.workflow.view(run.id)?.publication?.report);
   } finally {
     s.close();
@@ -156,7 +151,6 @@ test("una aceptación histórica no puede reanudar una intervención operativa s
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.observationFails(true);
     await s.workflow.poll();
@@ -165,10 +159,7 @@ test("una aceptación histórica no puede reanudar una intervención operativa s
     s.merge();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
-    assert.equal(
-      s.workflow.view(run.id)?.publication?.integratedAcceptance,
-      undefined,
-    );
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
     assert.equal(s.facts.request.open, true);
     assert.equal(
       s.writes.some((write) => write.kind === "close-issue"),
@@ -184,7 +175,6 @@ test("un issue cerrado manualmente tras el merge conserva su resumen y completa 
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.merge();
     s.facts.request.open = false;
@@ -206,7 +196,6 @@ for (const effect of ["integration-report", "close-issue"]) {
     try {
       const run = await s.candidate();
       await s.workflow.poll();
-      s.comment();
       await s.workflow.poll();
       s.merge();
       s.uncertainEffect(effect);
@@ -240,7 +229,6 @@ test("editar el issue entre el resumen y el cierre conserva el encargo y permite
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.merge();
     s.onInspect(() => {
@@ -269,7 +257,6 @@ test("un registro anterior pendiente de producción se lee como cierre pendiente
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.comment();
     await s.workflow.poll();
     s.merge();
     s.uncertainEffect("close-issue");
@@ -294,8 +281,8 @@ test("un registro anterior pendiente de producción se lee como cierre pendiente
     }
     assert.equal(s.workflow.view(run.id)?.status, "closing_issue");
     assert.deepEqual(
-      s.workflow.view(run.id)?.publication?.integratedAcceptance,
-      current.publication?.integratedAcceptance,
+      s.workflow.view(run.id)?.publication?.acceptance,
+      current.publication?.acceptance,
     );
     const writes = s.writes.length;
     s.reopen();
@@ -307,3 +294,49 @@ test("un registro anterior pendiente de producción se lee como cierre pendiente
     s.close();
   }
 });
+
+for (const change of [
+  "permission",
+  "identity",
+  "base",
+  "head",
+  "report",
+  "status",
+] as const) {
+  test(`el merge exige autor, versión y evidencia válidos: ${change}`, async () => {
+    const s = publicationFixture();
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      assert.equal(s.facts.status?.state, "success");
+      assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+      s.merge();
+      switch (change) {
+        case "permission":
+          s.writer(false);
+          break;
+        case "identity":
+          delete s.facts.pull!.mergedBy;
+          break;
+        case "base":
+          s.facts.pull!.base = "other";
+          break;
+        case "head":
+          s.facts.pull!.head = "b".repeat(40);
+          break;
+        case "report":
+          s.facts.comments[0].body = "Changed report";
+          break;
+        case "status":
+          s.facts.mergeStatus = null;
+          break;
+      }
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "intervention");
+      assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+      assert.equal(s.facts.request.open, true);
+    } finally {
+      s.close();
+    }
+  });
+}

@@ -21,8 +21,8 @@ También se pueden usar encabezados de objetivo y criterios, listas o contexto a
 3. **Seguir la Ejecución y responder dudas.** Consultar el Dashboard y los comentarios del issue. Cuando la Factory publique preguntas del agente, responder con un comentario nuevo; puede contener todas las respuestas. Cualquier persona puede hacerlo. El agente continúa en el mismo thread y puede volver a preguntar. Retirar la etiqueta no cancela un trabajo admitido.
 4. **Revisar la PR y su informe.** Leer diff, resultados y lagunas del Commit candidato vigente.
 5. **Probar la preview.** El creador del issue se responsabiliza de conseguir la revisión de cada criterio en la URL del informe.
-6. **Aceptar o pedir corrección.** Cualquier persona con escritura puede copiar el ejemplo del informe con SHA completo y URL y publicarlo como comentario nuevo. Para corregir, cualquier persona puede comentar `Corregir: instrucciones` en el issue, sin comprobar permisos. La Factory conserva thread, rama y PR, abre otro Intento y exige verificación y aceptación nuevas.
-7. **Realizar el merge.** Esperar `Factory / ready-to-merge: success` y los demás controles. Si cambió el candidato, esperar verificación, preview, informe y aceptación nuevos.
+6. **Aceptar o pedir corrección.** Para aceptar, haz merge de la PR cuando `Factory / ready-to-merge` y los demás controles sean favorables. No hace falta un comentario de aceptación. Para corregir, publica `Corregir: instrucciones` en el issue. La Factory conserva thread, rama y PR y abre otro Intento.
+7. **Revisar cualquier versión nueva.** Si cambia el candidato, espera nuevas verificaciones, preview e informe y vuelve a revisar antes del merge.
 8. **Confirmar el final.** Comprobar el resumen de integración, el issue cerrado y el estado `completed`. La Factory no espera ni comprueba producción.
 
 ## Decidir durante la revisión
@@ -39,7 +39,7 @@ flowchart TD
     C -->|"Sí"| B{"¿Cumple todos los criterios?"}
     B -->|"Tengo dudas"| Q["Preguntar en GitHub<br/>La consulta no acepta"]
     B -->|"No"| X["Comentar Corregir: instrucciones en el issue<br/>Otro Intento en el mismo thread"]
-    B -->|"Sí"| H["Aceptar SHA y preview con comentario nuevo"]
+    B -->|"Sí"| H["Revisar la versión vigente"]
     H --> G{"¿Control favorable y demás requisitos de GitHub?"}
     G -->|"No"| V["Revisar cambios, permisos y observaciones"]
     G -->|"Sí"| M["Hacer merge humano"]
@@ -59,8 +59,7 @@ Lee el comentario de la Factory y elige una acción disponible. Publica `Reinten
 | Dudas y respuestas del issue               | Qué información humana recibió el agente durante el trabajo.            |
 | Diff y verificaciones del Commit candidato | Qué cambió y qué controles técnicos superó.                             |
 | Preview e informe                          | Qué versión se presentó a revisión y con qué evidencia.                 |
-| Comentario de aceptación                   | Qué SHA y preview aceptó una persona con permiso.                       |
-| Merge y control histórico                  | Qué candidato se integró, por quién y bajo qué aceptación.              |
+| Merge y control histórico                  | Qué candidato se integró, por quién y con qué evidencia técnica previa. |
 | Informe en el issue y `completed`          | Que la Factory conservó la evidencia y completó el recorrido de cierre. |
 
 La revisión humana del preview determina si el resultado cumple los criterios. Las pruebas técnicas aportan evidencia previa al merge; el resumen final acredita la integración y el cierre del issue.
