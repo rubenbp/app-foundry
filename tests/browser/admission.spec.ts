@@ -45,6 +45,7 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
           emit = sink;
           return { pid: 123, version: "test", configuration: {} };
         },
+        async resume() {},
         async create() {
           return "s1";
         },

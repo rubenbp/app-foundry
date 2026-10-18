@@ -37,6 +37,7 @@ export function setup() {
     async start() {
       return { pid: 123, version: "test", configuration: {} };
     },
+    async resume() {},
     async create() {
       return "session";
     },

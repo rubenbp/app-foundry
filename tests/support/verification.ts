@@ -10,6 +10,7 @@ import type { ProcessPort } from "../../src/infrastructure/process.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
 import type { PublicationPort } from "../../src/application/publication/ports.ts";
+import type { IssueConversation } from "../../src/application/issueConversation.ts";
 
 export function verificationFixture(
   options: {
@@ -19,6 +20,7 @@ export function verificationFixture(
     commands?: string[];
     e2e?: ManagedProject["verification"]["e2e"];
     publication?: PublicationPort;
+    issueConversation?: IssueConversation;
     body?: string;
   } = {},
 ) {
@@ -85,15 +87,24 @@ export function verificationFixture(
   };
   let emit: (fact: Fact) => void = () => {};
   let onStop = () => {};
+  const tasks: { sessionId: string; text: string }[] = [];
+  const resumed: string[] = [];
+  let sessions = 0;
   const agent: AgentPort = {
     async start(sink) {
       emit = sink;
       return { pid: 123, version: "test", configuration: {} };
     },
+    async resume(id) {
+      resumed.push(id);
+    },
     async create() {
+      sessions++;
       return "session";
     },
-    async send() {},
+    async send(sessionId, text) {
+      tasks.push({ sessionId, text });
+    },
     async stop() {
       onStop();
       return {
@@ -133,6 +144,7 @@ export function verificationFixture(
       workspace: new GitWorkspace(config.dataDir, processPort),
       verificationProcess: processPort,
       publication: options.publication,
+      issueConversation: options.issueConversation,
       github: {
         async ready() {
           return [];
@@ -144,6 +156,13 @@ export function verificationFixture(
   return {
     root,
     config,
+    agent,
+    tasks,
+    resumed,
+    emit: (fact: Fact) => emit(fact),
+    get sessions() {
+      return sessions;
+    },
     project,
     baseSha,
     git,

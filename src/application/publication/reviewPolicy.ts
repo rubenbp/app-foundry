@@ -14,6 +14,19 @@ export function isOwn(run: Run, comment: ConversationComment) {
     !comment.human
   );
 }
+
+export function isInterventionResponse(run: Run, comment: ConversationComment) {
+  return (
+    comment.source === "issue" &&
+    Boolean(
+      run.interventions?.some(
+        (intervention) =>
+          intervention.response?.id === comment.id &&
+          intervention.deliveredAt !== undefined,
+      ),
+    )
+  );
+}
 export function reportIntact(
   run: Run,
   facts: PublicationFacts,

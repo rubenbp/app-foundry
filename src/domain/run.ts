@@ -1,6 +1,7 @@
 import type { AuthorizedIssue, Workspace } from "./request.ts";
 import type { Verification } from "./verification.ts";
 import type { Publication } from "./publication.ts";
+import type { AgentIntervention } from "./intervention.ts";
 export type RunStatus =
   | "queued"
   | "preparing"
@@ -73,6 +74,8 @@ export interface Run {
   error: string | null;
   result: string | null;
   pending: Pending[];
+  interventions?: AgentIntervention[];
+  lastFinishedMessageId?: string;
   parts: PartView[];
   usage: Usage[];
   history: History[];

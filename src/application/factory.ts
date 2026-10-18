@@ -5,6 +5,10 @@ import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import type { Run } from "../domain/run.ts";
+import {
+  interventionQuestions,
+  pendingIntervention,
+} from "../domain/intervention.ts";
 
 export class Factory {
   store: RunRepository;
@@ -30,6 +34,22 @@ export class Factory {
     this.clean = sanitizer(this.secrets);
     this.store = store;
     for (const run of this.store.list()) {
+      if (
+        run.status === "waiting" &&
+        run.request &&
+        run.workspace &&
+        run.sessionId &&
+        pendingIntervention(run.interventions)
+      ) {
+        this.active = run.id;
+        this.record(
+          run,
+          "recovery",
+          "Human reply still pending; preserve the same agent conversation without resending the task",
+        );
+        this.store.save(run);
+        continue;
+      }
       if (
         run.status !== "stopped" &&
         run.status !== "completed" &&
@@ -296,12 +316,26 @@ export class Factory {
         kind: p.kind,
         text: this.clean(p.text, 4096).text,
       }));
+      const intervention =
+        run.status === "waiting"
+          ? pendingIntervention(run.interventions)
+          : null;
+      if (intervention) {
+        pending.push({
+          id: intervention.id,
+          kind: "question",
+          text: intervention.questions,
+        });
+      }
       if (JSON.stringify(run.pending) !== JSON.stringify(pending)) {
         run.pending = pending;
         run.lastActivity = at;
         if (pending.length && run.status !== "intervention") {
           run.status = "waiting";
-        } else if (run.status === "waiting") {
+        } else if (
+          run.status === "waiting" &&
+          !pendingIntervention(run.interventions)
+        ) {
           run.status = "running";
         }
         this.record(
@@ -313,6 +347,41 @@ export class Factory {
         );
       }
     } else if (fact.type === "finished" && run.status !== "intervention") {
+      if (fact.messageId && fact.messageId === run.lastFinishedMessageId) {
+        return;
+      }
+      run.lastFinishedMessageId = fact.messageId;
+      let questions: string | null;
+      try {
+        questions = run.request ? interventionQuestions(text!.text) : null;
+      } catch (error) {
+        run.status = "intervention";
+        run.error = String(error);
+        this.record(run, "error", run.error);
+        this.persist(run);
+        return;
+      }
+      if (questions) {
+        const previous = pendingIntervention(run.interventions);
+        if (previous && !previous.response) {
+          return;
+        }
+        const intervention = {
+          id: fact.messageId ?? randomUUID(),
+          questions,
+          requestedAt: at,
+        };
+        (run.interventions ??= []).push(intervention);
+        run.pending = [
+          { id: intervention.id, kind: "question", text: questions },
+        ];
+        run.status = "waiting";
+        run.result = null;
+        run.endedAt = null;
+        this.record(run, "agent-intervention", questions);
+        this.persist(run);
+        return;
+      }
       run.result = text!.text;
       run.status = "awaiting_verification";
       if (!run.endedAt) {
@@ -369,14 +438,12 @@ export class Factory {
     this.persist(run);
     let result;
     try {
-      result =
-        run.phase === "verification" && run.process?.exited
-          ? {
-              exited: true,
-              detail:
-                "Owned agent was already confirmed absent before verification",
-            }
-          : await this.agent.stop(run.sessionId);
+      result = run.process?.exited
+        ? {
+            exited: true,
+            detail: "Owned agent was already confirmed absent",
+          }
+        : await this.agent.stop(run.sessionId);
     } catch (error) {
       result = { exited: false, detail: `Stop unconfirmed: ${String(error)}` };
     }
@@ -394,6 +461,65 @@ export class Factory {
       this.active = null;
     }
     return latest;
+  }
+
+  async restoreConversation(id: string, agent: AgentPort) {
+    this.assertRunning(id);
+    const run = this.view(id)!;
+    if (
+      run.status !== "waiting" ||
+      !run.sessionId ||
+      !pendingIntervention(run.interventions)
+    ) {
+      throw new Error("A waiting agent conversation is required");
+    }
+    this.record(
+      run,
+      "intent",
+      `Recover owned OpenCode server for thread ${run.sessionId}`,
+    );
+    this.persist(run);
+    this.agent = agent;
+    const process = await agent.start(
+      (fact) => this.ingest(id, fact),
+      (secrets) => {
+        this.secrets.push(...secrets);
+        this.clean = sanitizer(this.secrets);
+      },
+    );
+    this.assertRunning(id);
+    const current = this.view(id)!;
+    current.process = sanitizedRecord(process, this.clean);
+    this.record(
+      current,
+      "conversation-restored",
+      `Observe existing agent thread ${run.sessionId}`,
+    );
+    this.persist(current);
+    await agent.resume(run.sessionId);
+    this.assertRunning(id);
+  }
+
+  async suspendConversation(id: string) {
+    this.assertRunning(id);
+    const run = this.view(id)!;
+    this.record(
+      run,
+      "intent",
+      "Stop owned OpenCode server and preserve the waiting conversation",
+    );
+    this.persist(run);
+    const stopped = await this.agent.stop(run.sessionId);
+    const current = this.view(id)!;
+    if (current.process) {
+      current.process.exited = stopped.exited;
+    }
+    if (!stopped.exited) {
+      current.status = "intervention";
+      current.error = stopped.detail;
+    }
+    this.record(current, "conversation-suspended", stopped.detail);
+    this.persist(current);
   }
 
   view(id: string) {

@@ -8,7 +8,12 @@ import {
 } from "../domain/publication.ts";
 import { PublicationRuntime, ObservedMerge } from "./publication/runtime.ts";
 import { candidateEvidence } from "./publication/evidence.ts";
-import { isOwn, reportIntact, canMerge } from "./publication/reviewPolicy.ts";
+import {
+  isOwn,
+  isInterventionResponse,
+  reportIntact,
+  canMerge,
+} from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
 import { IntegratedPublication } from "./publication/integration.ts";
 
@@ -231,7 +236,9 @@ export class CandidatePublication {
         }
         let reason = "Consulta sin aceptación";
         const own = isOwn(run, comment);
-        if (own) {
+        if (isInterventionResponse(run, comment)) {
+          reason = "Aclaración ya entregada a la conversación del agente";
+        } else if (own) {
           reason = "Publicación propia o de bot";
         } else {
           const intent = interpretComment(comment.body);

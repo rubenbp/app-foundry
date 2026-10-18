@@ -21,6 +21,7 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
         configuration: { model: "google/gemini-2.5-flash" },
       };
     },
+    async resume() {},
     async create() {
       return "s1";
     },
@@ -153,6 +154,7 @@ test("la conexión local y los avisos automáticos de actividad usan relojes dis
         emit = sink;
         return { pid: 123, version: "1.19.3", configuration: {} };
       },
+      async resume() {},
       async create() {
         return "s1";
       },

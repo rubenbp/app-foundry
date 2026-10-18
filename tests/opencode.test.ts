@@ -187,3 +187,75 @@ test("la conciliación del SDK alcanza mensajes posteriores a la página 200 y a
     server.close();
   }
 });
+
+test("el observador no confunde la respuesta anterior con un turno en curso y admite los marcadores idle del historial", async () => {
+  let phase: "idle" | "queued" | "busy" | "finished" = "idle";
+  const server = createServer((req, res) => {
+    res.setHeader("Content-Type", "application/json");
+    const message = (id: string) => ({
+      id,
+      type: "assistant",
+      time: { created: 10, completed: 20 },
+      finish: "stop",
+      model: { providerID: "openai", id: "gpt-6-luna" },
+      content: [{ type: "text", text: "Result" }],
+    });
+    if (req.url!.startsWith("/api/session/s1/message")) {
+      const data: unknown[] = [
+        message("m1"),
+        { id: "idle1", type: "idle", time: { created: 20 } },
+      ];
+      if (phase !== "idle") {
+        data.push({
+          id: "u2",
+          type: "user",
+          time: { created: 30 },
+          text: "Human reply",
+        });
+      }
+      if (phase === "busy" || phase === "finished") {
+        data.push(message("m2"));
+      }
+      res.end(JSON.stringify({ data, cursor: {} }));
+    } else if (req.url === "/api/session/active") {
+      res.end(
+        JSON.stringify({
+          data: phase === "busy" ? { s1: { type: "busy" } } : {},
+        }),
+      );
+    } else {
+      res.end(JSON.stringify({ data: [] }));
+    }
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const facts: Fact[] = [];
+  const observer = new Observer(
+    OpenCode.make({ baseUrl: `http://127.0.0.1:${address.port}` }),
+    "s1",
+    (fact) => facts.push(fact),
+  );
+  try {
+    await observer.poll();
+    assert.equal(facts.filter((fact) => fact.type === "finished").length, 1);
+    phase = "queued";
+    await observer.poll();
+    phase = "busy";
+    await observer.poll();
+    assert.equal(facts.filter((fact) => fact.type === "finished").length, 1);
+    phase = "finished";
+    await observer.poll();
+    assert.deepEqual(
+      facts
+        .filter((fact) => fact.type === "finished")
+        .map((fact) => fact.messageId),
+      ["m1", "m2"],
+    );
+  } finally {
+    observer.close();
+    server.closeAllConnections();
+    server.close();
+  }
+});

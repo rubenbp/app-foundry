@@ -57,6 +57,7 @@ function fixture(options: { stopConfirmed?: boolean } = {}) {
     async start() {
       return { pid: 123, version: "test", configuration: {} };
     },
+    async resume() {},
     async create() {
       return "s1";
     },

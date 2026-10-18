@@ -4,8 +4,11 @@ import type {
   PublicationFacts,
 } from "../../src/application/publication/ports.ts";
 import { verificationFixture } from "./verification.ts";
+import type { IssueConversation } from "../../src/application/issueConversation.ts";
 
-export function publicationFixture(options: { body?: string } = {}) {
+export function publicationFixture(
+  options: { body?: string; issueConversation?: IssueConversation } = {},
+) {
   const writes: { kind: string; body?: string }[] = [];
   const issue = {
     title: "Accessible catalogue",
@@ -129,6 +132,7 @@ export function publicationFixture(options: { body?: string } = {}) {
   const s = verificationFixture({
     publication: port,
     body: issue.body,
+    issueConversation: options.issueConversation,
   });
 
   return {
@@ -140,6 +144,9 @@ export function publicationFixture(options: { body?: string } = {}) {
       return s.directory;
     },
     writes,
+    get sessions() {
+      return s.sessions;
+    },
     facts,
     issue,
     onInspect(callback: (inspection: number) => PublicationFacts | void) {

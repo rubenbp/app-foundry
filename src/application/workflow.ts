@@ -17,6 +17,9 @@ import { verificationPlan } from "../domain/verification.ts";
 import type { CandidateVerification } from "./verification.ts";
 import { CandidatePublication } from "./candidatePublication.ts";
 import type { PublicationPort } from "./publication/ports.ts";
+import type { IssueConversation } from "./issueConversation.ts";
+import { IssueInterventions } from "./issueInterventions.ts";
+import { pendingIntervention } from "../domain/intervention.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -25,6 +28,7 @@ export interface WorkflowOptions {
   verifier: CandidateVerification;
   createFactory: (config: FactoryConfig, agent: AgentPort) => Factory;
   publication?: PublicationPort;
+  issueConversation?: IssueConversation;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
 }
 
@@ -41,6 +45,8 @@ export class Workflow {
   private verificationDone?: Promise<void>;
   private verifier: CandidateVerification;
   private publication?: CandidatePublication;
+  private interventions?: IssueInterventions;
+  private conversationAttached = true;
 
   get observation() {
     return this.factory.store.observation();
@@ -58,6 +64,15 @@ export class Workflow {
     this.ownership = options.acquireOwnership(config);
     try {
       this.factory = options.createFactory(config, options.createAgent(config));
+      this.conversationAttached =
+        this.factory.view(this.factory.active ?? "")?.status !== "waiting";
+      if (options.issueConversation) {
+        this.interventions = new IssueInterventions(
+          this.factory,
+          options.issueConversation,
+          () => this.restoreConversation(),
+        );
+      }
       if (options.publication) {
         this.publication = new CandidatePublication(
           this.factory,
@@ -108,6 +123,10 @@ export class Workflow {
     }
     this.polling = true;
     try {
+      await this.interventions?.poll();
+      if (this.halted) {
+        return;
+      }
       await this.verifyCandidate();
       const publishing = this.factory.active;
       await this.publication?.poll();
@@ -232,6 +251,7 @@ export class Workflow {
           ...run.request!.runtime,
           projectDir: workspace.directory,
           managedProject: run.request!.configuration,
+          conversationId: run.id,
         }),
       };
     });
@@ -239,6 +259,42 @@ export class Workflow {
 
   queue() {
     return queuedRuns(this.list());
+  }
+
+  private async restoreConversation() {
+    if (this.conversationAttached) {
+      return;
+    }
+    const run = this.view(this.factory.active!)!;
+    if (!this.workspace) {
+      throw new Error("Workspace adapter required to restore the conversation");
+    }
+    await this.workspace.validate(run.workspace!, run.request!.configuration);
+    const agent = this.createAgent({
+      ...this.factory.config,
+      ...run.request!.runtime,
+      projectDir: run.workspace!.directory,
+      managedProject: run.request!.configuration,
+      conversationId: run.id,
+    });
+    await this.factory.restoreConversation(run.id, agent);
+    this.conversationAttached = true;
+  }
+
+  async shutdown() {
+    this.halt();
+    const run = this.view(this.factory.active ?? "");
+    if (!run) {
+      return;
+    }
+    if (run.status === "waiting" && pendingIntervention(run.interventions)) {
+      if (this.conversationAttached) {
+        await this.factory.suspendConversation(run.id);
+        this.conversationAttached = false;
+      }
+      return;
+    }
+    await this.stop(run.id);
   }
 
   async verifyCandidate() {
@@ -370,6 +426,14 @@ export class Workflow {
   }
 
   async stop(id: string) {
+    const run = this.view(id);
+    if (
+      run?.status === "waiting" &&
+      !this.conversationAttached &&
+      !run.process?.exited
+    ) {
+      await this.restoreConversation();
+    }
     await this.publication?.stop(id);
     if (this.verifying && this.factory.active === id) {
       const run = this.view(id)!;

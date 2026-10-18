@@ -28,6 +28,7 @@ function setup() {
         configuration: { model: "google/gemini-2.5-flash" },
       };
     },
+    async resume() {},
     async create() {
       return "session-1";
     },

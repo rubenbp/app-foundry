@@ -2,7 +2,7 @@ import type { Run } from "../../domain/run.ts";
 import { interpretComment } from "../../domain/publication.ts";
 import type { PublicationFacts } from "./ports.ts";
 import type { PublicationRuntime } from "./runtime.ts";
-import { isOwn, reportIntact } from "./reviewPolicy.ts";
+import { isOwn, isInterventionResponse, reportIntact } from "./reviewPolicy.ts";
 import { candidateEvidence } from "./evidence.ts";
 
 export class IntegratedPublication {
@@ -60,6 +60,7 @@ export class IntegratedPublication {
       const invalidations = facts.comments.filter(
         (comment) =>
           !isOwn(run, comment) &&
+          !isInterventionResponse(run, comment) &&
           comment.createdAt <= (pull.mergedAt ?? 0) &&
           interpretComment(comment.body).kind === "invalidate",
       );

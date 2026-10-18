@@ -9,4 +9,5 @@ export interface FactoryConfig {
   opencodeCli?: string;
   vercelCli?: string;
   managedProject?: ManagedProject;
+  conversationId?: string;
 }

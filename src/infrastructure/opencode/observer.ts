@@ -14,6 +14,7 @@ export class Observer {
   abort = new AbortController();
   timer: ReturnType<typeof setTimeout> | undefined;
   polling = false;
+  watching = false;
   pending = new Map<string, Pending>();
 
   constructor(
@@ -213,6 +214,7 @@ export class Observer {
       }
       let page = messages;
       let last: SessionMessageInfo | undefined;
+      let newerUserMessage = false;
       const cursors = new Set<string>();
       while (true) {
         signal.throwIfAborted();
@@ -221,6 +223,9 @@ export class Observer {
           this.message(row);
           if (row.type === "assistant") {
             last = row;
+            newerUserMessage = false;
+          } else if (row.type === "user") {
+            newerUserMessage = true;
           }
         }
         const next = page.cursor.next;
@@ -266,6 +271,8 @@ export class Observer {
       this.emit({ type: "observed" });
       if (
         !pending.length &&
+        !newerUserMessage &&
+        !active[this.sessionId] &&
         last?.type === "assistant" &&
         last.time.completed &&
         last.finish === "stop" &&
@@ -273,6 +280,7 @@ export class Observer {
       ) {
         this.emit({
           type: "finished",
+          messageId: last.id,
           text: last.content
             .filter((p) => p.type === "text")
             .map((p) => p.text)
@@ -292,6 +300,10 @@ export class Observer {
   }
 
   watch() {
+    if (this.watching) {
+      return;
+    }
+    this.watching = true;
     const tick = async () => {
       await this.poll();
       if (!this.abort.signal.aborted) {

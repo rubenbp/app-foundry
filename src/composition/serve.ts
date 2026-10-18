@@ -7,6 +7,7 @@ import { createFactory } from "./factory.ts";
 import { panelServer } from "../infrastructure/http/panelServer.ts";
 import { createWorkflow } from "./workflow.ts";
 import { GitHub } from "../infrastructure/github.ts";
+import { GitHubIssueConversation } from "../infrastructure/issueConversation.ts";
 import { GitWorkspace } from "../infrastructure/workspace.ts";
 import { GitHubPublication } from "../infrastructure/publication.ts";
 import { acquireLock } from "../infrastructure/lock.ts";
@@ -44,6 +45,7 @@ export async function serveFactory(
         createAgent: (config) => new OpenCode(config),
         workspace: new GitWorkspace(config.dataDir),
         github: new GitHub(),
+        issueConversation: new GitHubIssueConversation(),
         publication,
         secrets,
       })
@@ -94,9 +96,14 @@ export async function serveFactory(
     clearTimeout(pollTimer);
     try {
       if (factory.active) {
-        await (workflow
-          ? workflow.stop(factory.active)
-          : factory.stop(factory.active));
+        if (workflow && factory.view(factory.active)?.status === "waiting") {
+          await polling;
+          await workflow.shutdown();
+        } else {
+          await (workflow
+            ? workflow.stop(factory.active)
+            : factory.stop(factory.active));
+        }
       }
       await polling;
     } catch {
