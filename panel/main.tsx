@@ -4,118 +4,21 @@ import { RequestDetails } from "./request.tsx";
 import { VerificationDetails } from "./verification.tsx";
 import { ProductionDetails } from "./production.tsx";
 import { PublicationDetails } from "./publication.tsx";
-import { Button } from "./components/button.tsx";
 import { poll } from "./polling.ts";
-import {
-  consumption,
-  type Run,
-  type RunStatus,
-  type PartView,
-} from "../src/domain/run.ts";
+import type { FactoryView } from "../src/application/factory-view.ts";
+import { Output } from "./components/output.tsx";
+import { labels, time, age } from "./format.ts";
 import "./style.css";
-
-interface View {
-  serverNow: number;
-  admission: { at: number; lastSuccess: number | null; error: string | null };
-  source: string | null;
-  queue: { id: string; title: string }[];
-  fault: string | null;
-  runs: Pick<Run, "id" | "task" | "status" | "startedAt">[];
-  run: Run | null;
-  consumption: ReturnType<typeof consumption> | null;
-}
-const labels: Record<RunStatus, string> = {
-  queued: "En cola",
-  preparing: "Preparando base",
-  starting: "Preparando",
-  running: "En curso",
-  waiting: "Espera humana",
-  awaiting_verification: "Resultado sin verificar",
-  verifying: "Verificando candidato",
-  awaiting_preview: "Verificado · Preview pendiente",
-  awaiting_review: "Esperando revisión humana",
-  awaiting_merge: "Esperando merge humano",
-  checking_production: "Comprobando producción",
-  completed: "Completada",
-  intervention: "Requiere intervención",
-  stopped: "Detenida",
-};
-const time = (value: number | null) =>
-  value === null
-    ? "No disponible"
-    : new Date(value).toLocaleTimeString("es-ES", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-const age = (value: number | null, now: number) =>
-  value === null
-    ? "Sin observación"
-    : `Hace ${Math.max(0, Math.floor((now - value) / 1000))} s`;
-
-function Output({ runId, part }: { runId: string; part: PartView }) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    void fetch(
-      `/api/runs/${encodeURIComponent(runId)}/outputs/${encodeURIComponent(part.id)}`,
-      { signal: controller.signal },
-    )
-      .then(async (response) => {
-        if (!response.ok) throw new Error();
-        const value = await response.text();
-        if (!controller.signal.aborted) setText(value);
-      })
-      .catch(() => setError(true))
-      .finally(() => clearTimeout(timeout));
-    return () => {
-      clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [open, runId, part.id, part.updatedAt]);
-  return (
-    <li className="output" id={`part-${part.id}`}>
-      <Button
-        variant="ghost"
-        aria-expanded={open}
-        aria-controls={`output-${part.id}`}
-        onClick={() => {
-          if (!open) setError(false);
-          setOpen((value) => !value);
-        }}
-      >
-        <span>
-          {open ? "−" : "+"} {part.label}
-        </span>
-        <span className="muted">
-          {time(part.updatedAt)}
-          {part.truncated ? " · Truncada" : ""}
-        </span>
-      </Button>
-      {open ? (
-        <pre id={`output-${part.id}`} tabIndex={0}>
-          {error
-            ? "Salida no disponible. Puede existir una laguna de observación."
-            : (text ?? "Cargando salida…")}
-        </pre>
-      ) : null}
-    </li>
-  );
-}
 
 function App() {
   const [selected, setSelected] = useState<string | null>(null);
-  const [view, setView] = useState<View | null>(null);
+  const [view, setView] = useState<FactoryView | null>(null);
   const [lastLocal, setLastLocal] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [failing, setFailing] = useState(false);
   useEffect(
     () =>
-      poll<View>(
+      poll<FactoryView>(
         () =>
           `/api/view${selected ? `?run=${encodeURIComponent(selected)}` : ""}`,
         (data) => {

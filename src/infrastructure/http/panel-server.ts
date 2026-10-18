@@ -1,8 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, extname, sep } from "node:path";
-import { queuedRuns } from "../../domain/queue.ts";
-import { consumption } from "../../domain/run.ts";
+import { factoryView } from "../../application/factory-view.ts";
 import type { Factory } from "../../application/factory.ts";
 
 export function panelServer(factory: Factory, dist = resolve("dist")): Server {
@@ -36,34 +35,10 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
     try {
       const url = new URL(req.url!, origin);
       if (url.pathname === "/api/view") {
-        const runs = factory.list();
-        const queue = queuedRuns(runs);
-        const selected =
-          url.searchParams.get("run") ??
-          factory.active ??
-          queue[0]?.id ??
-          runs[0]?.id;
-        const run = runs.find((r) => r.id === selected) ?? null;
-        json(200, {
-          serverNow: Date.now(),
-          fault: factory.fault,
-          admission: factory.store.observation(),
-          source: factory.config.managedProject
-            ? `https://github.com/${factory.config.managedProject.repository}/issues`
-            : null,
-          queue: queue.map((r) => ({
-            id: r.id,
-            title: r.request?.title ?? r.task,
-          })),
-          runs: runs.map((r) => ({
-            id: r.id,
-            task: r.request?.title ?? r.task,
-            status: r.status,
-            startedAt: r.startedAt,
-          })),
-          run,
-          consumption: run ? consumption(run.usage) : null,
-        });
+        json(
+          200,
+          factoryView(factory, url.searchParams.get("run"), Date.now()),
+        );
         return;
       }
       const output = url.pathname.match(
