@@ -18,7 +18,20 @@ test("un fallo se avisa una vez y Reintentar vuelve a verificar sin otro Intento
       conversation.comments[0].body,
       /La Factory necesita intervención/,
     );
-    assert.match(conversation.comments[0].body, /Corregir: instrucciones/);
+    const notice = conversation.comments[0].body;
+    assert.match(notice, /Corregir: instrucciones/);
+    assert.match(notice, /Comando afectado: `node check.mjs`/);
+    assert.match(notice, /Código de salida: 7/);
+    assert.match(notice, /despliega la salida de «node check.mjs»/);
+    assert.match(notice, /repite la verificación del mismo código/);
+    assert.match(notice, /Corregir: Corrige el fallo de verificación indicado/);
+    await s.workflow.poll();
+    assert.equal(
+      s.tasks.length,
+      1,
+      "A failed check does not start an automatic correction",
+    );
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
     conversation.add("Reintentar", false);
     await s.workflow.poll();
     assert.equal(
@@ -38,6 +51,61 @@ test("un fallo se avisa una vez y Reintentar vuelve a verificar sin otro Intento
     assert.equal(s.workflow.view(run.id)?.attempt, 1);
     assert.ok(s.workflow.view(run.id)?.recovery?.consumed.includes(retry.id));
     await s.workflow.poll();
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("el aviso de verificación identifica los comandos posteriores que no se ejecutaron", async () => {
+  const conversation = recoveryConversation();
+  const s = verificationFixture({
+    commands: ["node check.mjs", "node --version"],
+    issueConversation: conversation.port,
+  });
+  try {
+    const run = await s.start();
+    s.commit("catalogue.txt", "defect", "Introduce defect");
+    s.finish();
+    await s.workflow.poll();
+    const notice = conversation.comments[0].body;
+    assert.match(notice, /Los comandos posteriores no se han ejecutado/);
+    assert.match(notice, new RegExp(s.git("rev-parse", "HEAD")));
+    assert.equal(
+      s.workflow.view(run.id)?.verification?.checks[1].status,
+      "not_run",
+    );
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("un comando sin código de salida confirmado conserva la causa saneada en el aviso", async () => {
+  const conversation = recoveryConversation();
+  let checks = 0;
+  const s = verificationFixture({
+    issueConversation: conversation.port,
+    process: async (command, args, options) => {
+      if (
+        command === "/bin/sh" &&
+        args[1] === "node check.mjs" &&
+        ++checks === 2
+      ) {
+        throw new Error("Command launch failed password=private-notice-secret");
+      }
+      return execute(command, args, options);
+    },
+  });
+  try {
+    await s.start();
+    s.finish();
+    await s.workflow.poll();
+    const notice = conversation.comments[0].body;
+    assert.match(notice, /Command launch failed/);
+    assert.match(notice, /Código de salida sin confirmar/);
+    assert.match(notice, /Comando afectado: `node check.mjs`/);
+    assert.doesNotMatch(notice, /private-notice-secret/);
     assert.equal(s.tasks.length, 1);
   } finally {
     s.close();

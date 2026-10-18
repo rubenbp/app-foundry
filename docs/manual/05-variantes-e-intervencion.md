@@ -31,6 +31,16 @@ La Factory publica un comentario por incidencia con la causa, la fase, el trabaj
 | `Corregir: instrucciones` | Durante intervención o revisión, antes del merge y con thread y workspace disponibles, abre otro Intento conservando conversación, rama y PR. Revoca aceptación y exige nueva verificación, preview, informe y aceptación.                                                                                        |
 | `Cancelar`                | Antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`). Si no confirma la parada, mantiene intervención, issue abierto y reserva. No elimina rama ni PR.                                                                                                                      |
 
+Cuando falla una verificación, el aviso identifica el Commit candidato, el comando afectado y su código de salida, o indica que ese código no está confirmado. Explica cómo abrir la salida completa en el Dashboard y si quedaron comandos posteriores sin ejecutar. Los procesos con parada o limpieza inciertas requieren inspección local antes de recuperar.
+
+Para elegir la acción:
+
+- Usa `Reintentar` después de resolver un problema de entorno o corregir la causa por otra vía. En verificación ejecuta de nuevo el contrato sobre el código que haya en la rama; no envía una tarea de corrección al agente.
+- Usa `Corregir: instrucciones` cuando el agente deba cambiar el código o las pruebas. Por ejemplo: `Corregir: Corrige el fallo de verificación indicado y deja el candidato listo para verificar.`
+- Usa `Cancelar` para detener y cerrar el encargo antes del merge.
+
+La Factory no inicia otra corrección por el mero hecho de observar el fallo. Las órdenes mantienen su significado y cada comentario autoriza una acción concreta.
+
 `Reintentar` necesita el aviso de intervención vigente. No se reejecuta una orden ya consumida. Durante una espera de dudas, una respuesta libre sigue siendo aclaración; `Cancelar` permite cancelar esa espera.
 
 Después del merge solo se permite `Reintentar` para terminar el resumen y el cierre pendientes. No revierte lo integrado ni encarga cambios nuevos. Las incidencias de un merge fuera del contrato siguen requiriendo inspección; reintentar no convierte una integración inválida en aceptada.
