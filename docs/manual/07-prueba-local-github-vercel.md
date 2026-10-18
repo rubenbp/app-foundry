@@ -175,7 +175,7 @@ gh issue edit NUMERO_DEL_ISSUE --repo rubenbp/appfoundry-site-demo \
 
 El dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
 
-La Factory captura el título y cuerpo que observe al admitir. No comprueba permisos del etiquetador ni estabilidad del contenido. Las ediciones posteriores no actualizan el encargo ni bloquean la Ejecución; volver a etiquetar no reejecuta el issue. Los comentarios tampoco se envían al agente para continuar una pregunta pendiente.
+La Factory captura el título y cuerpo que observe al admitir. No comprueba permisos del etiquetador ni estabilidad del contenido. Las ediciones posteriores no actualizan el encargo ni bloquean la Ejecución; volver a etiquetar no reejecuta el issue. Si el agente pide una aclaración, la Factory publica sus dudas en el issue. El primer comentario humano nuevo posterior a esa pregunta vuelve al mismo thread. Puede responder cualquiera, sin comandos ni comprobación de permisos para la aclaración. Los comentarios publicados mientras trabaja quedan sin procesar.
 
 La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, abre la causa y las salidas del dashboard antes de seguir; no aceptes para intentar desbloquear una verificación fallida.
 
@@ -214,19 +214,19 @@ cd /Users/rubenbp/dev/jakala-tfm/app-foundry
 npm start -- stop --config /private/tmp/app-foundry-prueba-local.json --id ID_DE_EJECUCION
 ```
 
-Usa el ID del dashboard. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Un reinicio a mitad del recorrido deja intervención; no reanuda el trabajo automáticamente.
+Usa el ID del dashboard. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Reiniciar mientras espera una respuesta humana conserva el mismo thread y permite continuar al recibirla. Un reinicio en otros trabajos iniciados deja intervención; no reanuda esos trabajos automáticamente.
 
 Para probar otro cambio crea otro issue con un resultado diferente, una vez completado o detenido el anterior. El mismo issue no se consume dos veces dentro de ese historial.
 
 ## Si no avanza
 
-| Lo que ves                      | Qué revisar                                                                                                                    |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                             |
-| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.               |
-| `waiting`                       | Pregunta o permiso del agente. La continuación guiada aún no está disponible.                                                  |
-| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                   |
-| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                 |
-| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                 |
-| Cierre en intervención          | Resumen de integración, petición intacta y permiso de comentar/cerrar. La siguiente consulta concilia efectos sin duplicarlos. |
-| Intervención tras reiniciar     | Inspeccionar procesos y efectos. No borrar datos o reservas para ocultar el trabajo pendiente.                                 |
+| Lo que ves                      | Qué revisar                                                                                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                 |
+| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.                                                   |
+| `waiting`                       | Pregunta o permiso del agente. La continuación guiada aún no está disponible.                                                                                      |
+| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                       |
+| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                     |
+| No acepta el comentario         | SHA y URL exactos, comentario nuevo posterior al informe, autor con escritura.                                                                                     |
+| Cierre en intervención          | Resumen de integración, petición intacta y permiso de comentar/cerrar. La siguiente consulta concilia efectos sin duplicarlos.                                     |
+| Intervención tras reiniciar     | Si esperaba respuesta humana, responder en el issue para recuperar el mismo thread. En otros estados, inspeccionar procesos y efectos. No borrar datos o reservas. |

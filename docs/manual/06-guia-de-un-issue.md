@@ -18,7 +18,7 @@ También se pueden usar encabezados de objetivo y criterios, listas o contexto a
 
 1. **Revisar la petición.** Confirmar que el objetivo y el resultado esperado se entienden.
 2. **Autorizar en GitHub.** Aplicar `factory:ready` al issue abierto. La Factory no acredita al actor ni exige contenido completo.
-3. **Seguir la Ejecución.** Consultar el Dashboard y cualquier pregunta o intervención. Retirar la etiqueta no cancela un trabajo admitido.
+3. **Seguir la Ejecución y responder dudas.** Consultar el Dashboard y los comentarios del issue. Cuando la Factory publique preguntas del agente, responder con un comentario nuevo; puede contener todas las respuestas. Cualquier persona puede hacerlo. El agente continúa en el mismo thread y puede volver a preguntar. Retirar la etiqueta no cancela un trabajo admitido.
 4. **Revisar la PR y su informe.** Leer diff, resultados y lagunas del Commit candidato vigente.
 5. **Probar la preview.** El creador del issue se responsabiliza de conseguir la revisión de cada criterio en la URL del informe.
 6. **Aceptar o pedir corrección.** Cualquier persona con escritura puede copiar el ejemplo del informe con SHA completo y URL y publicarlo como comentario nuevo. Una orden reconocida de corrección revoca el control y requiere intervención; hoy no lanza otro Intento.

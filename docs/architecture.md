@@ -21,6 +21,7 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 - `application/runRepository.ts` define persistencia de Ejecuciones, observaciones y evidencias. `infrastructure/persistence/store.ts` conserva SQLite y artefactos atómicos. Un fallo de escritura sigue bloqueando nuevos efectos.
 - `application/verification.ts` define la verificación independiente del Commit candidato. El adaptador ejecuta comandos y comunica progreso, evidencias y cancelación.
 - `application/ports.ts` define admisión desde GitHub, preparación del workspace y propiedad exclusiva del workflow.
+- `application/issueConversation.ts` define lectura y publicación de comentarios del issue. `application/issueInterventions.ts` publica las dudas y entrega el primer comentario humano nuevo a la conversación del agente, sin comprobar permisos del autor.
 - `application/publication/ports.ts` define observación y efectos de publicación, resumen de integración y cierre del issue. No ofrece una operación de merge: la integración sigue siendo humana.
 - `composition/factory.ts` crea el repositorio persistente e inyecta el puerto en la Factory. `composition/workflow.ts` conecta propiedad, persistencia y verificación. Las pruebas de integración usan estas mismas funciones con adaptadores externos controlados.
 
@@ -47,3 +48,13 @@ Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comand
 `tests/architecture.test.ts` recorre los imports TypeScript, incluidos los imports de tipos. Impide dependencias inversas entre capas, adquisición directa de efectos en dominio/aplicación e imports de adaptadores del backend desde el navegador. Se ejecuta con `npm run test:unit`.
 
 Las pruebas de comportamiento siguen cubriendo persistencia fallida, reinicio sin reenvío, propiedad exclusiva, cancelación de procesos, candidatos alterados, evidencia incompleta, aceptación por SHA y preview, merges concurrentes y cierre condicionado al merge autorizado y al resumen publicado. Los registros anteriores que esperaban producción se leen como cierre pendiente; el reinicio conserva la intervención y la evidencia histórica. El MVP no consulta producción después del merge.
+
+## Continuación de la conversación del agente
+
+En el workflow, cada Issue autorizado conserva una sesión de OpenCode asociada a su Ejecución. El agente solicita intervención terminando el turno con un bloque explícito `<factory-intervention>…</factory-intervention>`. El prompt incluye el contrato y un ejemplo para agrupar varias dudas. La herramienta nativa de preguntas queda deshabilitada en este workflow: la respuesta humana entra como texto libre mediante `session.prompt` en la misma sesión. No se clasifica lenguaje natural ni se traducen formularios.
+
+La Factory registra la solicitud, publica un comentario identificado y espera. Consulta los comentarios del issue mediante el puerto de conversación; excluye bots y marcas de la Factory y consume únicamente el primer comentario humano creado después de la pregunta publicada. Usa su identidad y orden de creación, sin consultar colaboradores ni permisos. Conserva la pregunta, la respuesta y la confirmación de entrega. Una publicación sin confirmación se concilia buscando el mismo comentario; una entrega al agente incierta queda en intervención sin reenvío automático.
+
+El runtime de OpenCode se conserva en un directorio privado por Ejecución dentro de la raíz de datos. La conexión autenticada permite volver a observar un servidor propio todavía vivo; si terminó, se inicia otro con el mismo almacenamiento y se recupera la sesión existente. La Factory no crea una conversación alternativa ni reenvía el encargo inicial al recuperar una espera. Las ejecuciones anteriores sin este protocolo mantienen su tratamiento de reinicio.
+
+La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Factory conserva esa espera; `stop` sigue siendo una cancelación explícita. Los fallos operativos, la aceptación del Commit candidato y la publicación conservan sus contratos.

@@ -29,7 +29,7 @@ flowchart TD
 
 La Factory obtiene los issues mediante una consulta paginada de abiertos con `factory:ready` y captura el contenido devuelto. No consulta eventos, permisos ni ediciones para admitirlos.
 
-La suficiencia del contenido corresponde al agente, fuera del proceso determinista de admisión. Si pide información o un permiso, el Dashboard muestra la solicitud pendiente. Hoy la Factory no publica esa pregunta en el issue ni devuelve comentarios humanos a la conversación del agente.
+La suficiencia del contenido corresponde al agente, fuera del proceso determinista de admisión. Si necesita información o una confirmación de producto, agrupa sus dudas y pide intervención. La Factory publica la solicitud en el issue y el Dashboard muestra la espera.
 
 ## Qué queda fijado
 
@@ -90,4 +90,16 @@ Comprobar primero la base permite distinguir un problema anterior de una regresi
 
 El agente recibe la petición fijada, las instrucciones de la base y los comandos permitidos. Puede cambiar el producto y crear commits locales. La Factory conserva el control del push, la PR, los informes y los estados remotos. No entrega al agente las credenciales de publicación.
 
-Si el agente pide un permiso o hace una pregunta, la Ejecución queda esperando y conserva el puesto. El Dashboard muestra la solicitud. La Factory no publica automáticamente la intervención en el issue ni envía las respuestas humanas a la misma sesión. El enlace para registrar una intervención en GitHub es manual; añadir un comentario no reanuda al agente. Hoy se inspecciona y se detiene si hace falta. La continuación mediante comentarios queda para otro cambio. Un error de autenticación, modelo o proceso exige intervención; no hay cambio automático de proveedor ni reenvío de la tarea.
+## Aclaraciones por comentarios
+
+Cada issue mantiene una misma conversación con el agente. Si faltan datos o una decisión de producto, el agente puede reunir varias preguntas en una solicitud.
+
+1. La Factory publica las dudas como comentario en el issue y deja la Ejecución en `waiting`.
+2. Cualquier persona puede responder con un comentario nuevo, sin comandos ni formato obligatorio. La Factory no comprueba permisos del autor para esta aclaración.
+3. El primer comentario humano posterior a la pregunta vuelve completo al agente. Los comentarios de bots y de la propia Factory no cuentan como respuesta.
+4. El agente continúa en el mismo thread y con el trabajo acumulado. Si necesita más información, vuelve a pedir intervención.
+5. Cuando termina el código, la Factory ejecuta las verificaciones y continúa con la PR y la preview de Vercel.
+
+La espera no caduca y mantiene el único puesto ocupado. Reiniciar la Factory mientras espera conserva el thread y la solicitud pendiente. Los comentarios publicados mientras el agente trabaja quedan sin procesar; tampoco se recogen respuestas adicionales después de reanudarlo. Si falta algo, el agente vuelve a preguntar.
+
+Las respuestas aclaran el encargo; no conceden permisos técnicos ni aceptan el resultado. Los errores de autenticación, modelo, proceso, verificación o despliegue conservan su tratamiento actual; no hay reparación automática ni cambio de proveedor.

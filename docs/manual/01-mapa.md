@@ -37,7 +37,7 @@ Un issue del repositorio de la Factory no se convierte en trabajo para Rebobina.
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Issue autorizado**         | Issue admitido al observar `factory:ready`, con su contenido capturado como encargo inicial. Permite empezar, pero no acepta el resultado.                                  |
 | **Ejecución**                | Recorrido completo para atender esa petición, incluidas esperas, integración y cierre del issue.                                                                            |
-| **Intento**                  | Trabajo encargado al agente dentro de la Ejecución. El modelo permite varios; hoy no existe continuación guiada ni reintento automático.                                    |
+| **Intento**                  | Trabajo encargado al agente dentro de la Ejecución. Puede incluir varias rondas de aclaraciones en el mismo thread; no hay reintento automático.                            |
 | **Aceptación del resultado** | Decisión humana sobre un Commit candidato concreto y su preview. Autoriza su integración y publicación.                                                                     |
 | **Base**                     | Versión de partida del producto, identificada por su SHA.                                                                                                                   |
 | **Commit candidato**         | `HEAD` de la rama de trabajo que dejó el agente. La Factory verifica todos los cambios acumulados desde la base antes de presentarlo para aceptación.                       |

@@ -22,17 +22,18 @@ flowchart TD
 
 ## Variantes antes de publicar
 
-| Situación                                                         | Comportamiento actual                                                       | Qué necesita la persona                                                                                                          |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Issue sin etiqueta, cerrado o de otro repositorio                 | No entra como petición admisible.                                           | Prepararlo en el Managed project y autorizarlo.                                                                                  |
-| Issue ya admitido, reabierto o etiquetado otra vez                | No se crea otra Ejecución en ese historial.                                 | Revisar la Ejecución existente; no usar la etiqueta como botón de reintento.                                                     |
-| Hay una Ejecución activa                                          | Las nuevas peticiones válidas permanecen en cola.                           | Resolver o detener de forma confirmada la activa.                                                                                |
-| Fallan clonación, instalación o comprobaciones de base            | Intervención de preparación; no empieza el agente.                          | Corregir la causa y revisar los efectos ya realizados. No hay recuperación guiada actual.                                        |
-| El agente pide permiso o formula una pregunta                     | `waiting`, con solicitud visible y puesto ocupado.                          | Consultar en el Dashboard; no se publica automáticamente en GitHub ni se reenvían respuestas. Inspeccionar y detener si procede. |
-| Falla el agente, la autenticación o su proceso                    | Intervención, sin reenvío ni cambio automático de modelo.                   | Revisar el error y el estado del proceso.                                                                                        |
-| Quedan cambios sin commit o no se confirma la parada del agente   | No se fija un Commit candidato acreditado.                                  | Resolver la incertidumbre; no aceptar el resultado como verificado.                                                              |
-| Cambian controles protegidos o fallan comandos                    | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el Commit candidato. No se encarga una corrección automática.                                                            |
-| Evidencia truncada, informe E2E ausente, cero pruebas u omisiones | No se aprueba técnicamente aunque el comando devuelva cero.                 | Obtener evidencia suficiente mediante una recuperación deliberada.                                                               |
+| Situación                                                         | Comportamiento actual                                                       | Qué necesita la persona                                                                                                             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Issue sin etiqueta, cerrado o de otro repositorio                 | No entra como petición admisible.                                           | Prepararlo en el Managed project y autorizarlo.                                                                                     |
+| Issue ya admitido, reabierto o etiquetado otra vez                | No se crea otra Ejecución en ese historial.                                 | Revisar la Ejecución existente; no usar la etiqueta como botón de reintento.                                                        |
+| Hay una Ejecución activa                                          | Las nuevas peticiones válidas permanecen en cola.                           | Resolver o detener de forma confirmada la activa.                                                                                   |
+| Fallan clonación, instalación o comprobaciones de base            | Intervención de preparación; no empieza el agente.                          | Corregir la causa y revisar los efectos ya realizados. No hay recuperación guiada actual.                                           |
+| El agente pide información o una confirmación de producto         | `waiting`, con las dudas publicadas en el issue y el puesto ocupado.        | Responder con un comentario nuevo en el issue. El primer comentario humano vuelve al mismo thread sin comprobar permisos del autor. |
+| Hay una solicitud técnica de permiso pendiente                    | Se mantienen los controles técnicos existentes.                             | Un comentario de aclaración no concede permisos adicionales.                                                                        |
+| Falla el agente, la autenticación o su proceso                    | Intervención, sin reenvío ni cambio automático de modelo.                   | Revisar el error y el estado del proceso.                                                                                           |
+| Quedan cambios sin commit o no se confirma la parada del agente   | No se fija un Commit candidato acreditado.                                  | Resolver la incertidumbre; no aceptar el resultado como verificado.                                                                 |
+| Cambian controles protegidos o fallan comandos                    | Intervención; se conserva la causa y los comandos posteriores sin ejecutar. | Revisar el Commit candidato. No se encarga una corrección automática.                                                               |
+| Evidencia truncada, informe E2E ausente, cero pruebas u omisiones | No se aprueba técnicamente aunque el comando devuelva cero.                 | Obtener evidencia suficiente mediante una recuperación deliberada.                                                                  |
 
 ## Variantes de PR, preview y revisión
 
@@ -54,7 +55,7 @@ flowchart TD
 | Se cierra la PR sin merge                                                                 | Intervención; no completar ni asumir que se publicó.                                                                                       |
 | Se retira `factory:ready` después de la admisión                                          | El trabajo ya admitido no se cancela.                                                                                                      |
 
-Para encargar un cambio adicional, crea otro issue con `factory:ready`. Editar el issue admitido o comentarlo no modifica el encargo del agente. No existe un comando para reemplazar su captura ni continuar la sesión con respuestas desde GitHub.
+Para encargar un cambio adicional, crea otro issue con `factory:ready`. Editar el issue admitido no reemplaza el encargo capturado. Los comentarios se envían al agente únicamente cuando está esperando una respuesta a sus dudas; mientras trabaja o después de publicar la PR y la preview no inician otro turno de implementación.
 
 Cerrar manualmente el issue antes del merge impide mantener una aceptación efectiva para integrar y puede dejar la publicación en intervención. No equivale a detener la Ejecución ni libera su puesto. El caso de cierre manual después del merge se trata a continuación.
 
@@ -90,12 +91,15 @@ flowchart TD
     R["Arrancar Factory con historial persistido"] --> S{"¿Estado anterior de la Ejecución?"}
     S -->|"En cola"| Q["Conservar cola<br/>Puede arrancar cuando quede libre"]
     S -->|"completed o stopped"| T["Conservar resultado terminal"]
-    S -->|"Ya había empezado"| I["Marcar intervención<br/>Mantener puesto y no reenviar tarea"]
+    S -->|"Esperaba una respuesta humana"| W["Conservar espera y thread<br/>Continuar al recibir un comentario nuevo"]
+    S -->|"Otros trabajos iniciados"| I["Marcar intervención<br/>Mantener puesto y no reenviar tarea"]
     I --> P{"¿Había publicación iniciada?"}
     P -->|"Sí"| O["Observar efectos remotos ya ocurridos<br/>Revocar aceptación activa y exigir recuperación"]
     P -->|"No"| C["Inspeccionar procesos y efectos locales"]
     O --> H["Sin reanudar push, PR, informes<br/>ni cierre automáticamente"]
 ```
+
+Cerrar la Factory mientras espera una respuesta humana conserva la solicitud, el puesto y la conversación. El comando operativo `stop` sigue cancelando la Ejecución. Si no se confirma la entrega de una respuesta al agente, se registra una incidencia y no se reenvía automáticamente.
 
 La Factory registra intención antes de los efectos y confirmación después. Esta separación permite reconocer una PR creada aunque se haya perdido la respuesta. No garantiza una transacción única entre GitHub, Vercel y el almacenamiento local.
 
@@ -124,4 +128,4 @@ Los tokens y costes mostrados son observaciones o estimaciones de OpenCode. Un c
 
 ## Capacidades que todavía no existen
 
-No hay continuación guiada de preguntas, reintento automático de Intentos, reparación automática tras verificaciones fallidas, recuperación operativa completa, rollback automático ni merge automático. El modo manual `run` sin Managed project es una herramienta de preparación de lectura; en el workflow de issues se rechaza y nunca sustituye a la autorización de GitHub.
+No hay reintento automático de Intentos, reparación automática tras verificaciones fallidas, recuperación operativa completa, rollback automático ni merge automático. El modo manual `run` sin Managed project es una herramienta de preparación de lectura; en el workflow de issues se rechaza y nunca sustituye a la autorización de GitHub.
