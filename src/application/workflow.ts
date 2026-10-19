@@ -30,7 +30,11 @@ export interface WorkflowOptions {
   workspace?: WorkspacePort;
   github?: GitHubPort;
   verifier: CandidateVerification;
-  createFactory: (config: FactoryConfig, agent: AgentPort) => Factory;
+  createFactory: (
+    config: FactoryConfig,
+    agent: AgentPort,
+    reservedRun?: string,
+  ) => Factory;
   publication?: PublicationPort;
   issueConversation?: IssueConversation;
   acquireOwnership: (config: FactoryConfig) => WorkflowOwnership;
@@ -69,7 +73,11 @@ export class Workflow {
     validateProject(config.managedProject);
     this.ownership = options.acquireOwnership(config);
     try {
-      this.factory = options.createFactory(config, options.createAgent(config));
+      this.factory = options.createFactory(
+        config,
+        options.createAgent(config),
+        this.ownership.reservation() ?? undefined,
+      );
       this.conversationAttached =
         this.factory.view(this.factory.active ?? "")?.status !== "waiting";
       if (options.issueConversation) {
@@ -322,7 +330,6 @@ export class Workflow {
         task: requestContext(run.request!, workspace),
         agent: this.createAgent({
           ...this.factory.config,
-          ...run.request!.runtime,
           projectDir: workspace.directory,
           managedProject: run.request!.configuration,
           conversationId: run.id,
@@ -409,7 +416,6 @@ export class Workflow {
     await this.workspace!.validate(run.workspace!, run.request!.configuration);
     const agent = this.createAgent({
       ...this.factory.config,
-      ...run.request!.runtime,
       projectDir: run.workspace!.directory,
       managedProject: run.request!.configuration,
       conversationId: run.id,
@@ -451,7 +457,6 @@ export class Workflow {
     await this.workspace.validate(run.workspace!, run.request!.configuration);
     const agent = this.createAgent({
       ...this.factory.config,
-      ...run.request!.runtime,
       projectDir: run.workspace!.directory,
       managedProject: run.request!.configuration,
       conversationId: run.id,

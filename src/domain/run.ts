@@ -1,4 +1,8 @@
-import type { AuthorizedIssue, Workspace } from "./request.ts";
+import type {
+  AgentConfiguration,
+  AuthorizedIssue,
+  Workspace,
+} from "./request.ts";
 import type { Verification } from "./verification.ts";
 import type { Publication } from "./publication.ts";
 import type { AgentIntervention, IssueComment } from "./intervention.ts";
@@ -54,6 +58,8 @@ export interface Run {
   attempt: number;
   task: string;
   request?: AuthorizedIssue;
+  /** Runtime selection for manual runs; issue runs retain request.runtime. */
+  runtime?: AgentConfiguration;
   workspace?: Workspace;
   verification?: Verification;
   publication?: Publication;
@@ -113,7 +119,7 @@ export function consumption(usage: Usage[]) {
     accreditedSpend: null,
     source: "OpenCode HTTP SDK 2.0.32 / assistant message identity",
     currency: "USD",
-    modality: "OpenCode OAuth / subscription; no invoice attribution",
+    modality: "OpenCode provider connection; no invoice attribution",
     coverage:
       usage.length &&
       withTokens.length === usage.length &&

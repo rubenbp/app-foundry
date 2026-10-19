@@ -1,70 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createWorkflow } from "../src/composition/workflow.ts";
-import type { ReadyIssue, ManagedProject } from "../src/domain/request.ts";
-import type { AgentPort } from "../src/application/agent.ts";
-
-export const project: ManagedProject = {
-  id: "other-product",
-  repository: "team/other-product",
-  baseBranch: "develop",
-  instructions: ["README.md"],
-  preparation: { command: "npm ci" },
-  verification: { commands: ["npm run check", "npm test"] },
-  publication: {
-    provider: "vercel",
-    projectId: "other-id",
-    humanMergeRequired: true,
-  },
-};
-export function ready(number = 1): ReadyIssue {
-  return {
-    repository: project.repository,
-    number,
-    title: "Show the catalogue",
-    body: "## Acceptance criteria\n- Show every game.\n- Keep keyboard navigation.",
-    author: "requester",
-    url: `https://github.com/${project.repository}/issues/${number}`,
-  };
-}
-export function setup() {
-  const root = mkdtempSync(join(tmpdir(), "foundry-admission-"));
-  const tasks: string[] = [];
-  const agent: AgentPort = {
-    async start() {
-      return { pid: 123, version: "test", configuration: {} };
-    },
-    async resume() {},
-    async create() {
-      return "session";
-    },
-    async send(_id, task) {
-      tasks.push(task);
-    },
-    async stop() {
-      return { exited: true, detail: "No owned process remains" };
-    },
-  };
-  const config = {
-    dataDir: join(root, "data"),
-    projectDir: join(root, "probe"),
-    provider: "openai",
-    model: "gpt-6-luna",
-    auth: "opencode" as const,
-    managedProject: project,
-  };
-
-  return { root, config, agent, tasks };
-}
+import { project, setup } from "./support/admission.ts";
 
 test("un issue con factory:ready se captura una sola vez, incluso si cambia, se quita la etiqueta o se reinicia", async () => {
   const s = setup();
   let workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
-    const request = ready();
+    const request = s.ready();
     await workflow.observe([request]);
     const admitted = workflow.list()[0];
     assert.equal(admitted.status, "queued");
@@ -73,10 +17,10 @@ test("un issue con factory:ready se captura una sola vez, incluso si cambia, se 
     await workflow.observe([request]);
     await workflow.observe([]);
     assert.equal(workflow.list().length, 1);
-    assert.equal(workflow.view(admitted.id)?.request?.body, ready().body);
+    assert.equal(workflow.view(admitted.id)?.request?.body, s.ready().body);
     workflow.close();
     workflow = createWorkflow(s.config, { createAgent: () => s.agent });
-    await workflow.observe([ready()]);
+    await workflow.observe([s.ready()]);
     assert.equal(workflow.list().length, 1);
     assert.equal(workflow.list()[0].status, "queued");
   } finally {
@@ -89,9 +33,9 @@ test("la admisión acepta contenido vacío o incompleto sin acreditar actores ni
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
     await workflow.observe([
-      { ...ready(1), title: "", body: "" },
-      { ...ready(2), body: " " },
-      { ...ready(3), body: "Quiero mejorar el catálogo." },
+      { ...s.ready(1), title: "", body: "" },
+      { ...s.ready(2), body: " " },
+      { ...s.ready(3), body: "Quiero mejorar el catálogo." },
     ]);
     assert.equal(workflow.list().length, 3);
     assert.equal(workflow.observation.error, null);
@@ -124,9 +68,9 @@ test("la cola sigue la primera observación y desempata de forma estable por iss
   const workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
     workflow.factory.now = () => 1000;
-    await workflow.observe([ready(9), ready(2)]);
+    await workflow.observe([s.ready(9), s.ready(2)]);
     workflow.factory.now = () => 2000;
-    await workflow.observe([ready(1)]);
+    await workflow.observe([s.ready(1)]);
     assert.deepEqual(
       workflow.queue().map((r) => r.request?.number),
       [2, 9, 1],
@@ -170,7 +114,7 @@ test("el Issue autorizado conserva la configuración de agente elegida mientras 
     { createAgent: () => s.agent },
   );
   try {
-    await workflow.observe([ready()]);
+    await workflow.observe([s.ready()]);
     assert.deepEqual(workflow.list()[0].request?.runtime, {
       provider: "openai",
       model: "gpt-6-luna",
@@ -188,10 +132,10 @@ test("un issue ajeno al Managed project no bloquea otros issues de la misma obse
   try {
     await workflow.observe([
       {
-        ...ready(9),
+        ...s.ready(9),
         repository: "another/repository",
       },
-      ready(2),
+      s.ready(2),
     ]);
     assert.equal(workflow.list()[0]?.request?.number, 2);
     assert.match(workflow.observation.error!, /configured Managed project/);
@@ -204,7 +148,7 @@ test("el historial anterior sigue en cola sin depender de la acreditación guard
   const s = setup();
   let workflow = createWorkflow(s.config, { createAgent: () => s.agent });
   try {
-    await workflow.observe([ready(9), ready(2)]);
+    await workflow.observe([s.ready(9), s.ready(2)]);
     for (const run of workflow.list()) {
       workflow.factory.store.save({
         ...run,
@@ -226,13 +170,13 @@ test("el historial anterior sigue en cola sin depender de la acreditación guard
     }
     workflow.close();
     workflow = createWorkflow(s.config, { createAgent: () => s.agent });
-    await workflow.observe([ready(9), ready(2)]);
+    await workflow.observe([s.ready(9), s.ready(2)]);
     assert.equal(workflow.list().length, 2);
     assert.deepEqual(
       workflow.queue().map((run) => run.request?.number),
       [2, 9],
     );
-    assert.equal(workflow.queue()[0].request?.body, ready().body);
+    assert.equal(workflow.queue()[0].request?.body, s.ready().body);
     assert.equal(workflow.observation.error, null);
   } finally {
     workflow.close();

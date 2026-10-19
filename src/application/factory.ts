@@ -25,14 +25,40 @@ export class Factory {
     config: FactoryConfig,
     agent: AgentPort,
     store: RunRepository,
-    options: { secrets?: string[]; now?: () => number } = {},
+    options: {
+      secrets?: string[];
+      now?: () => number;
+      reservedRun?: string;
+    } = {},
   ) {
-    this.config = config;
+    this.config = Object.freeze({ ...config });
     this.agent = agent;
     this.now = options.now ?? Date.now;
     this.secrets = options.secrets ?? [];
     this.clean = sanitizer(this.secrets);
     this.store = store;
+    // Check every pending run before recovery writes or any external effect.
+    for (const run of this.store.list()) {
+      const selection = this.recordedSelection(run);
+      const initiated =
+        run.status !== "queued" ||
+        run.phase !== undefined ||
+        run.sessionId !== null ||
+        run.process !== null ||
+        options.reservedRun === run.id;
+      if (
+        run.status !== "completed" &&
+        run.status !== "stopped" &&
+        initiated &&
+        selection &&
+        (selection.provider !== config.provider ||
+          selection.model !== config.model)
+      ) {
+        throw new Error(
+          `No se puede arrancar la Factory: la Ejecución ${run.id} usa ${selection.provider}/${selection.model}; la configuración global indica ${config.provider}/${config.model}. Arranca con la selección anterior y termina o cancela esa Ejecución antes de cambiar.`,
+        );
+      }
+    }
     for (const run of this.store.list()) {
       if (
         run.status === "waiting" &&
@@ -87,6 +113,34 @@ export class Factory {
     }
   }
 
+  private recordedSelection(run: Run) {
+    const selection = run.request?.runtime ?? run.runtime;
+    if (selection) {
+      return selection;
+    }
+    // Older manual runs recorded the effective model only in process evidence.
+    const model = run.process?.configuration.model;
+    if (
+      model &&
+      typeof model === "object" &&
+      "providerID" in model &&
+      typeof model.providerID === "string" &&
+      "id" in model &&
+      typeof model.id === "string"
+    ) {
+      return { provider: model.providerID, model: model.id };
+    }
+    if (typeof model === "string" && model.includes("/")) {
+      const separator = model.indexOf("/");
+
+      return {
+        provider: model.slice(0, separator),
+        model: model.slice(separator + 1),
+      };
+    }
+    return undefined;
+  }
+
   record(run: Run, kind: string, text: string) {
     run.history.push({
       at: this.now(),
@@ -137,6 +191,7 @@ export class Factory {
       attempt: 1,
       task: this.clean(task, Number.MAX_SAFE_INTEGER).text,
       ...(request ? { request } : {}),
+      ...(!request ? { runtime: this.agentConfiguration() } : {}),
       status: "queued",
       startedAt: this.now(),
       endedAt: null,
@@ -161,6 +216,17 @@ export class Factory {
     return run;
   }
 
+  private agentConfiguration() {
+    return {
+      provider: this.config.provider,
+      model: this.config.model,
+      auth: this.config.auth,
+      ...(this.config.opencodeCli
+        ? { opencodeCli: this.config.opencodeCli }
+        : {}),
+    };
+  }
+
   async run(task: string) {
     if (this.active) {
       throw new Error("One Ejecución already occupies the Factory");
@@ -181,6 +247,13 @@ export class Factory {
     const run = this.view(id);
     if (!run || run.status !== "queued") {
       throw new Error("Queued request required");
+    }
+    if (!run.phase) {
+      if (run.request) {
+        run.request.runtime = this.agentConfiguration();
+      } else {
+        run.runtime = this.agentConfiguration();
+      }
     }
     this.active = run.id;
     run.status = prepare ? "preparing" : "starting";

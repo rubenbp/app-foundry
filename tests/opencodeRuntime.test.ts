@@ -6,11 +6,14 @@ import {
   writeFileSync,
   existsSync,
   rmSync,
+  readFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
 import { snapshotSkills } from "../src/infrastructure/opencode/skills.ts";
+import { createServer } from "node:http";
+import { once } from "node:events";
 
 for (const mode of ["manual", "workflow"]) {
   test(
@@ -252,3 +255,209 @@ for (const mode of ["manual", "workflow"]) {
     },
   );
 }
+
+test(
+  "Gemini y Anthropic importan claves y seleccionan modelos del catálogo nativo sin llamar al modelo",
+  { timeout: 60_000 },
+  async () => {
+    const root = mkdtempSync(join(tmpdir(), "foundry-api-runtime-"));
+    const projectDir = join(root, "project");
+    mkdirSync(projectDir);
+    const exporter = join(root, "export");
+    const writeCredential = (integrationID: string, value: object) =>
+      writeFileSync(
+        exporter,
+        `#!${process.execPath}\nconsole.log(${JSON.stringify(JSON.stringify([{ active: true, integrationID, value }]))});`,
+        { mode: 0o700 },
+      );
+    writeCredential("openai", {
+      type: "oauth",
+      methodID: "oauth",
+      access: "fictional-access",
+      refresh: "fictional-refresh",
+      expires: Date.now() + 3_600_000,
+    });
+    const config = {
+      dataDir: root,
+      projectDir,
+      provider: "openai",
+      model: "gpt-6-luna",
+      auth: "opencode" as const,
+      opencodeCli: exporter,
+    };
+    const catalogue = new OpenCode(config);
+    const agents = [catalogue];
+    try {
+      await catalogue.start(() => {});
+      for (const provider of ["google", "anthropic"]) {
+        const key = `fictional-${provider}-key`;
+        await catalogue.client!.credential.create({
+          integrationID: provider,
+          value: { type: "key", key },
+          activate: true,
+        });
+        const models = (
+          await catalogue.client!.model.list({
+            location: { directory: projectDir },
+          })
+        ).data;
+        const model = models.find(
+          (model) =>
+            model.providerID === provider &&
+            model.enabled &&
+            model.capabilities.tools,
+        );
+        assert.ok(
+          model,
+          `${provider} catalog must expose a tool-capable model`,
+        );
+        writeCredential(provider, { type: "key", key });
+        const agent = new OpenCode({ ...config, provider, model: model.id });
+        agents.push(agent);
+        const protectedValues: string[] = [];
+        const started = await agent.start(
+          () => {},
+          (values) => protectedValues.push(...values),
+        );
+        assert.ok(protectedValues.includes(key));
+        assert.doesNotMatch(JSON.stringify(started), new RegExp(key));
+        assert.doesNotMatch(
+          readFileSync(
+            join(agent.runtime!, "config", "opencode", "opencode.json"),
+            "utf8",
+          ),
+          new RegExp(key),
+        );
+        const sessionId = await agent.create();
+        const session = await agent.client!.session.get({
+          sessionID: sessionId,
+        });
+        assert.equal(session.model?.providerID, provider);
+        assert.equal(session.model?.id, model.id);
+        await agent.resume(sessionId);
+        await agent.stop(sessionId);
+      }
+      const invalid = new OpenCode({
+        ...config,
+        provider: "anthropic",
+        model: "factory-model-that-does-not-exist",
+      });
+      agents.push(invalid);
+      await assert.rejects(
+        invalid.start(() => {}),
+        /model unavailable/,
+      );
+    } finally {
+      for (const agent of agents.reverse()) {
+        agent.observer?.close();
+        if (agent.ownedPid) {
+          await agent.stop(null);
+        }
+      }
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "Ollama descubre un modelo local con herramientas sin credenciales ni llamadas de generación",
+  { timeout: 30_000 },
+  async (t) => {
+    const root = mkdtempSync(join(tmpdir(), "foundry-ollama-runtime-"));
+    const projectDir = join(root, "project");
+    mkdirSync(projectDir);
+    let tools = true;
+    const requests: string[] = [];
+    const name = "factory-test-coder:local";
+    const server = createServer((request, response) => {
+      requests.push(request.url!);
+      response.setHeader("content-type", "application/json");
+      if (request.url === "/api/tags") {
+        response.end(
+          JSON.stringify({
+            models: [
+              {
+                name,
+                model: name,
+                modified_at: "2026-10-19T00:00:00Z",
+                size: 1000,
+                digest: "test-digest",
+                details: {
+                  format: "gguf",
+                  family: "qwen3",
+                  parameter_size: "8B",
+                  quantization_level: "Q4_K_M",
+                },
+              },
+            ],
+          }),
+        );
+      } else if (request.url === "/api/show") {
+        response.end(
+          JSON.stringify({
+            capabilities: ["completion", ...(tools ? ["tools"] : [])],
+            model_info: {
+              "general.architecture": "qwen3",
+              "qwen3.context_length": 65536,
+            },
+          }),
+        );
+      } else {
+        response.statusCode = 404;
+        response.end("{}");
+      }
+    });
+    const agents: OpenCode[] = [];
+    try {
+      server.listen(11434, "127.0.0.1");
+      try {
+        await once(server, "listening");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") {
+          t.skip(
+            "A local Ollama service owns port 11434; do not contact or replace it",
+          );
+          return;
+        }
+        throw error;
+      }
+      const config = {
+        dataDir: root,
+        projectDir,
+        provider: "ollama",
+        model: name,
+        auth: "opencode" as const,
+      };
+      const agent = new OpenCode(config);
+      agents.push(agent);
+      const started = await agent.start(() => {});
+      assert.equal(started.configuration.auth, "Local Ollama (no credentials)");
+      const id = await agent.create();
+      const session = await agent.client!.session.get({ sessionID: id });
+      assert.equal(session.model?.providerID, "ollama");
+      assert.equal(session.model?.id, name);
+      assert.ok(requests.includes("/api/tags"));
+      assert.ok(requests.includes("/api/show"));
+      tools = false;
+      const unsupported = new OpenCode(config);
+      agents.push(unsupported);
+      await assert.rejects(
+        unsupported.start(() => {}),
+        /does not support tools/,
+      );
+      assert.ok(
+        requests.every((url) => url === "/api/tags" || url === "/api/show"),
+      );
+    } finally {
+      for (const agent of agents) {
+        agent.observer?.close();
+        if (agent.ownedPid) {
+          await agent.stop(null);
+        }
+      }
+      server.closeAllConnections();
+      server.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);

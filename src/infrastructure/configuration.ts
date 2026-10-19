@@ -17,16 +17,22 @@ export function readConfig(path: string): FactoryConfig {
   }
   if (
     config.auth !== "opencode" ||
-    config.provider !== "openai" ||
-    config.model !== "gpt-6-luna"
+    !["openai", "google", "anthropic", "ollama"].includes(
+      String(config.provider),
+    )
   ) {
     throw new Error(
-      "Supported preparation: openai/gpt-6-luna with OpenCode OAuth",
+      "Supported providers: openai, google, anthropic, ollama with auth opencode",
+    );
+  }
+  if (!/^[^\s#]+$/.test(String(config.model))) {
+    throw new Error(
+      "model must be an OpenCode model ID without whitespace or a variant suffix",
     );
   }
   if (
-    typeof config.opencodeCli !== "string" ||
-    !isAbsolute(config.opencodeCli)
+    (config.provider !== "ollama" || config.opencodeCli !== undefined) &&
+    (typeof config.opencodeCli !== "string" || !isAbsolute(config.opencodeCli))
   ) {
     throw new Error(
       "opencodeCli must identify the absolute OpenCode CLI path supporting auth export",
@@ -97,7 +103,9 @@ export function readConfig(path: string): FactoryConfig {
     provider: String(config.provider),
     model: String(config.model),
     auth: "opencode",
-    opencodeCli: config.opencodeCli,
+    ...(typeof config.opencodeCli === "string"
+      ? { opencodeCli: config.opencodeCli }
+      : {}),
     ...(typeof config.vercelCli === "string"
       ? { vercelCli: config.vercelCli }
       : {}),

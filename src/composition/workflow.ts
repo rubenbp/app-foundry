@@ -23,8 +23,8 @@ export function createWorkflow(
   return new Workflow(config, {
     ...options,
     acquireOwnership: acquireWorkflowOwnership,
-    createFactory: (config, agent) =>
-      createFactory(config, agent, { secrets: options.secrets }),
+    createFactory: (config, agent, reservedRun) =>
+      createFactory(config, agent, { secrets: options.secrets, reservedRun }),
     verifier: new CandidateVerifier(
       config.dataDir,
       options.verificationProcess,

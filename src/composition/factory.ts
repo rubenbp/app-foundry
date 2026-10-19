@@ -6,7 +6,11 @@ import { Store } from "../infrastructure/persistence/store.ts";
 export function createFactory(
   config: FactoryConfig,
   agent: AgentPort,
-  options: { secrets?: string[]; now?: () => number } = {},
+  options: {
+    secrets?: string[];
+    now?: () => number;
+    reservedRun?: string;
+  } = {},
 ) {
   const store = new Store(config.dataDir);
   try {

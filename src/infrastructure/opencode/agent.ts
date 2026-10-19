@@ -2,7 +2,6 @@ import {
   OpenCode as NativeClient,
   type OpenCodeClient,
   type PermissionRuleset,
-  type CredentialEntry,
 } from "@opencode/client";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import {
@@ -27,6 +26,7 @@ import type { FactoryConfig } from "../../application/configuration.ts";
 
 import { Observer } from "./observer.ts";
 import { snapshotSkills, skillPermissions, verifySkills } from "./skills.ts";
+import { exportCredential } from "./credentials.ts";
 
 export const OPENCODE_VERSION = "2.0.32";
 export const SDK_VERSION = "2.0.32";
@@ -82,7 +82,7 @@ export class OpenCode implements AgentPort {
   }
 
   constructor(config: FactoryConfig) {
-    this.config = config;
+    this.config = Object.freeze({ ...config });
   }
 
   async start(
@@ -92,12 +92,14 @@ export class OpenCode implements AgentPort {
     this.emit = emit;
     this.stopping = false;
     if (
-      this.config.provider !== "openai" ||
-      this.config.model !== "gpt-6-luna" ||
-      !this.config.opencodeCli
+      !["openai", "google", "anthropic", "ollama"].includes(
+        this.config.provider,
+      ) ||
+      !/^[^\s#]+$/.test(this.config.model) ||
+      (this.config.provider !== "ollama" && !this.config.opencodeCli)
     ) {
       throw new Error(
-        "Requires openai/gpt-6-luna with an opencodeCli supporting OAuth export",
+        "Requires a supported provider/model and opencodeCli supporting credential export for remote providers",
       );
     }
     const binary = new URL(
@@ -107,34 +109,25 @@ export class OpenCode implements AgentPort {
     const version = spawnSync(binary, ["--version"], {
       encoding: "utf8",
       timeout: 5000,
+      env: reducedEnvironment(this.config.dataDir),
     });
     if (
       version.status !== 0 ||
       !version.stdout.includes(`v${OPENCODE_VERSION}`)
     ) {
       throw new Error(
-        "OpenCode OAuth export unavailable or version mismatch; requires 2.0.32",
+        "OpenCode unavailable or version mismatch; requires 2.0.32",
       );
     }
-    const exported = spawnSync(
-      this.config.opencodeCli,
-      ["auth", "export", "openai"],
-      { encoding: "utf8", timeout: 5000, maxBuffer: 1_000_000 },
-    );
-    if (exported.status !== 0) {
-      throw new Error("OpenCode OAuth export unavailable; log in first");
-    }
-    const credentials = JSON.parse(exported.stdout) as CredentialEntry[];
-    const selected = credentials.find((c) => c.active);
-    if (
-      !selected ||
-      selected.value.type !== "oauth" ||
-      !selected.value.access ||
-      !selected.value.refresh
-    ) {
-      throw new Error("No active OpenAI OAuth credential in OpenCode");
-    }
-    protect([selected.value.access, selected.value.refresh]);
+    const selected =
+      this.config.provider === "ollama"
+        ? null
+        : exportCredential(
+            this.config.opencodeCli!,
+            this.config.provider,
+            protect,
+          );
+    const model = `${this.config.provider}/${this.config.model}`;
     if (
       this.config.conversationId &&
       !/^[a-zA-Z0-9-]+$/.test(this.config.conversationId)
@@ -178,7 +171,7 @@ export class OpenCode implements AgentPort {
       );
     }
     const effective = {
-      model: "openai/gpt-6-luna",
+      model,
       default_agent: "factory",
       update: "disable",
       warming: false,
@@ -189,7 +182,7 @@ export class OpenCode implements AgentPort {
       agents: {
         factory: {
           mode: "primary",
-          model: "openai/gpt-6-luna#low",
+          model,
           description: "Bounded Factory task",
           permissions: activePolicy,
           system:
@@ -337,12 +330,33 @@ export class OpenCode implements AgentPort {
       throw new Error("Owned OpenCode connection unavailable");
     }
 
-    await this.client.credential.create({
-      integrationID: selected.integrationID,
-      value: selected.value,
-      activate: true,
-      label: "Factory temporary OAuth",
-    });
+    if (selected) {
+      await this.client.credential.create({
+        integrationID: selected.integrationID,
+        value: selected.value,
+        activate: true,
+        label: "Factory provider credential",
+      });
+    }
+
+    const available = (
+      await this.client.model.list({
+        location: { directory: this.config.projectDir },
+      })
+    ).data.find(
+      (entry) =>
+        entry.providerID === this.config.provider &&
+        entry.id === this.config.model &&
+        entry.enabled,
+    );
+    if (!available) {
+      throw new Error(
+        `OpenCode model unavailable: ${model}; check the model ID, provider connection or local server`,
+      );
+    }
+    if (!available.capabilities.tools) {
+      throw new Error(`OpenCode model does not support tools: ${model}`);
+    }
 
     let agents =
       (
@@ -380,7 +394,12 @@ export class OpenCode implements AgentPort {
         .slice(start + activePolicy.length)
         .every((rule) => rule.effect === "deny");
 
-    if (!actual || actual.model?.id !== "gpt-6-luna" || !validPolicy) {
+    if (
+      !actual ||
+      actual.model?.id !== this.config.model ||
+      actual.model.providerID !== this.config.provider ||
+      !validPolicy
+    ) {
       const sources = await this.client.config.get({
         location: { directory: this.config.projectDir },
       });
@@ -405,7 +424,9 @@ export class OpenCode implements AgentPort {
         node: process.version,
         sdk: SDK_VERSION,
         model: actual.model,
-        auth: "OpenCode active OpenAI OAuth (credentials omitted)",
+        auth: selected
+          ? `OpenCode active ${this.config.provider} ${selected.value.type} (credentials omitted)`
+          : "Local Ollama (no credentials)",
         opencodeCli: this.config.opencodeCli,
         permissions: actual.permissions,
         skills: skills.entries,
@@ -425,11 +446,15 @@ export class OpenCode implements AgentPort {
     }
     const session = await this.client.session.create({
       agent: "factory",
-      model: { providerID: "openai", id: "gpt-6-luna", variant: "low" },
+      model: { providerID: this.config.provider, id: this.config.model },
       location: { directory: this.config.projectDir },
     });
     const id = session.id;
-    if (!id) {
+    if (
+      !id ||
+      session.model?.providerID !== this.config.provider ||
+      session.model.id !== this.config.model
+    ) {
       throw new Error("Session creation uncertain");
     }
     this.observer = new Observer(this.client, id, this.emit);
@@ -454,6 +479,14 @@ export class OpenCode implements AgentPort {
     if (session.id !== sessionId) {
       throw new Error(
         "Existing OpenCode thread not found; a replacement will not be created",
+      );
+    }
+    if (
+      session.model?.providerID !== this.config.provider ||
+      session.model.id !== this.config.model
+    ) {
+      throw new Error(
+        "Existing OpenCode thread uses a different provider/model; restore the original Factory configuration",
       );
     }
     this.observer = new Observer(this.client, sessionId, this.emit);

@@ -40,21 +40,28 @@ export async function serveFactory(
   const publication = new GitHubPublication(config.dataDir, {
     vercelCli: config.vercelCli,
   });
-  const workflow = config.managedProject
-    ? createWorkflow(config, {
-        createAgent: (config) => new OpenCode(config),
-        workspace: new GitWorkspace(config.dataDir),
-        github: new GitHub(),
-        issueConversation: new GitHubIssueConversation(),
-        publication,
-        secrets,
-      })
-    : null;
+  let workflow: ReturnType<typeof createWorkflow> | null = null;
+  let factory: ReturnType<typeof createFactory>;
+  try {
+    workflow = config.managedProject
+      ? createWorkflow(config, {
+          createAgent: (config) => new OpenCode(config),
+          workspace: new GitWorkspace(config.dataDir),
+          github: new GitHub(),
+          issueConversation: new GitHubIssueConversation(),
+          publication,
+          secrets,
+        })
+      : null;
+    factory = workflow?.factory ?? createFactory(config, agent, { secrets });
+  } catch (error) {
+    releaseProject();
+    releaseData();
+    throw error;
+  }
   if (existsSync(socket)) {
     unlinkSync(socket);
   }
-  const factory =
-    workflow?.factory ?? createFactory(config, agent, { secrets });
   let pollTimer: ReturnType<typeof setTimeout> | undefined;
   let closing = false;
   let polling: Promise<void> | undefined;

@@ -6,11 +6,56 @@ import {
   writeFileSync,
   readFileSync,
   symlinkSync,
+  existsSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
+import { createFactory } from "../src/composition/factory.ts";
+import { setup } from "./support/admission.ts";
+
+test("una selección incompatible muestra el error y sale antes de abrir servidores o recuperar historial", () => {
+  const s = setup();
+  mkdirSync(s.config.projectDir, { recursive: true });
+  const config = { ...s.config, opencodeCli: "/trusted/opencode" };
+  const factory = createFactory(config, s.agent);
+  const run = factory.enqueue("A previously initiated task");
+  run.status = "intervention";
+  run.phase = "implementation";
+  factory.persist(run);
+  factory.close();
+  const configPath = join(s.root, "factory.json");
+  writeFileSync(
+    configPath,
+    JSON.stringify({ ...config, model: "another-model" }),
+  );
+  const result = spawnSync(
+    process.execPath,
+    [resolve("src/cli.ts"), "serve", "--config", configPath, "--port", "0"],
+    {
+      env: { HOME: s.root, PATH: process.env.PATH, TMPDIR: tmpdir() },
+      encoding: "utf8",
+      timeout: 5000,
+    },
+  );
+  assert.notEqual(result.status, 0);
+  assert.equal(result.error, undefined);
+  assert.match(result.stderr, /No se puede arrancar la Factory/);
+  assert.ok(result.stderr.includes(run.id));
+  assert.doesNotMatch(result.stdout, /Factory dashboard|Factory PID/);
+  assert.equal(existsSync(join(config.dataDir, "factory.lock")), false);
+  const restored = createFactory(config, s.agent);
+  try {
+    assert.equal(
+      restored.view(run.id)!.history.filter((item) => item.kind === "recovery")
+        .length,
+      1,
+    );
+  } finally {
+    restored.close();
+  }
+});
 
 test("la CLI rechaza una segunda instancia, conserva el trabajo incierto tras reiniciar y nunca lo vuelve a enviar", async () => {
   const root = mkdtempSync(join(tmpdir(), "foundry-cli-"));
@@ -63,7 +108,7 @@ test("la CLI rechaza una segunda instancia, conserva el trabajo incierto tras re
     await once(admission, "exit");
     const snapshot = await fetch(`${origin}/api/view`).then((r) => r.json());
     assert.equal(snapshot.run.status, "intervention");
-    assert.match(snapshot.run.error, /OAuth export unavailable/);
+    assert.match(snapshot.run.error, /credential export unavailable/);
     const id = snapshot.run.id;
     const exit = once(child, "exit");
     child.kill("SIGTERM");
