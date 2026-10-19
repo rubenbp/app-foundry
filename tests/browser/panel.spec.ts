@@ -118,7 +118,7 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     await once(server, "listening");
     await page.reload();
     await expect(page.locator(".notice.danger")).toContainText(
-      "no task was resent",
+      "no se reenvió la tarea",
     );
     await expect(page.locator(".timeline")).toContainText("busy");
     await page.setViewportSize({ width: 390, height: 844 });

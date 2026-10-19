@@ -146,7 +146,7 @@ test("las evidencias truncadas de un comando no pueden aprobar un candidato, aun
     assert.equal(result.status, "intervention");
     assert.equal(result.verification?.checks[0].code, 0);
     assert.equal(result.verification?.checks[0].status, "failed");
-    assert.match(result.error!, /truncated/);
+    assert.match(result.error!, /truncada/);
   } finally {
     s.close();
   }
@@ -552,10 +552,10 @@ test("la verificación registra la intención antes de detener al agente y bloqu
     blocker.exec("BEGIN IMMEDIATE");
     await assert.rejects(
       s.workflow.verifyCandidate(),
-      /Persistence unavailable/,
+      /persistencia no está disponible/,
     );
     assert.equal(stopped, false);
-    assert.match(s.workflow.factory.fault!, /Persistence failed/);
+    assert.match(s.workflow.factory.fault!, /Falló la persistencia/);
   } finally {
     blocker?.exec("ROLLBACK");
     blocker?.close();

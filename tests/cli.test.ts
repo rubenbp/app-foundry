@@ -74,7 +74,7 @@ test("la CLI rechaza una segunda instancia, conserva el trabajo incierto tras re
       r.json(),
     );
     assert.equal(recovered.run.id, id);
-    assert.match(recovered.run.error, /no task was resent/);
+    assert.match(recovered.run.error, /no se reenvió la tarea/);
     assert.equal(recovered.runs.length, 1);
   } finally {
     const exit = once(child, "exit");

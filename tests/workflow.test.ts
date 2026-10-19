@@ -107,7 +107,7 @@ test("un fallo de escritura en SQLite impide enviar la tarea tras iniciar el ser
   try {
     await assert.rejects(s.factory.run("Do not send on persistence failure"));
     assert.equal(s.sends(), 0);
-    assert.match(s.factory.fault!, /Persistence failed/);
+    assert.match(s.factory.fault!, /Falló la persistencia/);
   } finally {
     blocker.exec("ROLLBACK");
     blocker.close();
@@ -186,7 +186,7 @@ test("los permisos siguen pendientes, la parada es explícita y reiniciar conser
   assert.equal(resumed.view(run.id)!.status, "intervention");
   assert.equal(resumed.view(run.id)!.pending[0].id, "q1");
   assert.equal(s.sends(), 1);
-  assert.match(resumed.view(run.id)!.error!, /no task was resent/);
+  assert.match(resumed.view(run.id)!.error!, /no se reenvió la tarea/);
   await resumed.stop(run.id);
   assert.equal(resumed.view(run.id)!.status, "stopped");
   assert.equal(s.stops(), 1);
@@ -248,7 +248,7 @@ test("un fallo al guardar artefactos bloquea nuevos efectos y ningún secreto si
       text: "hello",
     }),
   );
-  await assert.rejects(s.factory.stop(run.id), /effects blocked/);
+  await assert.rejects(s.factory.stop(run.id), /se bloquearon los efectos/);
   assert.equal(s.stops(), 0);
   s.factory.close();
 });

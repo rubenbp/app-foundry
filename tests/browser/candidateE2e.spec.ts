@@ -87,7 +87,7 @@ for (const scenario of ["passed", "occupied", "cancelled"] as const) {
       if (occupied) {
         expect(result.status).toBe("intervention");
         expect(result.verification?.checks[1].status).toBe("failed");
-        expect(output).toContain("already used");
+        expect(output).toContain("ya está en uso");
         expect(result.verification?.e2e).toBeUndefined();
       } else {
         expect(result.status, output ?? result.error ?? "").toBe(
