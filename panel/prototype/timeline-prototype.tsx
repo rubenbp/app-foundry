@@ -189,6 +189,7 @@ function EntryBody({
 }
 
 export function TimelinePrototype({
+  compact = false,
   runId,
   entries,
   technicalCount,
@@ -197,6 +198,7 @@ export function TimelinePrototype({
   onFollowChange,
   action,
 }: {
+  compact?: boolean;
   runId: string;
   entries: TimelineEntry[];
   technicalCount: number;
@@ -337,6 +339,14 @@ export function TimelinePrototype({
           <span>{entries.length} entradas</span>
         </div>
         <div className="proto-stream-actions">
+          {compact ? (
+            <span
+              className={following ? "proto-live-label" : "proto-reading-label"}
+            >
+              <i />
+              {following ? "Al final" : "Leyendo historial"}
+            </span>
+          ) : null}
           <button
             className={`proto-quiet-button ${showTechnical ? "selected" : ""}`}
             aria-pressed={showTechnical}
@@ -348,15 +358,17 @@ export function TimelinePrototype({
           {action}
         </div>
       </header>
-      <div className="proto-stream-description">
-        <span>Eventos, mensajes y herramientas en un solo lugar.</span>
-        <span
-          className={following ? "proto-live-label" : "proto-reading-label"}
-        >
-          <i />
-          {following ? "Siguiendo el final" : "Consultando historial"}
-        </span>
-      </div>
+      {!compact ? (
+        <div className="proto-stream-description">
+          <span>Eventos, mensajes y herramientas en un solo lugar.</span>
+          <span
+            className={following ? "proto-live-label" : "proto-reading-label"}
+          >
+            <i />
+            {following ? "Siguiendo el final" : "Consultando historial"}
+          </span>
+        </div>
+      ) : null}
       <div
         className="proto-stream-scroll"
         ref={viewport}

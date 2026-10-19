@@ -2,7 +2,7 @@
 
 **Pregunta:** ¿qué composición permite seguir una Ejecución en tiempo real, consultar su pasado sin saltos y mantener visibles la fase y las decisiones pendientes?
 
-Este código es exploratorio. Vive en la rama local `codex/prototype-dashboard`, separado de `main`. No representa una implementación de producción ni una composición ya elegida.
+Este código es exploratorio. Vive en la rama local `codex/prototype-dashboard`, separado de `main`. No representa una implementación de producción. El usuario eligió la composición A el 19/10/2026 y pidió profundizarla antes de implementarla.
 
 ## Ejecutar
 
@@ -22,7 +22,7 @@ La ruta existente `/` conserva el Dashboard actual cuando no recibe `variant`. L
 - **B · Bitácora:** fases en una columna izquierda, contexto resumido en una franja superior y cronología más densa. Favorece recorrer muchos registros.
 - **C · Foco:** una cronología amplia y centrada, fases superiores y un resumen inferior persistente. El contexto completo se consulta en un diálogo. Favorece leer mensajes largos.
 
-El selector inferior y las flechas del teclado recorren las variantes. La URL conserva la variante; las flechas no se interceptan en campos de formulario. «Estado» muestra la composición, la fuente, el escenario, la fase observada y la consultada, el seguimiento y los registros visibles.
+A es la composición seleccionada y su control «Estado» está integrado en la barra del prototipo, sin reservar altura al pie. B y C siguen disponibles mediante la URL para consultar la exploración inicial; conservan su selector inferior y sus atajos. «Estado» muestra la composición, la fuente, el escenario, la fase observada y la consultada, el seguimiento y los registros visibles.
 
 ## Comprobar el comportamiento
 
@@ -42,7 +42,20 @@ El selector inferior y las flechas del teclado recorren las variantes. La URL co
 
 **Bajo demanda:** estados internos de OpenCode, intenciones y confirmaciones, configuración capturada, sesión, procesos, identificadores completos, limitaciones, consumo detallado y salidas completas. Las entradas `part` del historial no se duplican, ya que su salida está representada por la evidencia o herramienta correspondiente.
 
-## Límites y decisión pendiente
+## Iteración sobre A: densidad y navegación
+
+Tras la elección del usuario:
+
+- La cabecera integra issue y título y reduce los metadatos a una segunda línea compacta. El estado de la Ejecución permanece visible también en móvil.
+- Desde 900 px, un aside izquierdo contiene el historial y la cola, con scroll propio y acceso permanente. En pantallas menores se conserva el selector de ejecuciones.
+- Se elimina el rótulo redundante «Contexto de la ejecución». El aside derecho empieza directamente con la fase.
+- Las comprobaciones se resumen en comando, resultado, duración y salida. Se elimina el ID del grupo del resumen y el diagnóstico queda plegado.
+- «Limpieza confirmada» se sustituye en el detalle por una explicación del cierre del comando. Si la finalización de sus procesos es incierta o pendiente, aparece un aviso visible sin desplegar el diagnóstico.
+- «Ver evidencia y criterios» abre el diálogo directamente en la verificación, sin obligar a recorrer la configuración anterior.
+
+Se comprobaron las vistas a 941×896, 706×896 y 390×844, sin scroll exterior. La cabecera de tarea ocupa unos 64 px a 706 y 941 px; una comprobación plegada ocupa unos 60 px. Pasan las cuatro pruebas existentes de `panel.spec.ts` y `verification.spec.ts`.
+
+## Límites y decisión de composición
 
 La simulación utiliza una copia en memoria de la Ejecución seleccionada. Sus escenarios recortan datos de una Ejecución ya observada; los eventos añadidos están marcados como simulados. Los recursos muestran el consumo observado de la Ejecución de origen, no una reconstrucción histórica de su consumo.
 
@@ -50,4 +63,4 @@ Las salidas disponibles solo tienen `updatedAt`. El orden inicial de estas entra
 
 Se han comprobado directamente en el navegador el seguimiento al final, la conservación de la posición al recibir novedades, el retorno al final, la carga de salidas, los escenarios por fase y la ausencia de scroll exterior en escritorio y móvil. También pasan TypeScript, ESLint y el build de producción. No se añaden pruebas automatizadas al código desechable.
 
-**Veredicto provisional:** A permite observar actividad y verificación simultáneamente y es la propuesta inicial para valorar. B y C exploran otras prioridades. La selección visual y la implementación definitiva quedan pendientes de la revisión del usuario; no se ha promovido ninguna variante a producción.
+**Decisión del usuario:** A · Cabina. Se continúa profundizando el prototipo con historial fijo, cabecera compacta y evidencia resumida. B y C quedan como referencia de la exploración inicial. La implementación definitiva sigue pendiente; no se ha promovido el código desechable a producción.

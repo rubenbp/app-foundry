@@ -16,16 +16,21 @@ export function PrototypeSwitcher({
   variant,
   onChange,
   state,
+  compact = false,
 }: {
   variant: PrototypeVariant;
   onChange: (variant: PrototypeVariant) => void;
   state: ReactNode;
+  compact?: boolean;
 }) {
   const [showState, setShowState] = useState(false);
   const current = prototypeVariants.findIndex((item) => item.key === variant);
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
+      if (compact) {
+        return;
+      }
       if (
         event.target instanceof Element &&
         event.target.closest("input, textarea, select, [contenteditable]")
@@ -44,39 +49,45 @@ export function PrototypeSwitcher({
     window.addEventListener("keydown", handleKey);
 
     return () => window.removeEventListener("keydown", handleKey);
-  }, [current, onChange]);
+  }, [current, onChange, compact]);
 
   if (!import.meta.env.DEV) {
     return null;
   }
 
   return (
-    <div className="prototype-switcher">
+    <div className={`prototype-switcher ${compact ? "is-selected" : ""}`}>
       {showState ? (
         <div className="prototype-state">
           <strong>Estado del prototipo</strong>
           {state}
         </div>
       ) : null}
-      <span className="prototype-mark">PROTOTIPO</span>
-      <button
-        aria-label="Variante anterior"
-        onClick={() => onChange(prototypeVariants[(current + 2) % 3].key)}
-      >
-        ←
-      </button>
-      <span className="prototype-label">
-        <strong>
-          {variant} · {prototypeVariants[current].name}
-        </strong>
-        <small>{prototypeVariants[current].description}</small>
+      <span className="prototype-mark">
+        {compact ? "PROTOTIPO A" : "PROTOTIPO"}
       </span>
-      <button
-        aria-label="Variante siguiente"
-        onClick={() => onChange(prototypeVariants[(current + 1) % 3].key)}
-      >
-        →
-      </button>
+      {!compact ? (
+        <>
+          <button
+            aria-label="Variante anterior"
+            onClick={() => onChange(prototypeVariants[(current + 2) % 3].key)}
+          >
+            ←
+          </button>
+          <span className="prototype-label">
+            <strong>
+              {variant} · {prototypeVariants[current].name}
+            </strong>
+            <small>{prototypeVariants[current].description}</small>
+          </span>
+          <button
+            aria-label="Variante siguiente"
+            onClick={() => onChange(prototypeVariants[(current + 1) % 3].key)}
+          >
+            →
+          </button>
+        </>
+      ) : null}
       <button
         className="prototype-state-toggle"
         aria-expanded={showState}

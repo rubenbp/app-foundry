@@ -1990,3 +1990,497 @@ body:has(.dashboard-prototype) {
     padding-bottom: 13px;
   }
 }
+/* A selected: persistent execution navigation and a compact observation area. */
+.proto-executions-sidebar {
+  display: none;
+}
+.prototype-a .variant-a {
+  grid-template-rows: auto auto minmax(0, 1fr) 28px;
+  grid-template-areas: "heading heading" "phases phases" "stream context" "footer footer";
+  padding: 0 18px 5px;
+  column-gap: 16px;
+}
+.prototype-a .proto-task-heading {
+  padding: 12px 0 10px;
+  gap: 12px;
+}
+.prototype-a .proto-task-heading > div:first-child {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: baseline;
+}
+.prototype-a .proto-breadcrumb {
+  margin: 0;
+  gap: 6px;
+}
+.prototype-a .proto-breadcrumb a {
+  white-space: nowrap;
+  font-size: 10px;
+}
+.prototype-a .proto-task-heading h1 {
+  font-size: 19px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+.prototype-a .proto-task-meta {
+  grid-column: 1 / -1;
+  margin-top: 5px;
+  font-size: 10px;
+}
+.prototype-a .proto-task-status {
+  display: flex;
+  align-self: center;
+}
+.prototype-a .proto-task-status small {
+  display: none;
+}
+.prototype-a .proto-status {
+  padding: 4px 8px;
+  font-size: 10px;
+  max-width: 165px;
+}
+.prototype-a .proto-phases {
+  padding-bottom: 12px;
+}
+.prototype-a .proto-layout-phases {
+  padding-bottom: 0;
+}
+.prototype-a .proto-phases button {
+  min-height: 40px;
+  padding: 7px 9px;
+  gap: 7px;
+}
+.prototype-a .proto-phases strong {
+  font-size: 10px;
+}
+.prototype-a .proto-phase-number {
+  width: 19px;
+  height: 19px;
+  flex-basis: 19px;
+}
+.prototype-a .proto-stream-header {
+  min-height: 47px;
+  padding: 9px 14px;
+}
+.prototype-a .proto-stream-actions {
+  gap: 9px;
+}
+.prototype-a .proto-stream-actions > .proto-live-label,
+.prototype-a .proto-stream-actions > .proto-reading-label {
+  font-size: 9px;
+}
+.prototype-a .proto-stream-footer {
+  min-height: 36px;
+  padding: 5px 14px;
+}
+.prototype-a .proto-phase-context {
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+.prototype-a .proto-phase-context h2 {
+  font-size: 16px;
+  margin-top: 4px;
+}
+.prototype-a .proto-lab-hint {
+  display: none;
+}
+.prototype-a .proto-lab-toolbar {
+  gap: 8px;
+  padding: 4px 18px;
+  min-height: 36px;
+  flex-basis: auto;
+}
+.prototype-switcher.is-selected {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  height: 26px;
+  padding: 2px 4px 2px 8px;
+  margin-left: auto;
+  gap: 6px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  box-shadow: none;
+}
+.prototype-switcher.is-selected .prototype-mark {
+  font-size: 7px;
+  padding-right: 6px;
+  white-space: nowrap;
+}
+.prototype-switcher.is-selected .prototype-state-toggle {
+  border-left: 0 !important;
+  padding: 3px 4px;
+}
+.prototype-switcher.is-selected .prototype-state {
+  top: 34px;
+  bottom: auto;
+  left: auto;
+  right: 0;
+  width: min(425px, calc(100vw - 26px));
+}
+.proto-dialog .verification-checks.is-compact {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 20px;
+}
+.verification-checks.is-compact .verification-compact-check {
+  padding: 10px 0;
+  margin: 0;
+  border-bottom: 1px solid #e4e8dd;
+}
+.verification-check-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.verification-check-summary > strong {
+  margin-right: auto;
+  font:
+    12px ui-monospace,
+    monospace;
+  color: #53654a;
+}
+.verification-check-result {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #edf0e7;
+  color: #7a856c;
+}
+.verification-check-result.passed {
+  background: #e8efdd;
+  color: #5a743f;
+}
+.verification-check-result.failed,
+.verification-check-result.uncertain {
+  background: #fff0da;
+  color: #97672c;
+}
+.verification-check-result.running {
+  background: #eef1e6;
+  color: #788c5b;
+}
+.verification-check-duration {
+  min-width: 40px;
+  font:
+    10px ui-monospace,
+    monospace;
+  color: #858f77;
+  text-align: right;
+}
+.verification-check-summary a {
+  font-size: 11px;
+}
+.verification-check-technical {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #7b886d;
+}
+.verification-check-technical summary {
+  cursor: pointer;
+  font-size: 10px;
+  color: #8c967f;
+  width: fit-content;
+}
+.verification-check-technical dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 9px 0;
+}
+.verification-check-technical dl > div {
+  display: flex;
+  gap: 7px;
+}
+.verification-check-technical dd {
+  margin: 0;
+}
+.verification-check-technical p {
+  font-size: 10px;
+  color: #8b947e;
+}
+.verification-process-warning {
+  margin: 8px 0;
+  padding: 7px 10px;
+  background: #fff0da;
+  color: #8f622b;
+  border-radius: 4px;
+  font-size: 11px;
+}
+@media (min-width: 900px) {
+  .dashboard-prototype.prototype-a {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: "executions lab" "executions alert" "executions main";
+  }
+  .prototype-a > .proto-appbar {
+    display: none;
+  }
+  .prototype-a > .proto-lab-toolbar {
+    grid-area: lab;
+  }
+  .prototype-a > .proto-global-alert {
+    grid-area: alert;
+  }
+  .prototype-a > .proto-main {
+    grid-area: main;
+  }
+  .prototype-a .proto-executions-sidebar {
+    grid-area: executions;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #253b30;
+    border-right: 1px solid #243b2b;
+    color: #e2e9da;
+    padding: 19px 12px 15px;
+  }
+  .proto-executions-sidebar .proto-brand {
+    font-size: 17px;
+    color: #eff5e7 !important;
+    padding: 0 5px;
+    gap: 9px;
+  }
+  .proto-executions-sidebar .proto-brand > span {
+    background: #46613d;
+  }
+  .proto-executions-heading {
+    padding: 29px 5px 0;
+  }
+  .proto-executions-heading .proto-eyebrow {
+    color: #9bad8b;
+    font-size: 8px;
+  }
+  .proto-executions-heading h2 {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 550;
+    padding: 12px 0;
+  }
+  .proto-executions-heading h2 > span {
+    color: #aabc9b;
+    font-size: 10px;
+  }
+  .proto-executions-scroll {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    flex: 1;
+  }
+  .proto-executions-scroll h3 {
+    font-size: 9px;
+    font-weight: 500;
+    color: #9bae8b;
+    padding: 14px 6px 10px;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .proto-executions-scroll ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 7px;
+  }
+  .proto-executions-scroll button {
+    display: grid;
+    gap: 9px;
+    width: 100%;
+    text-align: left;
+    padding: 12px 10px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: #d8e3ce;
+  }
+  .proto-executions-scroll button:hover {
+    background: #304a38;
+  }
+  .proto-executions-scroll button[aria-current="true"] {
+    background: #344f3c;
+    border-color: #526b47;
+  }
+  .proto-executions-scroll strong {
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .proto-executions-scroll small {
+    font-size: 9px;
+    color: #aebea1;
+    display: flex;
+    gap: 5px;
+    align-items: baseline;
+  }
+  .proto-run-dot {
+    display: inline-block;
+    flex: 0 0 4px;
+    height: 4px;
+    width: 4px;
+    border-radius: 50%;
+    background: #b4ba9e;
+  }
+  .proto-run-dot.running,
+  .proto-run-dot.verifying {
+    background: #b7d18d;
+  }
+  .proto-run-dot.completed {
+    background: #91b86f;
+  }
+  .proto-run-dot.waiting,
+  .proto-run-dot.intervention {
+    background: #d3ae72;
+  }
+  .proto-executions-sidebar > footer {
+    padding: 15px 5px 0;
+    border-top: 1px solid #3b5141;
+    font-size: 8px;
+    color: #99ad89;
+  }
+  .proto-executions-sidebar > footer > span {
+    display: block;
+    overflow-wrap: anywhere;
+    color: #bac9ac;
+    font-size: 9px;
+  }
+  .proto-executions-sidebar > footer p {
+    margin: 8px 0;
+  }
+  .proto-executions-sidebar > footer a {
+    color: #aebf9d;
+    font-size: 9px;
+    text-decoration: none;
+  }
+  .prototype-a .proto-task-meta > span:first-child,
+  .prototype-a .proto-task-meta > i:first-of-type {
+    display: none;
+  }
+}
+@media (min-width: 900px) and (max-width: 1199px) {
+  .dashboard-prototype.prototype-a {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .prototype-a .variant-a {
+    grid-template-columns: minmax(0, 1fr) 235px;
+    padding-left: 14px;
+    padding-right: 14px;
+    column-gap: 12px;
+  }
+  .prototype-a .proto-task-heading h1 {
+    font-size: 17px;
+  }
+  .prototype-a .proto-phases button {
+    padding-left: 6px;
+    padding-right: 6px;
+    gap: 5px;
+  }
+  .prototype-a .proto-phases strong {
+    font-size: 9px;
+  }
+  .prototype-a .proto-lab-toolbar {
+    flex-wrap: wrap;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+@media (max-width: 899px) {
+  .prototype-a .variant-a {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "heading" "phases" "stream" "footer";
+  }
+  .prototype-a .proto-appbar {
+    height: 44px;
+    flex-basis: 44px;
+  }
+  .prototype-a .proto-task-heading h1 {
+    font-size: 17px;
+  }
+}
+@media (max-width: 600px) {
+  .prototype-a .variant-a {
+    padding: 0 10px 5px;
+  }
+  .prototype-a .proto-lab-toolbar {
+    flex-wrap: wrap;
+    padding: 4px 10px;
+    gap: 6px;
+  }
+  .prototype-a .proto-task-heading {
+    gap: 7px;
+    padding: 10px 0;
+    align-items: center;
+  }
+  .prototype-a .proto-task-heading > div:first-child {
+    display: block;
+  }
+  .prototype-a .proto-breadcrumb {
+    margin-bottom: 4px;
+  }
+  .prototype-a .proto-task-heading h1 {
+    font-size: 15px;
+  }
+  .prototype-a .proto-task-meta {
+    font-size: 8px;
+    gap: 4px;
+  }
+  .prototype-a .proto-task-meta > span:first-child,
+  .prototype-a .proto-task-meta > i:first-of-type {
+    display: none;
+  }
+  .prototype-a .proto-status {
+    font-size: 8px;
+    padding: 4px 6px;
+    max-width: 100px;
+  }
+  .prototype-a .proto-phases button {
+    padding: 6px 1px;
+    min-height: 49px;
+    gap: 4px;
+  }
+  .prototype-a .proto-phases strong {
+    font-size: 7px;
+  }
+  .prototype-a .proto-phase-number {
+    height: 16px;
+    width: 16px;
+    flex-basis: 16px;
+  }
+  .prototype-a .proto-stream-header {
+    padding: 8px 10px;
+    min-height: 43px;
+  }
+  .prototype-a .proto-stream-header > div:first-child {
+    gap: 4px;
+  }
+  .prototype-a .proto-stream-actions {
+    gap: 5px;
+  }
+  .prototype-a .proto-stream-actions > .proto-live-label,
+  .prototype-a .proto-stream-actions > .proto-reading-label {
+    font-size: 8px;
+  }
+  .prototype-a .proto-stream-header > div > span {
+    font-size: 7px;
+  }
+  .prototype-a .proto-stream-footer {
+    padding: 5px 9px;
+  }
+  .verification-check-summary {
+    gap: 7px;
+  }
+  .verification-check-summary > strong {
+    flex-basis: 100%;
+    font-size: 11px;
+  }
+}

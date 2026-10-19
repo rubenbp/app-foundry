@@ -169,11 +169,13 @@ function PhaseNavigation({
   inspected,
   completed,
   onInspect,
+  compact = false,
 }: {
   current: number;
   inspected: number;
   completed: boolean;
   onInspect: (phase: number) => void;
+  compact?: boolean;
 }) {
   return (
     <nav className="proto-phases" aria-label="Fases de la Ejecución">
@@ -190,14 +192,15 @@ function PhaseNavigation({
               <button
                 aria-current={active ? "step" : undefined}
                 aria-pressed={inspected === index}
+                title={phase.name}
                 onClick={() => onInspect(index)}
               >
                 <span className="proto-phase-number">
                   {done ? "✓" : String(index + 1).padStart(2, "0")}
                 </span>
                 <span>
-                  <strong>{phase.name}</strong>
-                  <small>{phase.detail}</small>
+                  <strong>{compact ? phase.short : phase.name}</strong>
+                  {!compact ? <small>{phase.detail}</small> : null}
                 </span>
                 {active && !completed ? (
                   <i className="proto-phase-dot" />
@@ -226,6 +229,7 @@ function TaskContext({
   inspected,
   current,
   onDetails,
+  onVerificationDetails,
   onReturn,
 }: {
   run: Run;
@@ -233,6 +237,7 @@ function TaskContext({
   inspected: number;
   current: number;
   onDetails: () => void;
+  onVerificationDetails: () => void;
   onReturn: () => void;
 }) {
   const report = run.verification;
@@ -244,12 +249,6 @@ function TaskContext({
 
   return (
     <>
-      <div className="proto-context-title">
-        <span className="proto-eyebrow">CONTEXTO DE LA EJECUCIÓN</span>
-        <span className="proto-context-pin" title="Siempre visible">
-          ⌖
-        </span>
-      </div>
       <section className="proto-context-section proto-phase-context">
         <span className="proto-eyebrow">
           {inspected === current ? "FASE ACTUAL" : "CONSULTANDO FASE"}
@@ -330,7 +329,7 @@ function TaskContext({
               </li>
             ))}
           </ul>
-          <button className="proto-text-button" onClick={onDetails}>
+          <button className="proto-text-button" onClick={onVerificationDetails}>
             Ver evidencia y criterios ↗
           </button>
           <p className="proto-fine-print">
@@ -436,15 +435,20 @@ function PrototypeDialog({
   title,
   onClose,
   children,
+  initialSection,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  initialSection?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     dialog.current?.showModal();
-  }, []);
+    if (initialSection) {
+      dialog.current?.querySelector(`#${initialSection}`)?.scrollIntoView();
+    }
+  }, [initialSection]);
 
   return (
     <dialog className="proto-dialog" ref={dialog} onClose={onClose}>
@@ -543,9 +547,9 @@ export default function DashboardPrototype({
   const [inspected, setInspected] = useState<number | null>(null);
   const [showTechnical, setShowTechnical] = useState(false);
   const [following, setFollowing] = useState(true);
-  const [dialog, setDialog] = useState<"details" | "runs" | "context" | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<
+    "details" | "verification" | "runs" | "context" | null
+  >(null);
   const changeVariant = useCallback((key: PrototypeVariant) => {
     const url = new URL(location.href);
     url.searchParams.set("variant", key);
@@ -647,6 +651,15 @@ export default function DashboardPrototype({
     : blocked
       ? "Requiere atención"
       : labels[run.status];
+
+  function selectRun(id: string) {
+    onSelect(id);
+    setExtra([]);
+    setInspected(null);
+    setPlaying(false);
+    setDialog(null);
+  }
+
   const context = (
     <TaskContext
       run={run}
@@ -655,6 +668,7 @@ export default function DashboardPrototype({
       current={current}
       onReturn={() => setInspected(null)}
       onDetails={() => setDialog("details")}
+      onVerificationDetails={() => setDialog("verification")}
     />
   );
 
@@ -663,8 +677,12 @@ export default function DashboardPrototype({
       <div className="proto-task-heading">
         <div>
           <div className="proto-breadcrumb">
-            <span>EJECUCIONES</span>
-            <span>/</span>
+            {variant !== "A" ? (
+              <>
+                <span>EJECUCIONES</span>
+                <span>/</span>
+              </>
+            ) : null}
             <a href={run.request?.url} target="_blank" rel="noreferrer">
               {run.request
                 ? `ISSUE #${run.request.number}`
@@ -675,7 +693,9 @@ export default function DashboardPrototype({
               <span className="proto-replay-tag">SIMULACIÓN</span>
             ) : null}
           </div>
-          <h1>{run.request?.title ?? run.task}</h1>
+          <h1 title={run.request?.title ?? run.task}>
+            {run.request?.title ?? run.task}
+          </h1>
           <div className="proto-task-meta">
             <span>{run.request?.repository ?? "Ejecución manual"}</span>
             <i /> <span>Intento {String(run.attempt).padStart(2, "0")}</span>
@@ -702,6 +722,7 @@ export default function DashboardPrototype({
     <PhaseNavigation
       current={current}
       completed={completed}
+      compact={variant === "A"}
       inspected={inspectedPhase}
       onInspect={(phase) => {
         setInspected(phase);
@@ -715,6 +736,7 @@ export default function DashboardPrototype({
     <TimelinePrototype
       key={`${run.id}:${replay}:${scenario}`}
       runId={run.id}
+      compact={variant === "A"}
       entries={visible}
       technicalCount={technicalCount}
       showTechnical={showTechnical}
@@ -789,8 +811,114 @@ export default function DashboardPrototype({
   );
   const layout = { header, phases: phaseNavigation, timeline, context, footer };
 
+  const prototypeControls = (
+    <PrototypeSwitcher
+      compact={variant === "A"}
+      variant={variant}
+      onChange={changeVariant}
+      state={
+        <pre>
+          {JSON.stringify(
+            {
+              question:
+                "Seguir la ejecución y consultar el pasado sin scroll de página",
+              variant,
+              mode: replay
+                ? "simulación en memoria"
+                : "API local de solo lectura",
+              scenario: replay ? scenario : null,
+              run: run.id,
+              status: run.status,
+              currentPhase: phases[current].name,
+              inspectedPhase: phases[inspectedPhase].name,
+              followingEnd: following,
+              entries: visible.length,
+              hiddenTechnicalEntries: showTechnical ? 0 : technicalCount,
+              simulatedEntries: replay ? extra.length : 0,
+              disconnected,
+              lastLocalResponse: time(lastLocal),
+            },
+            null,
+            2,
+          )}
+        </pre>
+      }
+    />
+  );
+
   return (
     <div className={`dashboard-prototype prototype-${variant.toLowerCase()}`}>
+      {variant === "A" ? (
+        <aside
+          className="proto-executions-sidebar"
+          aria-label="Navegación de ejecuciones"
+        >
+          <a href="/?variant=A" className="proto-brand">
+            <span>
+              F<span>·</span>
+            </span>
+            App Foundry
+          </a>
+          <div className="proto-executions-heading">
+            <span className="proto-eyebrow">FACTORY LOCAL</span>
+            <h2>
+              Ejecuciones <span>{view.runs.length}</span>
+            </h2>
+          </div>
+          <div className="proto-executions-scroll">
+            {view.queue.length ? (
+              <section>
+                <h3>
+                  En cola <span>{view.queue.length}</span>
+                </h3>
+                <ul>
+                  {view.queue.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        onClick={() => selectRun(item.id)}
+                        aria-current={run.id === item.id ? "true" : undefined}
+                      >
+                        <strong>{item.title}</strong>
+                        <small>En cola</small>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            <section>
+              <h3>Historial</h3>
+              <ul>
+                {view.runs
+                  .filter((item) => item.status !== "queued")
+                  .map((item) => (
+                    <li key={item.id}>
+                      <button
+                        onClick={() => selectRun(item.id)}
+                        aria-current={
+                          source.id === item.id ? "true" : undefined
+                        }
+                      >
+                        <strong>{item.task}</strong>
+                        <small>
+                          <i className={`proto-run-dot ${item.status}`} />
+                          {labels[item.status]} · {time(item.startedAt)}
+                        </small>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          </div>
+          <footer>
+            <span>{run.request?.repository ?? "Ejecución manual"}</span>
+            <p>Solo consulta · decisiones en GitHub</p>
+            <a href="http://127.0.0.1:4310/" target="_blank" rel="noreferrer">
+              Dashboard actual ↗
+            </a>
+          </footer>
+        </aside>
+      ) : null}
       <header className="proto-appbar">
         <a href="/?variant=A" className="proto-brand">
           <span>
@@ -888,6 +1016,7 @@ export default function DashboardPrototype({
             Estado real · consulta cada 2 s
           </span>
         )}
+        {prototypeControls}
       </div>
       {view.fault ||
       view.admission.error ||
@@ -932,39 +1061,11 @@ export default function DashboardPrototype({
           <VariantC {...layout} dock={dock} />
         )}
       </main>
-      <PrototypeSwitcher
-        variant={variant}
-        onChange={changeVariant}
-        state={
-          <pre>
-            {JSON.stringify(
-              {
-                question:
-                  "Seguir la ejecución y consultar el pasado sin scroll de página",
-                variant,
-                mode: replay
-                  ? "simulación en memoria"
-                  : "API local de solo lectura",
-                scenario: replay ? scenario : null,
-                run: run.id,
-                status: run.status,
-                currentPhase: phases[current].name,
-                inspectedPhase: phases[inspectedPhase].name,
-                followingEnd: following,
-                entries: visible.length,
-                hiddenTechnicalEntries: showTechnical ? 0 : technicalCount,
-                simulatedEntries: replay ? extra.length : 0,
-                disconnected,
-                lastLocalResponse: time(lastLocal),
-              },
-              null,
-              2,
-            )}
-          </pre>
-        }
-      />
       {dialog ? (
         <PrototypeDialog
+          initialSection={
+            dialog === "verification" ? "verification-title" : undefined
+          }
           title={
             dialog === "runs"
               ? "Ejecuciones"
@@ -1017,7 +1118,7 @@ export default function DashboardPrototype({
           ) : (
             <>
               <IssueDetails run={run} />
-              <VerificationDetails run={run} />
+              <VerificationDetails run={run} compact={variant === "A"} />
               <PublicationDetails run={run} />
               <IntegrationDetails run={run} />
               <section className="card">
