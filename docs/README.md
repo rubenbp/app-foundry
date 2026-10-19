@@ -8,6 +8,10 @@ El agente puede mantener las pruebas existentes, actualizar dependencias, lockfi
 
 Se mantienen verificación independiente, revisión de la preview, aceptación mediante merge humano. La recuperación utiliza los comandos existentes; no incorpora bucles automáticos de corrección ni reanudación general tras reinicios. Consulta [el contrato de verificación](manual/03-verificacion-y-aceptacion.md) y [la arquitectura](architecture.md#autonomía-local-del-managed-project).
 
+## Skills del agente
+
+El directorio `skills/` del repositorio de la Factory contiene el catálogo común que mantiene el equipo. El agente descubre las skills por su nombre y descripción y carga las que necesita mediante OpenCode. Cada Ejecución fija su copia antes del primer Intento y la conserva entre Intentos y reinicios. Solo se autorizan las skills de esa copia; las globales y las del Managed project no se habilitan. El catálogo inicial está vacío. Consulta la [guía para añadir skills](guides/factory-skills.md) y su [integración en la arquitectura](architecture.md#skills-de-la-factory).
+
 ## Revisión desde GitHub
 
 El issue muestra su [estado mediante etiquetas](manual/02-issue-y-trabajo.md#estados-visibles-en-github), separando la cola del trabajo en curso. Al disponer de preview verificada y evidencia técnica, recibe `factory:pending-review` y un aviso con enlaces a preview y PR. La persona revisa el resultado y lo acepta haciendo merge de la PR; no se necesita un comentario de aceptación ni copiar un SHA. Consulta el [flujo de revisión](manual/03-verificacion-y-aceptacion.md).
@@ -37,6 +41,7 @@ El MVP mantiene este flujo sencillo; no añade recuperación de comunicaciones n
 | [Arquitectura](architecture.md)                           | Responsabilidades, contratos y adaptadores del código actual.                   |
 | [Guía de GitHub y Vercel](guides/vercel-setup.md)         | Preparación de infraestructura y conexión con el runtime actual.                |
 | [Preparación de Rebobina](guides/rebobina-preparation.md) | Contrato de base, verificaciones y contexto del incremento de preparación.      |
+| [Skills de la Factory](guides/factory-skills.md)          | Catálogo común, formato, permisos y copia por Ejecución.                        |
 | `evidence/`                                               | Comprobaciones fechadas y alcance de cada experimento.                          |
 | `research/`                                               | Investigaciones y propuestas en el contexto de su fecha y commit de referencia. |
 | `agents/`                                                 | Instrucciones para trabajar en el repositorio.                                  |

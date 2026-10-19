@@ -22,6 +22,10 @@ Edita `dataDir` y `opencodeCli` con rutas absolutas. `managedProjectFile` se res
 
 El único proveedor preparado es OpenAI mediante la cuenta OAuth de OpenCode. El modelo elegido por el usuario es [`gpt-6-luna`](https://developers.openai.com/api/docs/models/gpt-6-luna), con variante `low`. No hay cambio automático de modelo ni proveedor. OAuth consume la modalidad y cuota de esa cuenta; un coste SDK cero no acredita gratuidad. Ninguna prueba automatizada llama a modelos.
 
+## Skills del agente
+
+El catálogo común vive en `skills/` dentro de este repositorio y empieza vacío. Añade cada skill como `skills/<id>/SKILL.md`, con nombre, descripción y archivos auxiliares opcionales. El agente descubre las skills disponibles y carga las instrucciones cuando las necesita, mediante el soporte nativo de OpenCode. Cada Ejecución conserva una copia desde el primer arranque de su agente, incluidos Intentos posteriores y reinicios. Solo se autorizan las skills de la Factory; no se habilitan las globales ni las del Managed project. Consulta la [guía de skills](docs/guides/factory-skills.md) para añadirlas y conocer sus permisos.
+
 ## Uso
 
 Para publicación, instala Vercel CLI **62.7.0** y autentica deliberadamente `gh` y `vercel login` con acceso al Managed project. Puedes indicar `vercelCli` con una ruta absoluta en la configuración de Factory; en su ausencia se usa `vercel` del PATH. La cuenta de GitHub necesita contenidos y PRs con escritura, comentarios, permisos efectivos y estados de commit. Solo la configuración explícita de protección requiere administración.

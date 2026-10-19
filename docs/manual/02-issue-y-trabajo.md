@@ -30,6 +30,8 @@ La protección se configura mediante una operación administrativa explícita. E
 
 Los pasos técnicos están en el [README](../../README.md) y la [guía de Vercel](../guides/vercel-setup.md).
 
+El equipo también puede añadir procedimientos reutilizables al directorio `skills/` de la Factory. Este catálogo es común a los Managed projects y comienza vacío. La [guía de skills](../guides/factory-skills.md) explica cómo mantenerlo.
+
 ## Preparar y autorizar la petición
 
 Conviene explicar el objetivo y el resultado esperado en lenguaje natural. Encabezados, listas, contexto y límites son opcionales. La persona no necesita preparar pruebas técnicas, selectores ni JSON: la Factory decide las comprobaciones anteriores al merge. La admisión acepta también contenido vacío o incompleto; el agente decide si falta información relevante y pide una aclaración antes de implementar.
@@ -54,6 +56,8 @@ La suficiencia del contenido corresponde al agente, fuera del proceso determinis
 El Issue autorizado conserva título, cuerpo, autor, momento de captura, configuración del Managed project y selección del agente. La captura sirve como encargo inicial y bitácora. Editar el título o el cuerpo después no actualiza el encargo ni bloquea la Ejecución, su aceptación o su cierre. Los registros históricos con datos antiguos de autorización siguen siendo legibles, pero esos datos ya no condicionan la admisión ni la cola.
 
 Cada issue se consume una sola vez dentro del historial persistido. Retirar y volver a aplicar la etiqueta después de admitirlo no crea otra Ejecución. Reabrirlo tampoco es un mecanismo de reintento. Retirar la etiqueta no cancela el trabajo ya admitido.
+
+Antes del primer Intento del agente se fija también una copia del catálogo de skills de la Factory. El agente conoce sus nombres y descripciones, decide cuáles necesita y carga sus instrucciones completas bajo demanda. Las referencias, plantillas y scripts auxiliares siguen sujetos a sus permisos actuales. La misma copia se conserva en las correcciones, reintentos del agente y reinicios de esa Ejecución; las actualizaciones del catálogo se aplican a las Ejecuciones cuyo agente aún no ha empezado. Solo puede cargar las skills autorizadas de la Factory, sin incorporar las globales del sistema ni las del producto.
 
 ## Cola y puesto de trabajo
 

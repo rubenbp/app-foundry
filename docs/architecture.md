@@ -35,6 +35,16 @@ El MVP presupone operadores y repositorios de confianza. El agente puede mantene
 
 La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: instrucciones` abre otro Intento. No se añaden iteraciones automáticas ni recuperación automática general tras reiniciar. El Dashboard continúa siendo de lectura y la aceptación y el merge continúan siendo humanos.
 
+## Skills de la Factory
+
+`skills/` contiene el catálogo común mantenido en Git por las personas responsables de la Factory. `infrastructure/opencode/skills.ts` publica una copia completa antes del primer Intento del agente, en el runtime de la Ejecución. La copia se reutiliza entre Intentos y reinicios; no depende del clon ni de su configuración. El modo manual usa una copia temporal con el mismo ciclo de vida que su runtime. No hay configuración por Managed project ni instalación automática de skills.
+
+El adaptador registra la ruta de la copia en el array nativo `skills` de OpenCode V2. OpenCode anuncia ID, nombre y descripción, y carga el cuerpo mediante su herramienta `skill` cuando el agente lo solicita. Los documentos y scripts auxiliares permanecen junto al `SKILL.md` para consultarlos bajo demanda. El catálogo puede estar vacío.
+
+La política deniega `skill` por defecto y autoriza únicamente los IDs de las carpetas de primer nivel con `SKILL.md`. Conserva el entorno HOME/XDG privado y la desactivación de configuración del proyecto; las fuentes globales o del sistema que OpenCode aún descubra no reciben autorización general. Como el permiso identifica el ID y no su origen, el adaptador consulta el catálogo efectivo y comprueba que cada ID autorizado resuelve al archivo de su copia antes de crear o recuperar la sesión. Una discrepancia hace fallar el arranque. Los IDs y rutas autorizados forman parte de la configuración efectiva registrada.
+
+El acceso externo se limita al directorio de la copia y su edición nativa queda denegada. Las skills siguen sometidas a las reglas de secretos, comandos y efectos externos existentes; no conceden permisos ni habilitan delegación. Esto no añade aislamiento del sistema operativo. La [guía de skills](guides/factory-skills.md) documenta el formato admitido, la actualización del catálogo y las pruebas sin llamadas al modelo.
+
 ## Responsabilidades de publicación
 
 `application/candidatePublication.ts` coordina el avance del Commit candidato y la espera de revisión. Delega responsabilidades con motivos de cambio distintos:
