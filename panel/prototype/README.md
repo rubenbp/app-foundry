@@ -75,6 +75,7 @@ Verificación manual a 993×987, 793×987 y 390×844: sin scroll exterior ni hor
 - Al activar el registro técnico, las operaciones aparecen directamente en la cronología. Se elimina el plegado exterior de los bloques; solo se despliega el detalle de una operación. Cada operación tiene su propio anclaje de lectura.
 - Se retiran la última observación y el contador de registros del detalle. Los registros originales conservan sus horas. Las filas técnicas tienen espaciado vertical simétrico, incluida la última.
 - Los diálogos quedan centrados en ambos ejes. El acceso directo a la verificación desplaza únicamente el contenido interior del diálogo.
+- La barra de scroll del historial usa el mismo fondo oscuro del aside y un indicador verde discreto. Se comprobó en Chrome forzando desbordamiento solo en el DOM de prueba, sin modificar los datos de la Factory.
 - El detalle de código elimina las fases duplicadas y presenta «Versión de partida» y «Trabajo de esta Ejecución». Los enlaces llevan al repositorio, la rama principal, el código de partida y el diff de la PR; los identificadores completos quedan plegados.
 - Las pruebas E2E muestran pruebas ejecutadas, omitidas y navegador. El entorno técnico queda bajo demanda y el modo offline mantiene un aviso visible.
 - Los criterios se presentan en tarjetas numeradas. La evidencia técnica común aparece una sola vez; los enlaces específicos permanecen junto a su criterio. Se distingue la aceptación mediante merge de la validación automática de cada criterio.

@@ -2274,6 +2274,7 @@ body:has(.dashboard-prototype) {
     overflow: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+    scrollbar-color: #61765e #253b30;
     flex: 1;
   }
   .proto-executions-scroll h3 {
