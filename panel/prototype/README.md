@@ -55,9 +55,24 @@ Tras la elección del usuario:
 
 Se comprobaron las vistas a 941×896, 706×896 y 390×844, sin scroll exterior. La cabecera de tarea ocupa unos 64 px a 706 y 941 px; una comprobación plegada ocupa unos 60 px. Pasan las cuatro pruebas existentes de `panel.spec.ts` y `verification.spec.ts`.
 
+## Iteración sobre A: registro técnico y datos estables
+
+- El icono y la tarjeta de cada evidencia quedan centrados verticalmente cuando están plegados; al expandir, el icono permanece junto a su cabecera.
+- Proyecto, modelo y tokens observados se muestran junto a los datos del Intento en una cabecera estable para todas las fases. «Encargo y criterios» abre el contenido autorizado desde esa misma ubicación.
+- Se eliminan los bloques permanentes de Encargo y Recursos del aside, la estimación SDK y la frase explicativa de consumo. El aside queda dedicado a la información de la fase.
+- Se retira «Solo consulta · decisiones en GitHub» del lateral y del pie.
+- El historial muestra la fecha y la hora de inicio de cada Ejecución, no la fecha de creación del issue, que no está disponible en la proyección.
+- El registro técnico se agrupa en bloques cronológicos plegables. El inicio y la confirmación de una operación se representan juntos; ciclos diferentes de una operación siguen siendo distintos. Las señales internas repetidas de OpenCode se resumen, conservando todos sus registros.
+- Las claves de operación se traducen: `status:<sha>:pending` actualiza el check de merge de GitHub; `review-ready:<id>` registra la notificación de revisión. El detalle identifica el Commit candidato y las referencias de informe o preview cuando la proyección permite distinguirlas.
+- «Ver registro original» conserva acceso a todos los registros retenidos por la API, sin agrupar, y a sus salidas. No se afirma que el proveedor haya sido observado por completo.
+
+Con la Ejecución disponible, los 123 registros técnicos se representan exactamente una vez dentro de 25 bloques. Se conserva el acceso a las 165 entradas originales y a las 29 salidas. Se comprobaron también operaciones sin confirmación, confirmación sin inicio observado, ciclos repetidos y operaciones desconocidas. Ninguno de esos casos inventa una confirmación ni descarta registros.
+
+Verificación manual a 993×987, 793×987 y 390×844: sin scroll exterior ni horizontal en la cronología; desalineación de las evidencias plegadas de 0 px; posición de lectura conservada al recibir novedades y retorno al final correcto. A 993 px, los metadatos conservaron la misma posición vertical al alternar entre preparación, implementación, verificación, revisión y finalización. TypeScript, ESLint y el build pasan.
+
 ## Límites y decisión de composición
 
-La simulación utiliza una copia en memoria de la Ejecución seleccionada. Sus escenarios recortan datos de una Ejecución ya observada; los eventos añadidos están marcados como simulados. Los recursos muestran el consumo observado de la Ejecución de origen, no una reconstrucción histórica de su consumo.
+La simulación utiliza una copia en memoria de la Ejecución seleccionada. Sus escenarios recortan datos de una Ejecución ya observada; los eventos añadidos están marcados como simulados. La cabecera muestra los tokens observados de la Ejecución de origen, no una reconstrucción histórica de su consumo.
 
 Las salidas disponibles solo tienen `updatedAt`. El orden inicial de estas entradas corresponde a su última actualización observada, no acredita el instante de su primera emisión. La implementación definitiva deberá concretar ese contrato si necesita un orden estable desde el inicio de cada mensaje o herramienta. El anclaje de lectura conserva la posición visual al actualizar contenido.
 

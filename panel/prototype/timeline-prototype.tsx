@@ -8,6 +8,12 @@ import {
 } from "react";
 import type { History, PartView, Run } from "../../src/domain/run.ts";
 import { time } from "../format.ts";
+import {
+  groupTechnicalEntries,
+  technicalKinds,
+  technicalOperations,
+  type TechnicalOperation,
+} from "./technical-prototype.ts";
 
 export interface TimelineEntry {
   id: string;
@@ -17,6 +23,7 @@ export interface TimelineEntry {
   text?: string;
   part?: PartView;
   simulated?: boolean;
+  technical?: TechnicalOperation[];
 }
 
 const historyLabels: Record<string, string> = {
@@ -28,14 +35,15 @@ const historyLabels: Record<string, string> = {
   verification: "Verificación independiente finalizada",
   "agent-intervention": "El agente necesita una respuesta",
 };
-const technicalKinds = new Set([
-  "opencode-status",
-  "intent",
-  "confirmed",
-  "process-started",
-  "comment-consumed",
-  "agent-stop",
-]);
+const evidenceLabels: Record<string, string> = {
+  clone: "Clon de trabajo preparado",
+  "base-context": "Base e instrucciones capturadas",
+  "verification-worktree": "Integridad del árbol del Commit candidato",
+  "verification-diff": "Diff acumulado del Commit candidato",
+  "verification-configuration":
+    "Configuración de la verificación independiente",
+  "verification-controls": "Comparación de los controles de verificación",
+};
 
 function historyEntry(entry: History, index: number): TimelineEntry {
   const isError = /error|gap|intervention|stop|recovery/.test(entry.kind);
@@ -59,7 +67,20 @@ export function timelineEntries(run: Run): TimelineEntry[] {
   const history = run.history
     .map(historyEntry)
     // A part is already represented by its expandable output below.
-    .filter((_, index) => run.history[index].kind !== "part");
+    .filter(
+      (_, index) =>
+        run.history[index].kind !== "part" &&
+        !technicalKinds.has(run.history[index].kind),
+    );
+  const technical: TimelineEntry[] = technicalOperations(run).map(
+    (operation) => ({
+      id: operation.id,
+      at: operation.at,
+      kind: "technical",
+      label: operation.label,
+      technical: [operation],
+    }),
+  );
   const parts: TimelineEntry[] = run.parts.map((part) => ({
     id: `part-${part.id}`,
     at: part.updatedAt,
@@ -70,11 +91,91 @@ export function timelineEntries(run: Run): TimelineEntry[] {
         : part.kind === "evidence"
           ? "evidence"
           : "tool",
-    label: part.kind === "text" ? "Mensaje del agente" : part.label,
+    label:
+      part.kind === "text"
+        ? "Mensaje del agente"
+        : (evidenceLabels[part.id] ?? part.label),
     part,
   }));
 
-  return [...history, ...parts].sort((a, b) => a.at - b.at);
+  const grouped = groupTechnicalEntries(
+    [...history, ...parts, ...technical].sort((a, b) => a.at - b.at),
+  );
+  for (const entry of grouped) {
+    if (entry.technical) {
+      const records = entry.technical.reduce(
+        (sum, operation) => sum + operation.records.length,
+        0,
+      );
+      entry.label = `${entry.technical.length} ${entry.technical.length === 1 ? "operación técnica" : "operaciones técnicas"} · ${records} ${records === 1 ? "registro" : "registros"}`;
+    }
+  }
+
+  return grouped;
+}
+
+function TechnicalGroup({
+  entry,
+  onInspect,
+}: {
+  entry: TimelineEntry;
+  onInspect: () => void;
+}) {
+  return (
+    <details className="proto-technical-group" onClick={onInspect}>
+      <summary>
+        <time>{time(entry.at)}</time>
+        <span>{entry.label}</span>
+      </summary>
+      <ol>
+        {entry.technical?.map((operation) => (
+          <li key={operation.id}>
+            <details className="proto-technical-operation">
+              <summary>
+                <time>{time(operation.at)}</time>
+                <span>{operation.label}</span>
+                <small className={operation.state}>
+                  {operation.state === "confirmed"
+                    ? "Confirmada"
+                    : operation.state === "started"
+                      ? "Sin confirmar"
+                      : "Observado"}
+                </small>
+              </summary>
+              <div className="proto-technical-detail">
+                {operation.note ? <p>{operation.note}</p> : null}
+                <dl>
+                  {operation.references.map((reference, index) => (
+                    <div key={index}>
+                      <dt>{reference.label}</dt>
+                      <dd>{reference.value}</dd>
+                    </div>
+                  ))}
+                  {operation.endedAt !== null ? (
+                    <div>
+                      <dt>Confirmación / última observación</dt>
+                      <dd>{time(operation.endedAt)}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+                <strong>
+                  Registros de origen · {operation.records.length}
+                </strong>
+                <pre tabIndex={0}>
+                  {operation.records
+                    .map(
+                      (record) =>
+                        `${time(record.at)} · ${record.kind}\n${record.text}`,
+                    )
+                    .join("\n\n")}
+                </pre>
+              </div>
+            </details>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
 }
 
 function EntryBody({
@@ -197,6 +298,7 @@ export function TimelinePrototype({
   onToggleTechnical,
   onFollowChange,
   action,
+  onOriginalRecords,
 }: {
   compact?: boolean;
   runId: string;
@@ -206,6 +308,7 @@ export function TimelinePrototype({
   onToggleTechnical: () => void;
   onFollowChange: (following: boolean) => void;
   action?: ReactNode;
+  onOriginalRecords: () => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLOListElement>(null);
@@ -358,6 +461,14 @@ export function TimelinePrototype({
           {action}
         </div>
       </header>
+      {showTechnical ? (
+        <div className="proto-technical-toolbar">
+          <span>{technicalCount} registros de origen agrupados</span>
+          <button className="proto-text-button" onClick={onOriginalRecords}>
+            Ver registro original ↗
+          </button>
+        </div>
+      ) : null}
       {!compact ? (
         <div className="proto-stream-description">
           <span>Eventos, mensajes y herramientas en un solo lugar.</span>
@@ -427,25 +538,34 @@ export function TimelinePrototype({
               data-entry-id={entry.id}
               className={`proto-entry ${entry.kind}`}
             >
-              <time dateTime={new Date(entry.at).toISOString()}>
-                {time(entry.at)}
-              </time>
-              <span className="proto-entry-icon" aria-hidden="true">
-                {entry.kind === "message"
-                  ? "A"
-                  : entry.kind === "tool"
-                    ? "⌘"
-                    : entry.kind === "evidence"
-                      ? "✓"
-                      : entry.kind === "error"
-                        ? "!"
-                        : "·"}
-              </span>
-              <EntryBody
-                entry={entry}
-                runId={runId}
-                onInspect={() => setFollow(false)}
-              />
+              {entry.kind === "technical" ? (
+                <TechnicalGroup
+                  entry={entry}
+                  onInspect={() => setFollow(false)}
+                />
+              ) : (
+                <>
+                  <time dateTime={new Date(entry.at).toISOString()}>
+                    {time(entry.at)}
+                  </time>
+                  <span className="proto-entry-icon" aria-hidden="true">
+                    {entry.kind === "message"
+                      ? "A"
+                      : entry.kind === "tool"
+                        ? "⌘"
+                        : entry.kind === "evidence"
+                          ? "✓"
+                          : entry.kind === "error"
+                            ? "!"
+                            : "·"}
+                  </span>
+                  <EntryBody
+                    entry={entry}
+                    runId={runId}
+                    onInspect={() => setFollow(false)}
+                  />
+                </>
+              )}
             </li>
           ))}
           {!entries.length ? (

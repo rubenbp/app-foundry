@@ -26,6 +26,16 @@ import {
 } from "./timeline-prototype.tsx";
 import "./dashboard-prototype.css";
 
+function startDate(value: number) {
+  return new Date(value).toLocaleString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 const phases = [
   { name: "Cola", detail: "Issue autorizado", short: "Cola" },
   { name: "Preparación", detail: "Base y entorno", short: "Preparación" },
@@ -225,7 +235,6 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 
 function TaskContext({
   run,
-  view,
   inspected,
   current,
   onDetails,
@@ -233,7 +242,6 @@ function TaskContext({
   onReturn,
 }: {
   run: Run;
-  view: FactoryView;
   inspected: number;
   current: number;
   onDetails: () => void;
@@ -382,48 +390,6 @@ function TaskContext({
           <p>La verificación independiente aparecerá al comenzar esta fase.</p>
         </section>
       ) : null}
-      <section className="proto-context-section">
-        <h3>Encargo</h3>
-        <dl className="proto-facts">
-          <Fact label="Proyecto">
-            {run.request?.configuration.id ?? "Ejecución manual"}
-          </Fact>
-          <Fact label="Issue">
-            {run.request ? (
-              <a href={run.request.url} target="_blank" rel="noreferrer">
-                #{run.request.number} ↗
-              </a>
-            ) : (
-              "Sin issue"
-            )}
-          </Fact>
-          <Fact label="Intento">{String(run.attempt).padStart(2, "0")}</Fact>
-          <Fact label="Modelo">
-            {run.request?.runtime.model ?? run.runtime?.model ?? "Sin observar"}
-          </Fact>
-        </dl>
-        <details className="proto-inline-details">
-          <summary>Ver encargo y criterios</summary>
-          <pre>{run.request?.body ?? run.task}</pre>
-        </details>
-      </section>
-      <section className="proto-context-section proto-resource-context">
-        <h3>Recursos</h3>
-        <dl className="proto-facts">
-          <Fact label="Tokens observados">
-            {view.consumption?.observedTokens?.toLocaleString("es-ES") ??
-              "No disponible"}
-          </Fact>
-          <Fact label="Estimación SDK">
-            {view.consumption?.estimatedCost != null
-              ? `$${view.consumption.estimatedCost.toFixed(4)}`
-              : "No disponible"}
-          </Fact>
-        </dl>
-        <p className="proto-fine-print">
-          Consumo observado de la ejecución. No equivale a gasto facturado.
-        </p>
-      </section>
       <button className="proto-details-button" onClick={onDetails}>
         Configuración, procesos y evidencia <span>↗</span>
       </button>
@@ -548,7 +514,13 @@ export default function DashboardPrototype({
   const [showTechnical, setShowTechnical] = useState(false);
   const [following, setFollowing] = useState(true);
   const [dialog, setDialog] = useState<
-    "details" | "verification" | "runs" | "context" | null
+    | "details"
+    | "verification"
+    | "runs"
+    | "context"
+    | "request"
+    | "records"
+    | null
   >(null);
   const changeVariant = useCallback((key: PrototypeVariant) => {
     const url = new URL(location.href);
@@ -616,9 +588,15 @@ export default function DashboardPrototype({
   const current = runPhase(run);
   const inspectedPhase = inspected ?? current;
   const events = [...timelineEntries(run), ...(replay ? extra : [])];
-  const technicalCount = events.filter(
-    (entry) => entry.kind === "technical",
-  ).length;
+  const technicalCount = events.reduce(
+    (sum, entry) =>
+      sum +
+      (entry.technical?.reduce(
+        (count, operation) => count + operation.records.length,
+        0,
+      ) ?? 0),
+    0,
+  );
   const visible = events.filter(
     (entry) => showTechnical || entry.kind !== "technical",
   );
@@ -663,7 +641,6 @@ export default function DashboardPrototype({
   const context = (
     <TaskContext
       run={run}
-      view={view}
       inspected={inspectedPhase}
       current={current}
       onReturn={() => setInspected(null)}
@@ -697,9 +674,29 @@ export default function DashboardPrototype({
             {run.request?.title ?? run.task}
           </h1>
           <div className="proto-task-meta">
-            <span>{run.request?.repository ?? "Ejecución manual"}</span>
+            <span className="proto-project-meta">
+              {run.request?.configuration.id ?? "Ejecución manual"}
+            </span>
             <i /> <span>Intento {String(run.attempt).padStart(2, "0")}</span>
             <i /> <span>{duration}</span>
+            <i />{" "}
+            <span>
+              {run.request?.runtime.model ??
+                run.runtime?.model ??
+                "Modelo sin observar"}
+            </span>
+            <i />{" "}
+            <span className="proto-tokens-meta">
+              {view.consumption?.observedTokens?.toLocaleString("es-ES") ??
+                "Sin observar"}{" "}
+              tokens observados
+            </span>
+            <button
+              className="proto-header-request"
+              onClick={() => setDialog("request")}
+            >
+              Encargo y criterios ↗
+            </button>
           </div>
         </div>
         <div className="proto-task-status">
@@ -742,6 +739,7 @@ export default function DashboardPrototype({
       showTechnical={showTechnical}
       onToggleTechnical={() => setShowTechnical(!showTechnical)}
       onFollowChange={setFollowing}
+      onOriginalRecords={() => setDialog("records")}
       action={
         <button
           className={`proto-quiet-button ${variant === "A" ? "proto-mobile-context" : ""}`}
@@ -758,7 +756,6 @@ export default function DashboardPrototype({
         <i className={disconnected || failing ? "warning" : ""} />
         {connectionText}
       </span>
-      <span>Solo consulta · decisiones en GitHub</span>
       <button onClick={() => setDialog("details")}>
         {replay
           ? "Datos de una ejecución real"
@@ -902,8 +899,14 @@ export default function DashboardPrototype({
                         <strong>{item.task}</strong>
                         <small>
                           <i className={`proto-run-dot ${item.status}`} />
-                          {labels[item.status]} · {time(item.startedAt)}
+                          {labels[item.status]}
                         </small>
+                        <time
+                          className="proto-run-start"
+                          dateTime={new Date(item.startedAt).toISOString()}
+                        >
+                          Inicio · {startDate(item.startedAt)}
+                        </time>
                       </button>
                     </li>
                   ))}
@@ -912,7 +915,6 @@ export default function DashboardPrototype({
           </div>
           <footer>
             <span>{run.request?.repository ?? "Ejecución manual"}</span>
-            <p>Solo consulta · decisiones en GitHub</p>
             <a href="http://127.0.0.1:4310/" target="_blank" rel="noreferrer">
               Dashboard actual ↗
             </a>
@@ -1067,15 +1069,74 @@ export default function DashboardPrototype({
             dialog === "verification" ? "verification-title" : undefined
           }
           title={
-            dialog === "runs"
-              ? "Ejecuciones"
-              : dialog === "context"
-                ? "Contexto de la ejecución"
-                : "Evidencia y detalles de la ejecución"
+            dialog === "records"
+              ? "Registro original de la ejecución"
+              : dialog === "request"
+                ? "Encargo y criterios"
+                : dialog === "runs"
+                  ? "Ejecuciones"
+                  : dialog === "context"
+                    ? "Contexto de la ejecución"
+                    : "Evidencia y detalles de la ejecución"
           }
           onClose={() => setDialog(null)}
         >
-          {dialog === "runs" ? (
+          {dialog === "request" ? (
+            <section className="proto-request-detail">
+              <h3>{run.request?.title ?? "Encargo de la Ejecución"}</h3>
+              <pre tabIndex={0}>{run.request?.body ?? run.task}</pre>
+              {run.request ? (
+                <a href={run.request.url} target="_blank" rel="noreferrer">
+                  Abrir issue #{run.request.number} en GitHub ↗
+                </a>
+              ) : null}
+            </section>
+          ) : dialog === "records" ? (
+            <section className="proto-original-records">
+              <p>
+                {run.history.length} registros de historial y {run.parts.length}{" "}
+                salidas disponibles en la API local.
+              </p>
+              <p>
+                El historial se muestra aquí sin agrupar. Las notificaciones de
+                salida se corresponden con los mensajes, las herramientas y las
+                evidencias de la cronología.
+              </p>
+              <details className="proto-record-coverage">
+                <summary>Alcance de la observación</summary>
+                <p>
+                  Se muestran los datos retenidos por la Factory. La observación
+                  de OpenCode conserva campos seleccionados; no acredita una
+                  captura completa del proveedor.
+                </p>
+                <ul>
+                  {run.gaps.map((gap, index) => (
+                    <li key={index}>{gap}</li>
+                  ))}
+                </ul>
+              </details>
+              <ol className="proto-original-history">
+                {run.history.map((record, index) => (
+                  <li key={index}>
+                    <header>
+                      <time>{time(record.at)}</time>
+                      <code>{record.kind}</code>
+                      <span>#{index + 1}</span>
+                    </header>
+                    <pre tabIndex={0}>{record.text}</pre>
+                  </li>
+                ))}
+              </ol>
+              <details>
+                <summary>Salidas completas · {run.parts.length}</summary>
+                <ul className="outputs">
+                  {run.parts.map((part) => (
+                    <Output key={part.id} runId={run.id} part={part} />
+                  ))}
+                </ul>
+              </details>
+            </section>
+          ) : dialog === "runs" ? (
             <div className="proto-run-picker">
               <h3>Historial</h3>
               {view.runs.map((item) => (
@@ -1092,7 +1153,7 @@ export default function DashboardPrototype({
                 >
                   <strong>{item.task}</strong>
                   <span>
-                    {labels[item.status]} · {time(item.startedAt)}
+                    {labels[item.status]} · Inicio {startDate(item.startedAt)}
                   </span>
                 </button>
               ))}
