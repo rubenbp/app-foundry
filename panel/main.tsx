@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { IssueDetails } from "./issue.tsx";
 import { VerificationDetails } from "./verification.tsx";
@@ -9,6 +9,10 @@ import type { FactoryView } from "../src/application/factoryView.ts";
 import { Output } from "./components/output.tsx";
 import { labels, time, age } from "./format.ts";
 import "./style.css";
+
+const DashboardPrototype = import.meta.env.DEV
+  ? lazy(() => import("./prototype/dashboard-prototype.tsx"))
+  : null;
 
 function App() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -51,6 +55,24 @@ function App() {
     ? Math.max(0, Math.floor(((run.endedAt ?? now) - run.startedAt) / 1000))
     : 0;
   const usage = view?.consumption;
+
+  if (
+    import.meta.env.DEV &&
+    DashboardPrototype &&
+    new URLSearchParams(window.location.search).has("variant")
+  ) {
+    return (
+      <Suspense fallback={<p>Cargando prototipo…</p>}>
+        <DashboardPrototype
+          view={view}
+          onSelect={setSelected}
+          failing={failing}
+          lastLocal={lastLocal}
+          now={now}
+        />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="app-shell">

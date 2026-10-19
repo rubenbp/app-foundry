@@ -1,0 +1,480 @@
+// Throwaway timeline: unified read-only history, messages and tool evidence.
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import type { History, PartView, Run } from "../../src/domain/run.ts";
+import { time } from "../format.ts";
+
+export interface TimelineEntry {
+  id: string;
+  at: number;
+  kind: "event" | "message" | "tool" | "evidence" | "error" | "technical";
+  label: string;
+  text?: string;
+  part?: PartView;
+  simulated?: boolean;
+}
+
+const historyLabels: Record<string, string> = {
+  admitted: "Issue autorizado · ejecución en cola",
+  result: "El agente ha terminado · resultado pendiente de verificación",
+  "merge-observed": "Merge humano observado",
+  completed: "Ejecución completada · issue cerrado",
+  "agent-stop": "Edición detenida para fijar el Commit candidato",
+  verification: "Verificación independiente finalizada",
+  "agent-intervention": "El agente necesita una respuesta",
+};
+const technicalKinds = new Set([
+  "opencode-status",
+  "intent",
+  "confirmed",
+  "process-started",
+  "comment-consumed",
+  "agent-stop",
+]);
+
+function historyEntry(entry: History, index: number): TimelineEntry {
+  const isError = /error|gap|intervention|stop|recovery/.test(entry.kind);
+  const kind =
+    isError && entry.kind !== "agent-stop"
+      ? "error"
+      : technicalKinds.has(entry.kind)
+        ? "technical"
+        : "event";
+
+  return {
+    id: `history-${index}`,
+    at: entry.at,
+    kind,
+    label: historyLabels[entry.kind] ?? entry.text,
+    text: historyLabels[entry.kind] ? entry.text : undefined,
+  };
+}
+
+export function timelineEntries(run: Run): TimelineEntry[] {
+  const history = run.history
+    .map(historyEntry)
+    // A part is already represented by its expandable output below.
+    .filter((_, index) => run.history[index].kind !== "part");
+  const parts: TimelineEntry[] = run.parts.map((part) => ({
+    id: `part-${part.id}`,
+    at: part.updatedAt,
+    kind: /(?: · (?:error|failed)| · exit [1-9])/.test(part.label)
+      ? "error"
+      : part.kind === "text"
+        ? "message"
+        : part.kind === "evidence"
+          ? "evidence"
+          : "tool",
+    label: part.kind === "text" ? "Mensaje del agente" : part.label,
+    part,
+  }));
+
+  return [...history, ...parts].sort((a, b) => a.at - b.at);
+}
+
+function EntryBody({
+  entry,
+  runId,
+  onInspect,
+}: {
+  entry: TimelineEntry;
+  runId: string;
+  onInspect: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [output, setOutput] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const message = entry.kind === "message";
+  const expanded = message || open;
+  const part = entry.part;
+  const partId = part?.id;
+  const updatedAt = part?.updatedAt;
+
+  useEffect(() => {
+    if (!expanded || !partId) {
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      setFailed(true);
+      controller.abort();
+    }, 5000);
+    void fetch(
+      `/api/runs/${encodeURIComponent(runId)}/outputs/` +
+        encodeURIComponent(partId),
+      { signal: controller.signal },
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Salida no disponible");
+        }
+        const text = await response.text();
+        if (!controller.signal.aborted) {
+          setOutput(text);
+          setFailed(false);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setFailed(true);
+        }
+      })
+      .finally(() => clearTimeout(timeout));
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [expanded, partId, updatedAt, runId]);
+
+  const content = entry.text ?? output;
+  if (message) {
+    return (
+      <div className="proto-message">
+        <div className="proto-entry-heading">
+          <strong>Agente</strong>
+          <span>MENSAJE</span>
+          {entry.simulated ? <small>Simulado</small> : null}
+        </div>
+        <pre>
+          {failed
+            ? "No se pudo consultar el mensaje."
+            : (content ?? "Consultando mensaje…")}
+        </pre>
+      </div>
+    );
+  }
+  if (part || entry.text) {
+    return (
+      <div className={`proto-expandable ${open ? "is-open" : ""}`}>
+        <button
+          className="proto-output-toggle"
+          aria-expanded={open}
+          aria-controls={`body-${entry.id}`}
+          onClick={() => {
+            onInspect();
+            setOpen(!open);
+          }}
+        >
+          <span className="proto-chevron" aria-hidden="true">
+            {open ? "⌄" : "›"}
+          </span>
+          <span className="proto-output-label">{entry.label}</span>
+          {part?.truncated ? <small>Truncada</small> : null}
+          <span className={`proto-kind-label ${entry.kind}`}>
+            {entry.kind === "tool"
+              ? "HERRAMIENTA"
+              : entry.kind === "evidence"
+                ? "EVIDENCIA"
+                : "EVENTO"}
+          </span>
+        </button>
+        {open ? (
+          <pre id={`body-${entry.id}`} tabIndex={0}>
+            {failed
+              ? "Salida no disponible. La observación tiene una laguna."
+              : (content ?? "Consultando salida…")}
+          </pre>
+        ) : null}
+      </div>
+    );
+  }
+
+  return <p className="proto-event-text">{entry.label}</p>;
+}
+
+export function TimelinePrototype({
+  runId,
+  entries,
+  technicalCount,
+  showTechnical,
+  onToggleTechnical,
+  onFollowChange,
+  action,
+}: {
+  runId: string;
+  entries: TimelineEntry[];
+  technicalCount: number;
+  showTechnical: boolean;
+  onToggleTechnical: () => void;
+  onFollowChange: (following: boolean) => void;
+  action?: ReactNode;
+}) {
+  const viewport = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLOListElement>(null);
+  const followingRef = useRef(true);
+  const anchor = useRef<{ id: string; top: number } | null>(null);
+  const observed = useRef(new Map<string, string>());
+  const pending = useRef(new Set<string>());
+  const scrollGeometry = useRef({ height: 0, viewportHeight: 0 });
+  const [following, setFollowing] = useState(true);
+  const [unread, setUnread] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
+
+  function recordAnchor() {
+    const element = viewport.current;
+    if (!element) {
+      return;
+    }
+    const top = element.getBoundingClientRect().top;
+    const first = Array.from(
+      element.querySelectorAll<HTMLElement>("[data-entry-id]"),
+    ).find((row) => row.getBoundingClientRect().bottom > top);
+    anchor.current = first
+      ? {
+          id: first.dataset.entryId!,
+          top: first.getBoundingClientRect().top - top,
+        }
+      : null;
+  }
+
+  function setFollow(value: boolean) {
+    followingRef.current = value;
+    setFollowing(value);
+    onFollowChange(value);
+    if (value) {
+      pending.current.clear();
+      setUnread(0);
+    } else {
+      recordAnchor();
+    }
+  }
+
+  function scrollToEnd() {
+    const element = viewport.current;
+    setFollow(true);
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }
+
+  function pauseBeforeUserScroll() {
+    // The wheel/touch/key default scroll happens after this handler.
+    // Capture its anchor in onScroll, never at the old bottom position.
+    followingRef.current = false;
+    anchor.current = null;
+    setFollowing(false);
+    onFollowChange(false);
+  }
+
+  useLayoutEffect(() => {
+    const element = viewport.current;
+    if (!element) {
+      return;
+    }
+    for (const entry of entries) {
+      const fingerprint = `${entry.at}:${entry.label}:${entry.text ?? ""}`;
+      if (observed.current.get(entry.id) !== fingerprint) {
+        if (!followingRef.current) {
+          pending.current.add(entry.id);
+        }
+        observed.current.set(entry.id, fingerprint);
+      }
+    }
+    if (followingRef.current) {
+      element.scrollTop = element.scrollHeight;
+    } else if (anchor.current) {
+      const saved = anchor.current;
+      const row = Array.from(
+        element.querySelectorAll<HTMLElement>("[data-entry-id]"),
+      ).find((item) => item.dataset.entryId === saved.id);
+      if (row) {
+        element.scrollTop +=
+          row.getBoundingClientRect().top -
+          element.getBoundingClientRect().top -
+          saved.top;
+      }
+    }
+    const frame = requestAnimationFrame(() => {
+      setUnread(pending.current.size);
+      setCanScroll(element.scrollHeight > element.clientHeight + 24);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [entries]);
+
+  useEffect(() => {
+    const element = viewport.current;
+    const list = content.current;
+    if (!element || !list) {
+      return;
+    }
+    // Includes streaming messages, lazy output and viewport/layout resizes.
+    const resize = new ResizeObserver(() => {
+      setCanScroll(element.scrollHeight > element.clientHeight + 24);
+      if (followingRef.current) {
+        element.scrollTop = element.scrollHeight;
+      } else if (anchor.current) {
+        const saved = anchor.current;
+        const row = Array.from(list.children).find(
+          (item) =>
+            item instanceof HTMLElement && item.dataset.entryId === saved.id,
+        );
+        if (row) {
+          element.scrollTop +=
+            row.getBoundingClientRect().top -
+            element.getBoundingClientRect().top -
+            saved.top;
+        }
+      }
+    });
+    resize.observe(list);
+    resize.observe(element);
+
+    return () => resize.disconnect();
+  }, []);
+
+  return (
+    <section className="proto-timeline" aria-label="Actividad cronológica">
+      <header className="proto-stream-header">
+        <div>
+          <h2>Actividad</h2>
+          <span>{entries.length} entradas</span>
+        </div>
+        <div className="proto-stream-actions">
+          <button
+            className={`proto-quiet-button ${showTechnical ? "selected" : ""}`}
+            aria-pressed={showTechnical}
+            onClick={onToggleTechnical}
+            title="Mostrar estados internos, procesos e intenciones"
+          >
+            Registro técnico <span>{technicalCount}</span>
+          </button>
+          {action}
+        </div>
+      </header>
+      <div className="proto-stream-description">
+        <span>Eventos, mensajes y herramientas en un solo lugar.</span>
+        <span
+          className={following ? "proto-live-label" : "proto-reading-label"}
+        >
+          <i />
+          {following ? "Siguiendo el final" : "Consultando historial"}
+        </span>
+      </div>
+      <div
+        className="proto-stream-scroll"
+        ref={viewport}
+        tabIndex={0}
+        aria-label="Cronología, desplazamiento independiente"
+        onWheel={(event) => {
+          if (event.deltaY < 0) {
+            pauseBeforeUserScroll();
+          }
+        }}
+        onPointerDown={pauseBeforeUserScroll}
+        onTouchStart={pauseBeforeUserScroll}
+        onKeyDown={(event) => {
+          if (["ArrowUp", "PageUp", "Home"].includes(event.key)) {
+            pauseBeforeUserScroll();
+          }
+          if (event.key === "End") {
+            event.preventDefault();
+            scrollToEnd();
+          }
+        }}
+        onScroll={() => {
+          const element = viewport.current;
+          if (!element) {
+            return;
+          }
+          const bottom =
+            element.scrollHeight - element.clientHeight - element.scrollTop <
+            24;
+          const resized =
+            scrollGeometry.current.height !== element.scrollHeight ||
+            scrollGeometry.current.viewportHeight !== element.clientHeight;
+          scrollGeometry.current = {
+            height: element.scrollHeight,
+            viewportHeight: element.clientHeight,
+          };
+          // A content/viewport resize is not a request to read history.
+          if (followingRef.current && resized) {
+            element.scrollTop = element.scrollHeight;
+            return;
+          }
+          setFollow(bottom);
+          if (!bottom) {
+            recordAnchor();
+          }
+        }}
+      >
+        <ol ref={content} className="proto-entries">
+          <li className="proto-stream-start">
+            <span>INICIO DE LA EJECUCIÓN</span>
+            <span>Orden cronológico ↓</span>
+          </li>
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              data-entry-id={entry.id}
+              className={`proto-entry ${entry.kind}`}
+            >
+              <time dateTime={new Date(entry.at).toISOString()}>
+                {time(entry.at)}
+              </time>
+              <span className="proto-entry-icon" aria-hidden="true">
+                {entry.kind === "message"
+                  ? "A"
+                  : entry.kind === "tool"
+                    ? "⌘"
+                    : entry.kind === "evidence"
+                      ? "✓"
+                      : entry.kind === "error"
+                        ? "!"
+                        : "·"}
+              </span>
+              <EntryBody
+                entry={entry}
+                runId={runId}
+                onInspect={() => setFollow(false)}
+              />
+            </li>
+          ))}
+          {!entries.length ? (
+            <li className="proto-empty-stream">
+              Esperando la primera actividad.
+            </li>
+          ) : null}
+        </ol>
+      </div>
+      <footer className="proto-stream-footer">
+        <span role="status" aria-live="polite">
+          {following
+            ? "Estás al día"
+            : unread
+              ? `${unread} entradas nuevas o actualizadas`
+              : "Lectura en pausa"}
+        </span>
+        {!following ? (
+          <button className="proto-return-live" onClick={scrollToEnd}>
+            ↓{" "}
+            {unread
+              ? `${unread} ${unread === 1 ? "novedad" : "novedades"} · `
+              : ""}
+            Volver al final
+          </button>
+        ) : canScroll ? (
+          <button
+            className="proto-quiet-button"
+            onClick={() => {
+              setFollow(false);
+              if (viewport.current) {
+                viewport.current.scrollTop = 0;
+              }
+            }}
+          >
+            Consultar desde el inicio ↑
+          </button>
+        ) : (
+          <span>Las novedades aparecerán aquí</span>
+        )}
+      </footer>
+    </section>
+  );
+}
