@@ -24,6 +24,7 @@ export interface TimelineEntry {
   part?: PartView;
   simulated?: boolean;
   technical?: TechnicalOperation[];
+  version?: string;
 }
 
 const historyLabels: Record<string, string> = {
@@ -101,17 +102,19 @@ export function timelineEntries(run: Run): TimelineEntry[] {
   const grouped = groupTechnicalEntries(
     [...history, ...parts, ...technical].sort((a, b) => a.at - b.at),
   );
-  for (const entry of grouped) {
-    if (entry.technical) {
-      const records = entry.technical.reduce(
-        (sum, operation) => sum + operation.records.length,
-        0,
-      );
-      entry.label = `${entry.technical.length} ${entry.technical.length === 1 ? "operación técnica" : "operaciones técnicas"} · ${records} ${records === 1 ? "registro" : "registros"}`;
-    }
-  }
 
-  return grouped;
+  return grouped.flatMap((entry) =>
+    entry.technical
+      ? entry.technical.map((operation) => ({
+          id: operation.id,
+          at: operation.at,
+          kind: "technical" as const,
+          label: operation.label,
+          version: `${operation.state}:${operation.records.length}:${operation.records.at(-1)?.at}`,
+          technical: [operation],
+        }))
+      : [entry],
+  );
 }
 
 function TechnicalGroup({
@@ -122,11 +125,7 @@ function TechnicalGroup({
   onInspect: () => void;
 }) {
   return (
-    <details className="proto-technical-group" onClick={onInspect}>
-      <summary>
-        <time>{time(entry.at)}</time>
-        <span>{entry.label}</span>
-      </summary>
+    <div className="proto-technical-group" onClick={onInspect}>
       <ol>
         {entry.technical?.map((operation) => (
           <li key={operation.id}>
@@ -144,23 +143,16 @@ function TechnicalGroup({
               </summary>
               <div className="proto-technical-detail">
                 {operation.note ? <p>{operation.note}</p> : null}
-                <dl>
-                  {operation.references.map((reference, index) => (
-                    <div key={index}>
-                      <dt>{reference.label}</dt>
-                      <dd>{reference.value}</dd>
-                    </div>
-                  ))}
-                  {operation.endedAt !== null ? (
-                    <div>
-                      <dt>Confirmación / última observación</dt>
-                      <dd>{time(operation.endedAt)}</dd>
-                    </div>
-                  ) : null}
-                </dl>
-                <strong>
-                  Registros de origen · {operation.records.length}
-                </strong>
+                {operation.references.length ? (
+                  <dl>
+                    {operation.references.map((reference, index) => (
+                      <div key={index}>
+                        <dt>{reference.label}</dt>
+                        <dd>{reference.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : null}
                 <pre tabIndex={0}>
                   {operation.records
                     .map(
@@ -174,7 +166,7 @@ function TechnicalGroup({
           </li>
         ))}
       </ol>
-    </details>
+    </div>
   );
 }
 
@@ -373,7 +365,7 @@ export function TimelinePrototype({
       return;
     }
     for (const entry of entries) {
-      const fingerprint = `${entry.at}:${entry.label}:${entry.text ?? ""}`;
+      const fingerprint = `${entry.at}:${entry.label}:${entry.text ?? ""}:${entry.version ?? ""}`;
       if (observed.current.get(entry.id) !== fingerprint) {
         if (!followingRef.current) {
           pending.current.add(entry.id);

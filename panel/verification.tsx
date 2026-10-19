@@ -16,7 +16,7 @@ const cleanupLabels = {
   uncertain: "Limpieza incierta",
 };
 
-function CompactVerificationCheck({
+export function CompactVerificationCheck({
   check,
   hasOutput,
 }: {

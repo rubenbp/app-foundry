@@ -70,6 +70,18 @@ Con la Ejecución disponible, los 123 registros técnicos se representan exactam
 
 Verificación manual a 993×987, 793×987 y 390×844: sin scroll exterior ni horizontal en la cronología; desalineación de las evidencias plegadas de 0 px; posición de lectura conservada al recibir novedades y retorno al final correcto. A 993 px, los metadatos conservaron la misma posición vertical al alternar entre preparación, implementación, verificación, revisión y finalización. TypeScript, ESLint y el build pasan.
 
+## Iteración sobre A: operaciones directas y evidencia legible
+
+- Al activar el registro técnico, las operaciones aparecen directamente en la cronología. Se elimina el plegado exterior de los bloques; solo se despliega el detalle de una operación. Cada operación tiene su propio anclaje de lectura.
+- Se retiran la última observación y el contador de registros del detalle. Los registros originales conservan sus horas. Las filas técnicas tienen espaciado vertical simétrico, incluida la última.
+- Los diálogos quedan centrados en ambos ejes. El acceso directo a la verificación desplaza únicamente el contenido interior del diálogo.
+- El detalle de código elimina las fases duplicadas y presenta «Versión de partida» y «Trabajo de esta Ejecución». Los enlaces llevan al repositorio, la rama principal, el código de partida y el diff de la PR; los identificadores completos quedan plegados.
+- Las pruebas E2E muestran pruebas ejecutadas, omitidas y navegador. El entorno técnico queda bajo demanda y el modo offline mantiene un aviso visible.
+- Los criterios se presentan en tarjetas numeradas. La evidencia técnica común aparece una sola vez; los enlaces específicos permanecen junto a su criterio. Se distingue la aceptación mediante merge de la validación automática de cada criterio.
+- El alcance, las limitaciones y el registro original de evidencia siguen disponibles bajo demanda.
+
+Esta iteración sustituye los 25 bloques plegables anteriores por 40 operaciones técnicas visibles en la Ejecución disponible. Sus 123 registros de origen se conservan exactamente una vez. Se comprobaron el centrado en escritorio y móvil, la ausencia de scroll exterior y horizontal, los enlaces del código, las tres tarjetas de criterios y las cinco comprobaciones comunes. Al añadir actividad, el seguimiento conserva el final; al consultar el pasado, la posición permanece estable y «Volver al final» recupera el seguimiento.
+
 ## Límites y decisión de composición
 
 La simulación utiliza una copia en memoria de la Ejecución seleccionada. Sus escenarios recortan datos de una Ejecución ya observada; los eventos añadidos están marcados como simulados. La cabecera muestra los tokens observados de la Ejecución de origen, no una reconstrucción histórica de su consumo.

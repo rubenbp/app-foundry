@@ -25,6 +25,10 @@ import {
   type TimelineEntry,
 } from "./timeline-prototype.tsx";
 import "./dashboard-prototype.css";
+import {
+  PrototypeRunDetails,
+  PrototypeVerificationDetails,
+} from "./evidence-prototype.tsx";
 
 function startDate(value: number) {
   return new Date(value).toLocaleString("es-ES", {
@@ -412,7 +416,14 @@ function PrototypeDialog({
   useEffect(() => {
     dialog.current?.showModal();
     if (initialSection) {
-      dialog.current?.querySelector(`#${initialSection}`)?.scrollIntoView();
+      const content = dialog.current?.querySelector(".proto-dialog-content");
+      const section = dialog.current?.querySelector(`#${initialSection}`);
+      if (content && section) {
+        content.scrollTop +=
+          section.getBoundingClientRect().top -
+          content.getBoundingClientRect().top -
+          12;
+      }
     }
   }, [initialSection]);
 
@@ -1178,8 +1189,17 @@ export default function DashboardPrototype({
             context
           ) : (
             <>
-              <IssueDetails run={run} />
-              <VerificationDetails run={run} compact={variant === "A"} />
+              {variant === "A" ? (
+                <>
+                  <PrototypeRunDetails run={run} />
+                  <PrototypeVerificationDetails run={run} />
+                </>
+              ) : (
+                <>
+                  <IssueDetails run={run} />
+                  <VerificationDetails run={run} />
+                </>
+              )}
               <PublicationDetails run={run} />
               <IntegrationDetails run={run} />
               <section className="card">
