@@ -23,6 +23,7 @@ import { pendingIntervention } from "../domain/intervention.ts";
 import type { RecoveryCommand } from "../domain/recovery.ts";
 import { IssueRecovery } from "./issueRecovery.ts";
 import type { Run } from "../domain/run.ts";
+import { issueLabel } from "../domain/issueLabels.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -51,6 +52,7 @@ export class Workflow {
   private interventions?: IssueInterventions;
   private recovery?: IssueRecovery;
   private conversationAttached = true;
+  private labelsBusy?: Promise<void>;
 
   get observation() {
     return this.factory.store.observation();
@@ -159,6 +161,7 @@ export class Workflow {
         this.factory.persist(current);
       }
       await this.recovery?.notify();
+      await this.syncIssueLabels();
     } catch (error) {
       this.factory.assertWritable();
       this.factory.store.observation({
@@ -212,6 +215,53 @@ export class Workflow {
       at: this.factory.now(),
       error: errors.length ? this.factory.clean(errors.join("\n")).text : null,
     });
+    await this.syncIssueLabels();
+  }
+
+  // Proyecta el estado existente. Un fallo conserva la intención y usa el error de observación
+  // del workflow; la siguiente consulta concilia el mismo efecto sin repetir el desarrollo.
+  async syncIssueLabels(): Promise<void> {
+    if (!this.github || this.halted) {
+      return;
+    }
+    if (this.labelsBusy) {
+      await this.labelsBusy;
+      return this.syncIssueLabels();
+    }
+    this.labelsBusy = this.updateIssueLabels().finally(() => {
+      this.labelsBusy = undefined;
+    });
+    return this.labelsBusy;
+  }
+
+  private async updateIssueLabels() {
+    for (const snapshot of this.list()) {
+      const run = this.view(snapshot.id)!;
+      if (!run.request || this.halted) {
+        continue;
+      }
+      const name = issueLabel(run.status);
+      if (
+        run.issueLabel?.name === name &&
+        run.issueLabel.state === "confirmed"
+      ) {
+        continue;
+      }
+      this.factory.assertWritable();
+      run.issueLabel = { name, state: "intent" };
+      this.factory.record(run, "intent", `Issue label: ${name}`);
+      this.factory.persist(run);
+      await this.github!.setRunLabel(
+        run.request.repository,
+        run.request.number,
+        name,
+      );
+      this.factory.assertWritable();
+      const current = this.view(run.id)!;
+      current.issueLabel = { name, state: "confirmed" };
+      this.factory.record(current, "confirmed", `Issue label: ${name}`);
+      this.factory.persist(current);
+    }
   }
 
   async startNext() {
@@ -231,6 +281,7 @@ export class Workflow {
 
   private startPrepared(id: string, retry = false) {
     return this.factory.start(id, async (run) => {
+      await this.syncIssueLabels();
       const effect: Effect = async (id, description, action) => {
         this.factory.assertRunning(run.id);
         const before = this.view(run.id)!;
@@ -588,6 +639,7 @@ export class Workflow {
     if (result.status === "stopped") {
       this.ownership.releaseRun(id);
     }
+    await this.syncIssueLabels();
     return result;
   }
 

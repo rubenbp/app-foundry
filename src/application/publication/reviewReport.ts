@@ -11,6 +11,17 @@ export class ReviewReport {
     this.runtime = runtime;
   }
 
+  async notify(run: Run) {
+    const publication = run.publication!;
+    const report = publication.report!;
+    await this.runtime.comment(
+      run,
+      `review-ready:${report.id}`,
+      `El desarrollo está listo para validar.\n\nPreview: ${report.preview}\nPR e informe: ${publication.pull!.url}\n\nPara aceptar los cambios, revisa la preview y haz merge de la PR cuando sus controles sean favorables. No necesitas un comentario de aceptación.\n\nPara pedir cambios, publica \`Corregir: instrucciones\` en este issue.`,
+      "issue",
+    );
+  }
+
   async publish(run: Run) {
     const publication = run.publication!;
     const preview = publication.preview!;

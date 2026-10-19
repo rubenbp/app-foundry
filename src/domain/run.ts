@@ -2,6 +2,7 @@ import type { AuthorizedIssue, Workspace } from "./request.ts";
 import type { Verification } from "./verification.ts";
 import type { Publication } from "./publication.ts";
 import type { AgentIntervention, IssueComment } from "./intervention.ts";
+import type { IssueLabel } from "./issueLabels.ts";
 export type RunStatus =
   | "queued"
   | "preparing"
@@ -58,6 +59,7 @@ export interface Run {
   publication?: Publication;
   phase?: "preparation" | "implementation" | "verification" | "publication";
   status: RunStatus;
+  issueLabel?: { name: IssueLabel; state: "intent" | "confirmed" };
   startedAt: number;
   endedAt: number | null;
   sessionId: string | null;

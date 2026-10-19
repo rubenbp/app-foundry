@@ -1,6 +1,6 @@
 # Manual de negocio de App Foundry
 
-Este manual explica cómo una petición de cambio se convierte en una versión comprobada del producto. Describe el comportamiento implementado en este repositorio a fecha de 18 de octubre de 2026.
+Este manual explica cómo una petición de cambio se convierte en una versión comprobada del producto. Describe el comportamiento implementado en este repositorio a fecha de 19 de octubre de 2026.
 
 La **Factory** organiza el trabajo. El **Managed project** es el producto que desarrolla. Una persona autoriza la petición (issue de github), revisa el resultado (preview en Vercel) y realiza el merge (PR en Github). La Factory prepara, encarga el trabajo al agente, comprueba, publica evidencias y completa el cierre tras el merge autorizado.
 

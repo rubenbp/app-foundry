@@ -173,7 +173,7 @@ gh issue edit NUMERO_DEL_ISSUE --repo rubenbp/appfoundry-site-demo \
   --add-label factory:ready
 ```
 
-El dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
+El dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. En GitHub, `factory:ready` se sustituye por `factory:queued` y después `factory:in-progress`. La Factory crea las etiquetas operativas que falten; la cuenta necesita permiso para crearlas y aplicarlas. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
 
 La Factory captura el título y cuerpo que observe al admitir. No comprueba permisos del etiquetador ni estabilidad del contenido. Las ediciones posteriores no actualizan el encargo ni bloquean la Ejecución; volver a etiquetar no reejecuta el issue. Si el agente pide una aclaración, la Factory publica sus dudas en el issue. El primer comentario humano nuevo posterior a esa pregunta vuelve al mismo thread. Puede responder cualquiera, sin comandos ni comprobación de permisos para la aclaración. Los comentarios publicados mientras trabaja quedan sin procesar.
 
@@ -187,7 +187,7 @@ La espera no caduca y conserva el puesto. Para comprobar la recuperación, puede
 
 ## 8. Revisar y aceptar
 
-Abre la PR desde el dashboard y lee el informe vigente. Abre su preview con tu sesión Vercel y comprueba:
+Espera el aviso de revisión en el issue y la etiqueta `factory:pending-review`. El aviso incluye la preview y la PR, sin SHA ni fórmulas de aceptación. Abre la PR y lee el informe vigente. Abre su preview con tu sesión Vercel y comprueba:
 
 1. El nuevo texto del pie en `/`.
 2. El mismo texto en `/sobre-rebobina/`.

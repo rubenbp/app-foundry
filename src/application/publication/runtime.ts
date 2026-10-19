@@ -151,7 +151,12 @@ export class PublicationRuntime {
     }
   }
 
-  async comment(run: Run, key: string, text: string) {
+  async comment(
+    run: Run,
+    key: string,
+    text: string,
+    source: "pull" | "issue" = "pull",
+  ) {
     const origin = `<!-- app-foundry:${run.id}:${key} -->`;
     const body = this.factory.clean(
       `${origin}\n${text}`,
@@ -176,9 +181,14 @@ export class PublicationRuntime {
           );
         }
 
-        return facts.comments.find((comment) => comment.body === body);
+        return facts.comments.find(
+          (comment) => comment.source === source && comment.body === body,
+        );
       },
-      () => this.port.comment(this.context(run), body),
+      () =>
+        source === "issue"
+          ? this.port.commentIssue(this.context(run), body)
+          : this.port.comment(this.context(run), body),
     );
     if (!run.publication!.ownComments.includes(result.id)) {
       run.publication!.ownComments.push(result.id);

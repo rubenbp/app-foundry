@@ -1,17 +1,19 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import type { GitHubPort } from "../application/ports.ts";
 import type { ReadyIssue } from "../domain/request.ts";
+import { issueLabels, type IssueLabel } from "../domain/issueLabels.ts";
+import { remoteCommand } from "./remoteCommand.ts";
+import { list, record, text } from "./remoteValues.ts";
 
-export type GitHubCommand = (args: string[]) => Promise<unknown>;
-const command: GitHubCommand = async (args) => {
-  const { stdout } = await promisify(execFile)("gh", args, {
-    timeout: 30_000,
-    maxBuffer: 16_000_000,
-  });
+export type GitHubCommand = (
+  args: string[],
+  input?: unknown,
+) => Promise<unknown>;
+const command: GitHubCommand = async (args, input) => {
+  const output = await remoteCommand("gh", args, input);
 
-  return JSON.parse(stdout);
+  return output.trim() ? (JSON.parse(output) as unknown) : null;
 };
+
 interface Issue {
   number: number;
   title: string;
@@ -55,5 +57,58 @@ export class GitHub implements GitHubPort {
         author: issue.user.login,
         url: `https://github.com/${repository}/issues/${issue.number}`,
       }));
+  }
+
+  private async write(path: string, method: string, body?: unknown) {
+    return this.command(
+      [
+        "api",
+        path,
+        "--method",
+        method,
+        ...(body === undefined ? [] : ["--input", "-"]),
+      ],
+      body,
+    );
+  }
+
+  async setRunLabel(repository: string, issue: number, label: IssueLabel) {
+    const path = `repos/${repository}`;
+    const labelsPath = `${path}/issues/${issue}/labels`;
+    const names = (value: unknown) =>
+      list(value)
+        .flatMap(list)
+        .map((value) => text(record(value).name));
+    const current = names(await this.api(`${labelsPath}?per_page=100`));
+    if (!current.includes(label)) {
+      const defined = names(await this.api(`${path}/labels?per_page=100`));
+      if (!defined.includes(label)) {
+        try {
+          await this.write(`${path}/labels`, "POST", {
+            name: label,
+            ...issueLabels[label],
+          });
+        } catch (error) {
+          // Otra escritura o una respuesta perdida puede haber creado ya la definición.
+          if (
+            !names(await this.api(`${path}/labels?per_page=100`)).includes(
+              label,
+            )
+          ) {
+            throw error;
+          }
+        }
+      }
+      await this.write(labelsPath, "POST", { labels: [label] });
+    }
+    // Añade primero el estado nuevo. Solo elimina los nombres que pertenecen al contrato.
+    for (const previous of current) {
+      if (previous !== label && Object.hasOwn(issueLabels, previous)) {
+        await this.write(
+          `${labelsPath}/${encodeURIComponent(previous)}`,
+          "DELETE",
+        );
+      }
+    }
   }
 }

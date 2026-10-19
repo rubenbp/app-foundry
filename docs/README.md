@@ -8,6 +8,10 @@ El agente puede mantener las pruebas existentes, actualizar dependencias, lockfi
 
 Se mantienen verificación independiente, revisión de la preview, aceptación mediante merge humano. La recuperación utiliza los comandos existentes; no incorpora bucles automáticos de corrección ni reanudación general tras reinicios. Consulta [el contrato de verificación](manual/03-verificacion-y-aceptacion.md) y [la arquitectura](architecture.md#autonomía-local-del-managed-project).
 
+## Revisión desde GitHub
+
+El issue muestra su [estado mediante etiquetas](manual/02-issue-y-trabajo.md#estados-visibles-en-github), separando la cola del trabajo en curso. Al disponer de preview verificada e informe, recibe `factory:pending-review` y un aviso con enlaces a preview y PR. La persona revisa el resultado y lo acepta haciendo merge de la PR; no se necesita un comentario de aceptación ni copiar un SHA. Consulta el [flujo de revisión](manual/03-verificacion-y-aceptacion.md).
+
 ## Continuación del agente por el issue
 
 La Factory publica las dudas del agente en un comentario del issue. Puede reunir varias preguntas en una solicitud. Cualquier persona responde con un comentario nuevo, sin comandos ni comprobación de permisos para esa aclaración; la primera respuesta humana vuelve al mismo thread. El agente puede repetir el ciclo durante la implementación.

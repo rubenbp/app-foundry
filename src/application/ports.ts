@@ -3,9 +3,16 @@ import type {
   ReadyIssue,
   Workspace,
 } from "../domain/request.ts";
+import type { IssueLabel } from "../domain/issueLabels.ts";
 
 export interface GitHubPort {
   ready(repository: string): Promise<ReadyIssue[]>;
+  // Conciliar antes de escribir permite repetir una actualización sin perder etiquetas ajenas.
+  setRunLabel(
+    repository: string,
+    issue: number,
+    label: IssueLabel,
+  ): Promise<void>;
 }
 export interface EffectEvidence {
   label: string;

@@ -67,13 +67,13 @@ Cada build Astro genera `/version.json`, mediante un [endpoint estático](https:
 1. Publicar los cambios de preparación mediante PR contra `main`. No hacer push directo, merge automático ni modificar la especificación padre #12.
 2. Comprobar check `Vercel`, rama actualizada y resolución de conversaciones. Mantener PR obligatoria para administradores, cero aprobaciones obligatorias en este proyecto de una sola cuenta, sin push forzado ni eliminación de `main`.
 3. Correlacionar el deployment Preview correcto con repositorio, proyecto y SHA del head. Abrir su URL inmutable con la sesión autorizada existente de Vercel y comprobar `/version.json` sin caché. No reducir Deployment Protection ni guardar cookies o tokens como evidencia.
-4. Revisar diff completo, cambios de verificaciones, resultados, navegación y preview. Registrar la aceptación humana en GitHub vinculada al SHA vigente. Si cambia el head, repetir verificación y aceptación.
-5. Una persona realiza el merge en GitHub. Guardar su actor, timestamp y SHA resultante, incluido squash. Preparar y probar código no constituye esa aceptación.
+4. Revisar diff completo, cambios de verificaciones, resultados, navegación y preview. Si cambia el head, repetir la verificación y revisar la nueva preview antes de integrar.
+5. Una persona acepta el resultado haciendo merge en GitHub. Guardar su actor, timestamp y SHA resultante, incluido squash. Preparar y probar código no constituye esa aceptación.
 6. Confirmar que la Factory publica el resumen de integración, cierra el issue y termina como `completed`. El despliegue de producción queda fuera del proceso del MVP.
 
 La sesión de Chrome puede acreditar acceso humano autorizado a Preview; no acredita por sí sola credenciales del proceso de Factory. Para HTTP automatizado protegido, la Factory utiliza la autenticación existente de la CLI indicada por `vercelCli` y `vercel curl`. El conector MCP puede tener permisos distintos de los del navegador; registrar fallos de acceso sin inventar resultados.
 
-El recorrido termina con la revisión de preview, el merge autorizado, el resumen de integración y el cierre del issue. Las pruebas locales aportan evidencia técnica; la persona acepta el resultado en la preview.
+El recorrido termina con la revisión de preview, el merge autorizado, el resumen de integración y el cierre del issue. Las pruebas locales aportan evidencia técnica; la persona revisa la preview y acepta el resultado mediante merge.
 
 ## Evidencia y separación de evaluación
 

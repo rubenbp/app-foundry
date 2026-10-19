@@ -19,7 +19,7 @@ test("una corrección no autorizada antes de integrar no puede invalidar una int
   }
 });
 
-for (const inspection of [2, 3, 4, 5, 6, 7]) {
+for (const inspection of [1, 2, 3, 4, 5, 6, 7, 8]) {
   test(`una integración humana durante la observación ${inspection} de la publicación conserva la aceptación y completa el cierre del issue`, async () => {
     const s = publicationFixture();
     try {

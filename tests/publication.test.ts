@@ -421,3 +421,69 @@ test("integrar sin control técnico favorable es un incidente, aunque el issue s
     s.close();
   }
 });
+
+test("perder la respuesta del aviso de preview no duplica comentarios ni repite el desarrollo", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    s.uncertainEffect("review-notice");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.notEqual(s.facts.status?.state, "success");
+    const reviewNotices = () =>
+      s.facts.comments.filter(
+        (comment) =>
+          comment.source === "issue" &&
+          comment.body.includes("listo para validar"),
+      );
+    assert.equal(reviewNotices().length, 1);
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.facts.status?.state, "success");
+    assert.equal(reviewNotices().length, 1);
+    assert.equal(s.sessions, 1);
+    assert.equal(s.writes.filter((write) => write.kind === "push").length, 1);
+    assert.equal(s.writes.filter((write) => write.kind === "pull").length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("una nueva versión revisable publica otro aviso con su preview vigente", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.commit("second.txt", "Second candidate", "Second delivery");
+    const head = s.git("rev-parse", "HEAD");
+    s.facts.remoteHead = head;
+    s.facts.pull!.head = head;
+    await s.workflow.poll();
+    await s.workflow.poll();
+    const notices = () =>
+      s.facts.comments.filter(
+        (comment) =>
+          comment.source === "issue" &&
+          comment.body.includes("listo para validar"),
+      );
+    assert.equal(notices().length, 1);
+    s.facts.preview = {
+      ...s.facts.preview!,
+      head,
+      servedHead: head,
+      id: "deployment-2",
+      url: "https://second-preview.vercel.app",
+    };
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(notices().length, 2);
+    assert.ok(
+      notices().at(-1)!.body.includes("https://second-preview.vercel.app"),
+    );
+    assert.ok(!notices().at(-1)!.body.includes(head));
+    await s.workflow.poll();
+    assert.equal(notices().length, 2);
+  } finally {
+    s.close();
+  }
+});

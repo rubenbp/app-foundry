@@ -20,7 +20,7 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 - `application/agent.ts` define las observaciones y operaciones del agente. OpenCode implementa ese contrato; sus mensajes nativos se traducen en `infrastructure/opencode/observer.ts`.
 - `application/runRepository.ts` define persistencia de Ejecuciones, observaciones y evidencias. `infrastructure/persistence/store.ts` conserva SQLite y artefactos atómicos. Un fallo de escritura sigue bloqueando nuevos efectos.
 - `application/verification.ts` define la verificación independiente del Commit candidato. El adaptador ejecuta comandos y comunica progreso, evidencias y cancelación.
-- `application/ports.ts` define admisión desde GitHub, preparación del workspace y propiedad exclusiva del workflow.
+- `application/ports.ts` define admisión y proyección de etiquetas en GitHub, preparación del workspace y propiedad exclusiva del workflow.
 - `application/issueConversation.ts` define lectura y publicación de comentarios del issue y cierre como no implementado. `application/issueInterventions.ts` publica las dudas y entrega el primer comentario humano nuevo a la conversación del agente, sin comprobar permisos del autor.
 - `application/publication/ports.ts` define observación y efectos de publicación, resumen de integración y cierre del issue. No ofrece una operación de merge: la integración sigue siendo humana.
 - `composition/factory.ts` crea el repositorio persistente e inyecta el puerto en la Factory. `composition/workflow.ts` conecta propiedad, persistencia y verificación. Las pruebas de integración usan estas mismas funciones con adaptadores externos controlados.
@@ -76,3 +76,11 @@ La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Fa
 El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y control favorable vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview, informe y aceptación.
 
 Cancelar reutiliza la parada operativa y cierra el issue con `state_reason: not_planned` solo después de confirmar la parada. La CLI `stop` conserva su contrato de parada local. Después del merge, la recuperación queda limitada al resumen y al cierre pendientes; no corrige código ni cancela lo integrado.
+
+## Etiquetas y avisos de revisión
+
+`domain/issueLabels.ts` proyecta los estados existentes de Ejecución sobre seis etiquetas operativas. `factory:ready` sigue siendo la entrada de autorización y se retira después de capturar el encargo. `Workflow.syncIssueLabels()` persiste intención antes de modificar GitHub y confirmación después; una actualización incierta se concilia en la consulta siguiente. El adaptador `GitHub.setRunLabel()` crea la definición si falta, añade el estado nuevo y retira únicamente los nombres conocidos anteriores. No reemplaza todas las etiquetas del issue ni crea una cola adicional de trabajo.
+
+`ReviewReport.notify()` publica el aviso breve de revisión en el issue mediante `PublicationRuntime.comment()`, que ahora selecciona issue o conversación de PR. Conserva el mismo protocolo de marcadores, observación previa y conciliación de comentarios. El informe completo permanece en la PR; el aviso no muestra el SHA. Una nueva entrega puede publicar otro aviso sin editar el historial.
+
+Los cambios se destinan a ejecuciones nuevas. No se migra el contrato de aceptación de ejecuciones antiguas en marcha; la prueba local debe reiniciarse desde una ejecución nueva.

@@ -4,10 +4,15 @@ import type {
   PublicationFacts,
 } from "../../src/application/publication/ports.ts";
 import { verificationFixture } from "./verification.ts";
+import type { GitHubPort } from "../../src/application/ports.ts";
 import type { IssueConversation } from "../../src/application/issueConversation.ts";
 
 export function publicationFixture(
-  options: { body?: string; issueConversation?: IssueConversation } = {},
+  options: {
+    body?: string;
+    issueConversation?: IssueConversation;
+    github?: GitHubPort;
+  } = {},
 ) {
   const writes: { kind: string; body?: string }[] = [];
   const issue = {
@@ -110,14 +115,27 @@ export function publicationFixture(
     },
   };
   port.commentIssue = async (context, body) => {
-    assert.ok(s.workflow.view(context.runId)!.publication?.acceptance);
-    const comment = await port.comment(context, body);
-    comment.source = "issue";
-    comment.url = `https://github.com/${context.repository}/issues/${context.issue}#issuecomment-${comment.id}`;
-    Object.assign(facts.comments.at(-1)!, comment);
-    if (uncertain === "integration-report") {
+    const integrated = body.includes(":integration:");
+    assert.ok(
+      s.workflow.view(context.runId)!.publication?.[
+        integrated ? "acceptance" : "report"
+      ],
+    );
+    writes.push({ kind: "issue-comment", body });
+    const comment = {
+      id: `comment-${writes.length}`,
+      url: `https://github.com/${context.repository}/issues/${context.issue}#issuecomment-${writes.length}`,
+      body,
+      author: "shared",
+      human: true,
+      createdAt: (clock += 1000),
+      updatedAt: clock,
+      source: "issue" as const,
+    };
+    facts.comments.push(comment);
+    if (uncertain === (integrated ? "integration-report" : "review-notice")) {
       uncertain = null;
-      throw new Error("Lost integration report response");
+      throw new Error("Lost issue comment response");
     }
     return comment;
   };
@@ -134,6 +152,7 @@ export function publicationFixture(
     publication: port,
     body: issue.body,
     issueConversation: options.issueConversation,
+    github: options.github,
   });
 
   return {

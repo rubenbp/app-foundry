@@ -299,7 +299,7 @@ for (const gate of [
       ) {
         assert.equal(s.workflow.view(run.id)?.status, "intervention");
         assert.equal(requestOpen, true);
-        assert.equal(issueComments.length, 0);
+        assert.equal(issueComments.length, 1);
         return;
       }
       assert.equal(
@@ -309,11 +309,11 @@ for (const gate of [
       );
       assert.equal(requestOpen, false);
       assert.match(
-        String(issueComments[0].body),
+        String(issueComments.at(-1)!.body),
         /El código de este issue se ha integrado/,
       );
       assert.ok(
-        String(issueComments[0].body).includes(
+        String(issueComments.at(-1)!.body).includes(
           `https://github.com/${s.project.repository}/pull/2`,
         ),
       );

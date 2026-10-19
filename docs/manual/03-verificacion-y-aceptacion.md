@@ -44,12 +44,23 @@ sequenceDiagram
     G->>V: Generar preview mediante integración Git
     F->>V: Comprobar identidad, acceso y versión servida
     F->>G: Publicar informe y evidencias
+    F->>G: Avisar en el issue con preview y PR
     F->>G: Habilitar Factory / ready-to-merge
     H->>V: Revisar comportamiento y criterios
     H->>G: Aceptar mediante merge de la PR
     F->>G: Observar merge, autor y control histórico
     F->>G: Publicar resumen y cerrar issue
 ```
+
+## Aviso en el issue
+
+Cuando la preview está verificada y el informe disponible, la Factory publica un comentario breve en el issue con la URL de preview, el enlace a la PR y estas instrucciones: revisar la preview y hacer merge de la PR para aceptar; publicar `Corregir: instrucciones` en el issue para pedir cambios. El aviso no muestra el SHA.
+
+El issue recibe `factory:pending-review`. Antes de que la preview esté acreditada conserva `factory:in-progress`: esa espera es automática, no una revisión humana.
+
+Cada nueva entrega revisable tiene un aviso identificado. La Factory consulta si ya existe antes de repetir un comentario cuya respuesta se perdió. Los reintentos u observaciones repetidas no duplican el aviso. Una nueva versión o informe puede generar otro aviso; no se editan avisos antiguos. La PR y su informe vigente identifican la entrega que se puede integrar.
+
+Un fallo al publicar el aviso utiliza la intervención y conciliación existentes. No vuelve a ejecutar desarrollo ni despliegue para repetir un comentario.
 
 ## Qué debe revisar una persona
 

@@ -9,6 +9,7 @@ import { execute } from "../../src/infrastructure/process.ts";
 import type { ProcessPort } from "../../src/infrastructure/process.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
+import type { GitHubPort } from "../../src/application/ports.ts";
 import type { PublicationPort } from "../../src/application/publication/ports.ts";
 import type { IssueConversation } from "../../src/application/issueConversation.ts";
 
@@ -20,6 +21,7 @@ export function verificationFixture(
     commands?: string[];
     e2e?: ManagedProject["verification"]["e2e"];
     publication?: PublicationPort;
+    github?: GitHubPort;
     issueConversation?: IssueConversation;
     body?: string;
   } = {},
@@ -145,10 +147,11 @@ export function verificationFixture(
       verificationProcess: processPort,
       publication: options.publication,
       issueConversation: options.issueConversation,
-      github: {
+      github: options.github ?? {
         async ready() {
           return [];
         },
+        async setRunLabel() {},
       },
     });
   let workflow = makeWorkflow();

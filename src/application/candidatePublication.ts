@@ -280,6 +280,9 @@ export class CandidatePublication {
       // Vuelve a leer los datos mutables justo antes de publicar el éxito.
       const final = await this.runtime.facts(run);
       const valid = readyToMerge(run, final);
+      if (valid) {
+        await this.report.notify(run);
+      }
       await this.runtime.setStatus(
         run,
         valid ? "success" : publication.blocked ? "failure" : "pending",

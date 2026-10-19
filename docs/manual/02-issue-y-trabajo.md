@@ -2,6 +2,24 @@
 
 [Índice](README.md) · [Anterior](01-mapa.md) · [Siguiente: verificación y aceptación](03-verificacion-y-aceptacion.md)
 
+## Estados visibles en GitHub
+
+Las etiquetas reflejan los estados de la Ejecución; no añaden fases ni pasos de aceptación. La Factory crea las definiciones que falten en el repositorio del Managed project y sustituye únicamente sus etiquetas de estado conocidas. Conserva las etiquetas ajenas, incluidas otras `factory:*` que no pertenezcan a este contrato.
+
+| Etiqueta                 | Significado                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| `factory:ready`          | Autorizado por una persona, todavía sin admitir.                                              |
+| `factory:queued`         | Encargo capturado, esperando el único puesto.                                                 |
+| `factory:in-progress`    | Preparación, desarrollo, verificaciones, espera automática de preview o cierre tras el merge. |
+| `factory:needs-human`    | Pregunta del agente o incidencia operativa.                                                   |
+| `factory:pending-review` | Preview verificada e informe disponibles; falta revisión y aceptación mediante merge.         |
+| `factory:completed`      | Integración, resumen y cierre confirmados.                                                    |
+| `factory:stopped`        | Parada confirmada.                                                                            |
+
+Al admitir el encargo, se sustituye `factory:ready` por `factory:queued`. Cuando adquiere el puesto pasa a `factory:in-progress`. La cola ya existe en código y queda persistida aunque otro issue esté trabajando. Quitar una etiqueta después de admitir no cancela ni vuelve a admitir el encargo; para cancelarlo, usa `Cancelar`.
+
+Las actualizaciones conservan intención y confirmación. Si falla GitHub, el Dashboard muestra el error de observación y la etiqueta puede conservar el último estado confirmado. La siguiente consulta concilia la actualización pendiente antes de escribir; no vuelve a encargar el desarrollo. No hay una cola adicional de avisos. Los cambios asíncronos del agente se reflejan en la siguiente consulta del workflow.
+
 ## Antes del primer issue
 
 La persona que opera la Factory prepara una configuración de confianza: repositorio del Managed project, rama base, instrucciones, instalación, verificaciones, identidad del proyecto Vercel para las previews. La configuración permanece fuera del clon que modifica el agente.
