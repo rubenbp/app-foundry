@@ -3192,6 +3192,97 @@ body:has(.dashboard-prototype) {
     padding-left: 0;
   }
 }
+.proto-publication-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.proto-publication-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 17px;
+  border: 1px solid #e4ead9;
+  border-radius: 6px;
+  background: #f8faf3;
+  min-width: 0;
+}
+.proto-publication-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proto-publication-panel-heading h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a704b;
+}
+.proto-publication-state {
+  font-size: 10px;
+  color: #95805a;
+}
+.proto-publication-state.ready {
+  color: #658147;
+}
+.proto-publication-description {
+  margin: 12px 0 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #81916f;
+  flex: 1;
+}
+.proto-publication-description strong {
+  font-weight: 550;
+  color: #61794c;
+}
+.proto-publication-description time {
+  display: block;
+  font-size: 10px;
+  color: #91a080;
+  margin-top: 3px;
+}
+.proto-publication-action {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  font-size: 11px;
+  padding: 9px 12px;
+  border: 1px solid #d9e3ca;
+  border-radius: 5px;
+  background: #fff;
+}
+.proto-publication-action.primary {
+  background: #eaf0df;
+  color: #526b3b;
+}
+.proto-publication-action:hover {
+  background: #e2ebd5;
+}
+.proto-publication-version {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px 16px;
+  margin-top: 17px;
+  font-size: 11px;
+}
+.proto-publication-version > span {
+  color: #8d9b7e;
+}
+.proto-publication-version code {
+  font-size: 10px;
+}
+@media (max-width: 600px) {
+  .proto-publication-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .proto-publication-panel {
+    padding: 14px;
+  }
+}
 /* Every visible technical operation has symmetric spacing and its own anchor. */
 .proto-technical-group > ol {
   padding: 0 8px;

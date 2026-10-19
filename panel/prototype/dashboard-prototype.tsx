@@ -16,6 +16,7 @@ import {
 import { IssueDetails } from "../issue.tsx";
 import { VerificationDetails } from "../verification.tsx";
 import { PublicationDetails } from "../publication.tsx";
+import { PrototypePublicationDetails } from "./publication-prototype.tsx";
 import { IntegrationDetails } from "../integration.tsx";
 import { Output } from "../components/output.tsx";
 import { labels, time, age } from "../format.ts";
@@ -1200,7 +1201,11 @@ export default function DashboardPrototype({
                   <VerificationDetails run={run} />
                 </>
               )}
-              <PublicationDetails run={run} />
+              {variant === "A" ? (
+                <PrototypePublicationDetails run={run} />
+              ) : (
+                <PublicationDetails run={run} />
+              )}
               <IntegrationDetails run={run} />
               <section className="card">
                 <h2>Salidas completas</h2>

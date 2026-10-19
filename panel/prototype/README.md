@@ -83,6 +83,16 @@ Verificación manual a 993×987, 793×987 y 390×844: sin scroll exterior ni hor
 
 Esta iteración sustituye los 25 bloques plegables anteriores por 40 operaciones técnicas visibles en la Ejecución disponible. Sus 123 registros de origen se conservan exactamente una vez. Se comprobaron el centrado en escritorio y móvil, la ausencia de scroll exterior y horizontal, los enlaces del código, las tres tarjetas de criterios y las cinco comprobaciones comunes. Al añadir actividad, el seguimiento conserva el final; al consultar el pasado, la posición permanece estable y «Volver al final» recupera el seguimiento.
 
+## Iteración sobre A: preview y aceptación
+
+- La sección se divide en dos bloques: preview y PR. Cada uno presenta su estado, contexto breve y acceso directo. En móvil se apilan sin scroll horizontal.
+- La aceptación del resultado muestra autor y fecha del merge. Solo se presenta como vigente si corresponde al Commit candidato actual; una aceptación anterior sigue identificada como anterior.
+- «Disponible» requiere la identidad configurada, el Commit candidato servido, el deployment correcto y el acceso verificado, mediante el contrato existente `validPreview`. Los estados protegidos, pendientes, fallidos o de otra versión permanecen explícitos.
+- El Commit candidato aparece abreviado y enlazado a GitHub. La evidencia técnica y el informe publicado tienen accesos directos.
+- SHA completos, IDs internos, última observación, deployments, informes, comentarios y límites quedan en «Detalles de publicación e historial». Los errores de observación y los bloqueos conservan avisos visibles.
+
+Se comprobó la vista real a 993×987 y 390×844, sin scroll exterior ni horizontal. Se simularon respuestas de consulta únicamente en el navegador para verificar acceso protegido, deployment fallido, error de observación, preview de otra versión y aceptación antigua; ninguno se presentó como preview disponible ni aceptación vigente. No se modificaron datos de la Factory.
+
 ## Límites y decisión de composición
 
 La simulación utiliza una copia en memoria de la Ejecución seleccionada. Sus escenarios recortan datos de una Ejecución ya observada; los eventos añadidos están marcados como simulados. La cabecera muestra los tokens observados de la Ejecución de origen, no una reconstrucción histórica de su consumo.
