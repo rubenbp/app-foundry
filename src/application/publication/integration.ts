@@ -2,8 +2,8 @@ import type { Run } from "../../domain/run.ts";
 import { interpretComment } from "../../domain/publication.ts";
 import type { PublicationFacts } from "./ports.ts";
 import type { PublicationRuntime } from "./runtime.ts";
-import { isOwn, isInterventionResponse, reportIntact } from "./reviewPolicy.ts";
-import { candidateEvidence } from "./evidence.ts";
+import { isOwn, isInterventionResponse } from "./reviewPolicy.ts";
+import { assertCandidateEvidence } from "./evidence.ts";
 
 export class IntegratedPublication {
   private runtime: PublicationRuntime;
@@ -66,7 +66,6 @@ export class IntegratedPublication {
         pull.base !== run.request!.configuration.baseBranch ||
         pull.head !== publication.head ||
         !report ||
-        !reportIntact(run, facts, report) ||
         conflicting ||
         !publication.operations[`status:${publication.head}:success`] ||
         facts.mergeStatus?.head !== publication.head ||
@@ -82,7 +81,7 @@ export class IntegratedPublication {
         this.runtime.save(run);
         throw new Error(publication.blocked);
       }
-      candidateEvidence(this.runtime.factory, run);
+      assertCandidateEvidence(this.runtime.factory, run);
       publication.report = report;
       publication.acceptance = {
         author: pull.mergedBy,

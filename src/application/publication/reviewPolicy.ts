@@ -1,10 +1,6 @@
-import { createHash } from "node:crypto";
 import type { Run } from "../../domain/run.ts";
 import { validPreview } from "../../domain/publication.ts";
-import type {
-  ConversationComment,
-  Publication,
-} from "../../domain/publication.ts";
+import type { ConversationComment } from "../../domain/publication.ts";
 import type { PublicationFacts } from "./ports.ts";
 
 export function isOwn(run: Run, comment: ConversationComment) {
@@ -28,23 +24,6 @@ export function isInterventionResponse(run: Run, comment: ConversationComment) {
       ))
   );
 }
-export function reportIntact(
-  run: Run,
-  facts: PublicationFacts,
-  report: Publication["report"] = run.publication!.report,
-) {
-  return Boolean(
-    report &&
-    [report, ...report.evidence].every((expected) =>
-      facts.comments.some(
-        (comment) =>
-          comment.id === expected.id &&
-          createHash("sha256").update(comment.body).digest("hex") ===
-            expected.bodyHash,
-      ),
-    ),
-  );
-}
 export function readyToMerge(run: Run, facts: PublicationFacts) {
   const publication = run.publication!;
   const report = publication.report;
@@ -60,7 +39,6 @@ export function readyToMerge(run: Run, facts: PublicationFacts) {
 
   return Boolean(
     report.head === publication.head &&
-    reportIntact(run, facts) &&
     !newInstructions &&
     facts.request.open &&
     facts.pull?.open &&

@@ -198,8 +198,8 @@ export function verificationFixture(
       git("add", "--", path);
       git("commit", "-m", message);
     },
-    finish() {
-      emit({ type: "finished", text: "Agent claims success" });
+    finish(text = "Agent claims success") {
+      emit({ type: "finished", text });
     },
     onStop(action: () => void) {
       onStop = action;

@@ -134,10 +134,11 @@ export function VerificationDetails({ run }: { run: Run }) {
                 ? "Juicio humano pendiente"
                 : "Falta evidencia"}
             </strong>
-            <p className="small muted">
-              Sin evidencia automática específica de este criterio. La suite no
-              lo acredita por sí sola.
-            </p>
+            <ul className="small muted">
+              {criterion.missing.map((missing) => (
+                <li key={missing}>{missing}</li>
+              ))}
+            </ul>
             {criterion.evidence.length ? (
               <ul>
                 {criterion.evidence.map((id) => (
@@ -176,6 +177,12 @@ export function VerificationDetails({ run }: { run: Run }) {
           Ejecución.
         </p>
       ) : null}
+      <h3>Limitaciones de la verificación</h3>
+      <ul>
+        {report.limitations.map((limitation) => (
+          <li key={limitation}>{limitation}</li>
+        ))}
+      </ul>
       <p className="small muted">
         Los cambios en pruebas y configuración del producto se muestran como
         información para la revisión humana y no bloquean las verificaciones.

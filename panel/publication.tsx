@@ -73,19 +73,14 @@ export function PublicationDetails({ run }: { run: Run }) {
       ) : (
         <p>Esperando el deployment Preview del SHA del Commit candidato.</p>
       )}
-      <h3>Informe y evidencia</h3>
-      {publication.report ? (
-        <p>
-          <a href={publication.report.url} target="_blank" rel="noreferrer">
-            Revisar informe y evidencia completa en GitHub
-          </a>
-        </p>
-      ) : (
-        <p>
-          El informe requiere petición intacta, contrato técnico válido y
-          preview de la versión verificada.
-        </p>
-      )}
+      <h3>Evidencia técnica</h3>
+      <p>
+        <a href="#verification-title">
+          Consultar verificación y salidas completas
+        </a>
+        . El diff, los resultados y las limitaciones de la versión vigente están
+        disponibles en este Dashboard. La descripción funcional está en la PR.
+      </p>
       <h3>Aceptación del resultado</h3>
       {publication.acceptance ? (
         <p>Aceptado mediante merge por {publication.acceptance.author}.</p>
@@ -123,16 +118,15 @@ export function PublicationDetails({ run }: { run: Run }) {
             </li>
           ))}
         </ul>
-        <h3>Informes publicados</h3>
+        <h3>Versiones presentadas a revisión</h3>
         <ul>
           {publication.reports.map((report) => (
             <li key={report.id}>
-              <a href={report.url} target="_blank" rel="noreferrer">
-                Informe del SHA {report.head}
-              </a>
+              {new Date(report.at).toLocaleTimeString("es-ES")} · {report.head}
             </li>
           ))}
         </ul>
+        <p>Las salidas técnicas corresponden a la última verificación.</p>
         <ul>
           {publication.consumed.map((comment) => (
             <li key={comment.id}>

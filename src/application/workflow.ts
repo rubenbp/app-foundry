@@ -8,7 +8,7 @@ import type {
   WorkspacePort,
   WorkflowOwnership,
 } from "./ports.ts";
-import { requestContext } from "./agentTask.ts";
+import { requestContext, pullRequestInstructions } from "./agentTask.ts";
 import { captureIssue } from "../domain/request.ts";
 import type { ReadyIssue } from "../domain/request.ts";
 import type { AgentPort } from "./agent.ts";
@@ -430,7 +430,7 @@ export class Workflow {
         : `Reintenta el trabajo pendiente tras este fallo: ${cause ?? "Intento interrumpido"}.`;
     await this.factory.agent.send(
       run.sessionId!,
-      `Continúa el mismo encargo y conserva el trabajo acumulado.\n\n${instructions}`,
+      `Continúa el mismo encargo y conserva el trabajo acumulado.\n\n${instructions}\n\n${pullRequestInstructions}`,
     );
     this.factory.assertRunning(id);
     return `Intento ${run.attempt} iniciado en la misma conversación y rama. El resultado necesitará verificación y una nueva aceptación.`;

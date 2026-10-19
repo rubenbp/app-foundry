@@ -6,11 +6,10 @@ import {
   validPreview,
 } from "../domain/publication.ts";
 import { PublicationRuntime, ObservedMerge } from "./publication/runtime.ts";
-import { candidateEvidence } from "./publication/evidence.ts";
+import { assertCandidateEvidence } from "./publication/evidence.ts";
 import {
   isOwn,
   isInterventionResponse,
-  reportIntact,
   readyToMerge,
 } from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
@@ -167,7 +166,7 @@ export class CandidatePublication {
         await this.runtime.setStatus(run, "failure");
         throw new Error(publication.blocked);
       }
-      candidateEvidence(this.runtime.factory, run);
+      assertCandidateEvidence(this.runtime.factory, run);
       const context = this.runtime.context(run);
       await this.runtime.effect(
         run,
@@ -193,9 +192,19 @@ export class CandidatePublication {
         run,
         "pull",
         async () => (await this.runtime.facts(run)).pull ?? undefined,
-        () => this.runtime.port.openPull(this.runtime.context(run)),
+        async () => {
+          const pull = await this.runtime.port.openPull(
+            this.runtime.context(run),
+          );
+          publication.operations[`description:${publication.head}`] = {
+            state: "confirmed",
+            at: this.runtime.factory.now(),
+          };
+          return pull;
+        },
       );
       this.runtime.save(run);
+      await this.report.describe(run);
       if (!publication.report) {
         await this.runtime.setStatus(run, "pending");
       }
@@ -230,14 +239,13 @@ export class CandidatePublication {
       if (
         publication.report &&
         (publication.report.preview !== facts.preview!.url ||
-          publication.report.head !== publication.head ||
-          !reportIntact(run, facts))
+          publication.report.head !== publication.head)
       ) {
         await this.runtime.setStatus(run, "pending");
         delete publication.report;
       }
       if (!publication.report) {
-        await this.report.publish(run);
+        this.report.record(run);
       }
       run.status = "awaiting_review";
       this.runtime.save(run);

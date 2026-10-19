@@ -3,7 +3,7 @@ import { once } from "node:events";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { publicationFixture } from "../support/publication.ts";
 
-test("el dashboard guía la revisión y la integración humana con enlaces a la PR, el candidato, el despliegue y el informe", async ({
+test("el dashboard guía la revisión con la PR y preview y permite consultar la evidencia técnica local", async ({
   page,
 }) => {
   const s = publicationFixture();
@@ -22,14 +22,34 @@ test("el dashboard guía la revisión y la integración humana con enlaces a la 
     await expect(section).toContainText("Autorizado y comprobado");
     await expect(section).toContainText("Sin aceptación registrada");
     const report = section.getByRole("link", {
-      name: "Revisar informe y evidencia completa en GitHub",
+      name: "Consultar verificación y salidas completas",
     });
-    await expect(report).toHaveAttribute(
-      "href",
-      s.workflow.view(run.id)!.publication!.report!.url,
-    );
+    await expect(report).toHaveAttribute("href", "#verification-title");
     await report.focus();
     await expect(report).toBeFocused();
+    await report.click();
+    const verification = page.getByRole("region", {
+      name: "Verificación independiente",
+    });
+    await expect(verification).toBeInViewport();
+    await page
+      .locator('button[aria-controls="output-verification-check-1"]')
+      .click();
+    await expect(page.locator("#output-verification-check-1")).toContainText(
+      "catalogue checked",
+    );
+    for (const limitation of s.workflow.view(run.id)!.verification!
+      .limitations) {
+      await expect(verification).toContainText(limitation);
+    }
+    for (const criterion of s.workflow.view(run.id)!.verification!.criteria) {
+      for (const missing of criterion.missing) {
+        await expect(verification).toContainText(missing);
+      }
+    }
+    await expect(
+      section.getByRole("link", { name: /informe.*GitHub/ }),
+    ).toHaveCount(0);
     await expect(
       section.getByRole("link", { name: "Abrir preview en Vercel" }),
     ).toHaveAttribute("href", s.facts.preview!.url!);

@@ -13,6 +13,7 @@ export interface PublicationContext {
   project: ManagedProject;
   workspace: Workspace;
   pull?: PullCandidate;
+  description: { title: string; body: string };
 }
 export interface PublicationFacts {
   request: { open: boolean };
@@ -28,6 +29,7 @@ export interface PublicationFacts {
   status: {
     head: string;
     state: "pending" | "success" | "failure" | "error";
+    at: number;
   } | null;
 }
 // Todos los efectos se realizan en este límite. Se omite deliberadamente la operación de integración.
@@ -38,14 +40,11 @@ export interface PublicationPort {
   ): Promise<PublicationFacts>;
   push(context: PublicationContext): Promise<void>;
   openPull(context: PublicationContext): Promise<PullCandidate>;
-  comment(
-    context: PublicationContext,
-    body: string,
-  ): Promise<ConversationComment>;
+  updatePull(context: PublicationContext): Promise<PullCandidate>;
   status(
     context: PublicationContext,
     state: "pending" | "success" | "failure" | "error",
-  ): Promise<void>;
+  ): Promise<{ at: number }>;
   commentIssue(
     context: PublicationContext,
     body: string,

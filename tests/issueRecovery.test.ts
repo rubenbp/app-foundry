@@ -1,7 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { verificationFixture } from "./support/verification.ts";
-import { publicationFixture } from "./support/publication.ts";
+import {
+  publicationFixture,
+  catalogueDelivery,
+} from "./support/publication.ts";
 import { recoveryConversation } from "./support/recovery.ts";
 import { execute } from "../src/infrastructure/process.ts";
 
@@ -122,6 +125,11 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     const branch = run.workspace!.branch;
     const oldHead = s.facts.remoteHead;
+    s.description.body = "Una edición humana de la entrega anterior";
+    const correctedDelivery = catalogueDelivery.replace(
+      "mostrar el catálogo",
+      "mostrar el catálogo y el nuevo pie",
+    );
     s.writer(false);
     const correction = conversation.add("Corregir: Cambia el texto del pie.");
     s.facts.comments.push({
@@ -143,7 +151,7 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
     assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
     assert.equal(s.facts.status?.state, "pending");
     s.commit("footer.txt", "New footer", "Correct footer");
-    s.finish();
+    s.finish(correctedDelivery);
     await s.workflow.poll();
     const head = s.git("rev-parse", "HEAD");
     assert.notEqual(head, oldHead);
@@ -151,6 +159,12 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
     assert.equal(s.workflow.view(run.id)?.workspace?.branch, branch);
     assert.equal(s.writes.filter((w) => w.kind === "pull").length, 1);
     assert.equal(s.workflow.view(run.id)?.verification?.status, "passed");
+    assert.equal(s.description.title, correctedDelivery.split("\n")[0]);
+    assert.match(s.description.body, /Se conserva el pie existente/);
+    assert.doesNotMatch(s.description.body, /Una edición humana/);
+    assert.match(s.tasks[0].text, /## Resumen/);
+    assert.match(s.tasks.at(-1)!.text, /entire accumulated change/);
+    assert.equal(s.writes.filter((w) => w.kind === "description").length, 1);
     s.facts.preview = {
       ...s.facts.preview!,
       head,

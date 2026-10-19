@@ -7,23 +7,28 @@ import { configureMergeProtection } from "../src/infrastructure/mergeProtection.
 import { verificationFixture } from "./support/verification.ts";
 import { execute } from "../src/infrastructure/process.ts";
 import { join } from "node:path";
+import { catalogueDelivery } from "./support/publication.ts";
 
 for (const gate of [
   "unchanged",
   "edited issue",
+  "edited description",
+  "lost pull response",
   "merge during preview",
   "revoked after merge",
   "success only after merge",
   "revoked before merge",
 ] as const) {
-  test(`el Workflow correlaciona la condición de integración (${({ unchanged: "sin cambios", "edited issue": "issue editado", "merge during preview": "integración durante la vista previa", "revoked after merge": "revocación tras integrar", "success only after merge": "éxito solo tras integrar", "revoked before merge": "revocación antes de integrar" } as const)[gate]}) mediante los adaptadores reales de GitHub y Vercel`, async () => {
+  test(`el Workflow correlaciona la condición de integración (${({ unchanged: "sin cambios", "edited issue": "issue editado", "edited description": "descripción editada", "lost pull response": "respuesta de PR perdida", "merge during preview": "integración durante la vista previa", "revoked after merge": "revocación tras integrar", "success only after merge": "éxito solo tras integrar", "revoked before merge": "revocación antes de integrar" } as const)[gate]}) mediante los adaptadores reales de GitHub y Vercel`, async () => {
     let remoteHead: string | null = null;
+    let lostPullResponse = gate === "lost pull response";
     let pull: Record<string, unknown> | null = null;
     let deployment = false;
     let integrated = false;
     let requestOpen = true;
     const integrationSha = "a".repeat(40);
-    let time = Date.now();
+    // GitHub tiene un reloj independiente y publica fechas con precisión de segundos.
+    let time = Date.UTC(2020, 0, 1);
     const comments: Record<string, unknown>[] = [];
     const issueComments: Record<string, unknown>[] = [];
     const statuses: Record<string, unknown>[] = [];
@@ -74,11 +79,18 @@ for (const gate of [
             String(input.body),
             /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+/i,
           );
+          assert.equal(input.title, catalogueDelivery.split("\n")[0]);
+          assert.match(String(input.body), /## Resumen/);
+          assert.match(String(input.body), /## Evidencia/);
+          assert.match(String(input.body), /## Riesgo de fusión/);
+          assert.ok(String(input.body).includes(context.request!.url));
           pull = {
             number: 2,
             html_url: `https://github.com/${s.project.repository}/pull/2`,
             state: "open",
             merged: false,
+            title: input.title,
+            body: input.body,
             head: {
               sha: remoteHead,
               ref: context.workspace!.branch,
@@ -86,6 +98,17 @@ for (const gate of [
             },
             base: { ref: "main", repo: { full_name: s.project.repository } },
           };
+          if (lostPullResponse) {
+            lostPullResponse = false;
+            throw new Error("Lost response after creating the PR");
+          }
+          return JSON.stringify(pull);
+        }
+        if (path === `${prefix}/pulls/2`) {
+          assert.ok(args.includes("PATCH"));
+          assert.equal(input.title, catalogueDelivery.split("\n")[0]);
+          assert.match(String(input.body), /## Evidencia/);
+          Object.assign(pull!, input);
           return JSON.stringify(pull);
         }
         if (path === `${prefix}/issues/1`) {
@@ -113,7 +136,7 @@ for (const gate of [
             ...input,
             created_at: new Date((time += 1000)).toISOString(),
           });
-          return JSON.stringify(input);
+          return JSON.stringify(statuses[0]);
         }
         assert.fail(`Unexpected mutation ${path}`);
       }
@@ -226,7 +249,7 @@ for (const gate of [
         inspect: (...args) => adapter.inspect(...args),
         push: (...args) => adapter.push(...args),
         openPull: (...args) => adapter.openPull(...args),
-        comment: (...args) => adapter.comment(...args),
+        updatePull: (...args) => adapter.updatePull(...args),
         commentIssue: (...args) => adapter.commentIssue(...args),
         closeIssue: (...args) => adapter.closeIssue(...args),
         status: (...args) => adapter.status(...args),
@@ -242,8 +265,20 @@ for (const gate of [
     try {
       const run = await s.start();
       s.commit("footer.txt", "Remote candidate", "Footer");
-      s.finish();
+      s.finish(catalogueDelivery);
       await s.workflow.poll();
+      if (gate === "lost pull response") {
+        assert.equal(s.workflow.view(run.id)?.status, "intervention");
+        await s.workflow.poll();
+        assert.equal(
+          writes.filter((path) => path.endsWith("/pulls")).length,
+          1,
+        );
+        assert.equal(
+          writes.filter((path) => path.endsWith("/pulls/2")).length,
+          1,
+        );
+      }
       assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
       deployment = true;
       access = "wrong project";
@@ -266,6 +301,19 @@ for (const gate of [
       assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
       assert.equal(statuses[0].state, "success");
       assert.equal(writes.filter((write) => write === "push").length, 1);
+      assert.equal(comments.length, 0);
+      if (gate === "edited description") {
+        Object.assign(pull!, {
+          title: "Título editado",
+          body: "Corrección editorial",
+        });
+        const before = writes.length;
+        await s.workflow.poll();
+        assert.equal(statuses[0].state, "success");
+        assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+        assert.equal(writes.length, before);
+        assert.equal(pull!.body, "Corrección editorial");
+      }
       if (gate !== "merge during preview") {
         integrated = true;
         Object.assign(pull!, {
@@ -423,6 +471,10 @@ test("una corrección actualiza la misma rama con el SHA anterior y rechaza sobr
       head: first,
       project: s.project,
       workspace: run.workspace!,
+      description: {
+        title: "Actualizar pie",
+        body: "Actualizar el pie del catálogo.",
+      },
     };
     await adapter.push(context);
     s.commit("footer.txt", "Corrected footer", "Correct candidate");

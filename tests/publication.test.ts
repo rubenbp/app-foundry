@@ -1,10 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { publicationFixture } from "./support/publication.ts";
+import {
+  publicationFixture,
+  catalogueDelivery,
+} from "./support/publication.ts";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 
-test("los informes extensos publican el diff acumulado completo y las salidas saneadas en comentarios acotados", async () => {
+test("la PR abre con una descripción funcional y la evidencia técnica extensa permanece saneada en el Dashboard", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate(
@@ -12,27 +15,26 @@ test("los informes extensos publican el diff acumulado completo y las salidas sa
         "x".repeat(80_000) +
         "\nLAST_DIFF_EVIDENCE password=fictional-publication-secret",
     );
+    // La descripción ya está disponible antes de observar la preview.
+    assert.equal(s.description.title, catalogueDelivery.split("\n")[0]);
+    assert.match(s.description.body, /## Resumen/);
+    assert.match(s.description.body, /## Evidencia/);
+    assert.match(s.description.body, /## Riesgo de fusión/);
+    assert.ok(s.description.body.includes(run.request!.url));
+    assert.doesNotMatch(s.description.body, /LAST_DIFF_EVIDENCE/);
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
     await s.workflow.poll();
-    const reports = s.writes
-      .filter((write) => write.kind === "comment")
-      .map((write) => write.body!);
-    assert.ok(reports.length > 2);
-    assert.ok(reports.every((body) => body.length <= 60_000));
-    assert.match(
-      reports.join("\n"),
-      /LAST_DIFF_EVIDENCE password=\[REDACTED\]/,
+    const verified = s.workflow.view(run.id)!.verification!;
+    const diff = s.workflow.factory.output(run.id, verified.diffPartId)!;
+    assert.match(diff, /LAST_DIFF_EVIDENCE password=\[REDACTED\]/);
+    assert.doesNotMatch(diff, /fictional-publication-secret/);
+    assert.equal(s.facts.comments.filter((c) => c.source === "pull").length, 0);
+    assert.equal(
+      s.facts.comments.filter((c) => c.source === "issue").length,
+      1,
     );
-    assert.doesNotMatch(reports.join("\n"), /fictional-publication-secret/);
+    assert.equal(s.facts.status?.state, "success");
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-    await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "success");
-    const fragment = s.facts.comments.find((comment) =>
-      comment.body.includes(":evidence:"),
-    )!;
-    s.facts.comments.splice(s.facts.comments.indexOf(fragment), 1);
-    await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "success");
-    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
   } finally {
     s.close();
   }
@@ -66,18 +68,71 @@ test("los cambios informativos en controles permiten publicar y completar el res
     };
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-    const report = s.writes
-      .filter((write) => write.kind === "comment")
-      .map((write) => write.body)
-      .join("\n");
-    assert.match(report, /Cambios en controles.*informativos/i);
-    assert.match(report, /package.json/);
+    assert.ok(
+      s.workflow
+        .view(run.id)!
+        .verification!.controls.some((control) =>
+          control.includes("package.json"),
+        ),
+    );
+    assert.equal(s.facts.comments.filter((c) => c.source === "pull").length, 0);
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     s.merge();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "completed");
     assert.equal(s.facts.request.open, false);
+  } finally {
+    s.close();
+  }
+});
+
+test("la publicación no añade una validación editorial ni bloquea una respuesta sin secciones", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate("Footer", "Entrega pendiente de describir");
+    await s.workflow.poll();
+    assert.equal(s.description.title, "Entrega pendiente de describir");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.facts.status?.state, "success");
+  } finally {
+    s.close();
+  }
+});
+
+test("una actualización incierta de la descripción se puede repetir sin duplicar PR ni avisos", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    // Otra versión verificada en la misma rama exige actualizar la misma PR.
+    s.commit("next.txt", "Next delivery", "Next candidate");
+    const head = s.git("rev-parse", "HEAD");
+    s.facts.remoteHead = head;
+    s.facts.pull!.head = head;
+    await s.workflow.poll();
+    s.uncertainEffect("description");
+    s.facts.preview = {
+      ...s.facts.preview!,
+      head,
+      servedHead: head,
+      id: "next-deployment",
+    };
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.notEqual(s.facts.status?.state, "success");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.writes.filter((w) => w.kind === "pull").length, 1);
+    assert.equal(s.facts.comments.filter((c) => c.source === "pull").length, 0);
+    assert.equal(
+      s.facts.comments.filter((c) => c.body.includes("listo para validar"))
+        .length,
+      2,
+    );
+    const writes = s.writes.length;
+    await s.workflow.poll();
+    assert.equal(s.writes.length, writes);
   } finally {
     s.close();
   }
@@ -144,27 +199,37 @@ test("una integración aceptada conserva su commit aceptado y el SHA integrado e
   }
 });
 
-test("editar el informe exige republicarlo y detener revoca el control de merge", async () => {
+test("editar la descripción conserva el estado y permite completar el merge; detener sigue revocando el control", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    assert.equal(s.facts.status?.state, "success");
     const original = s.workflow.view(run.id)!.publication!.report!;
-    s.facts.comments.find((comment) => comment.id === original.id)!.body =
-      "Removed";
+    s.description.title = "Título corregido por una persona";
+    s.description.body = "Corrección editorial";
+    const writes = s.writes.length;
     await s.workflow.poll();
-    assert.notEqual(
-      s.workflow.view(run.id)?.publication?.report?.id,
-      original.id,
-    );
+    assert.equal(s.description.body, "Corrección editorial");
+    assert.equal(s.writes.length, writes);
+    assert.deepEqual(s.workflow.view(run.id)!.publication!.report, original);
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
     assert.equal(s.facts.status?.state, "success");
-    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
-    await s.workflow.stop(run.id);
-    assert.equal(s.facts.status?.state, "failure");
-    assert.equal(s.workflow.view(run.id)?.status, "stopped");
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+    assert.equal(s.facts.request.open, false);
   } finally {
     s.close();
+  }
+  const stopped = publicationFixture();
+  try {
+    const run = await stopped.candidate();
+    await stopped.workflow.poll();
+    await stopped.workflow.stop(run.id);
+    assert.equal(stopped.facts.status?.state, "failure");
+    assert.equal(stopped.workflow.view(run.id)?.status, "stopped");
+  } finally {
+    stopped.close();
   }
 });
 
@@ -254,8 +319,8 @@ test("la vista previa debe identificar el commit, entorno, repositorio, proyecto
   }
 });
 
-test("una confirmación remota perdida se concilia sin duplicar el envío, la PR, el informe ni el estado", async () => {
-  for (const effect of ["push", "pull", "comment", "status"]) {
+test("una confirmación remota perdida se concilia sin duplicar el envío, la PR, los avisos ni el estado", async () => {
+  for (const effect of ["push", "pull", "status"]) {
     const s = publicationFixture();
     try {
       s.uncertainEffect(effect);
@@ -275,7 +340,7 @@ test("una confirmación remota perdida se concilia sin duplicar el envío, la PR
       );
       assert.equal(
         s.writes.filter((write) => write.kind === "comment").length,
-        1,
+        0,
         effect,
       );
       assert.equal(
@@ -289,7 +354,7 @@ test("una confirmación remota perdida se concilia sin duplicar el envío, la PR
   }
 });
 
-test("un commit nuevo invalida la aceptación y requiere una verificación, una vista previa y un informe completos nuevos", async () => {
+test("un commit nuevo invalida la aceptación y requiere una verificación, una vista previa y un registro de revisión nuevos", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
@@ -407,7 +472,11 @@ test("integrar sin control técnico favorable es un incidente, aunque el issue s
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    s.facts.status = { head: s.facts.pull!.head, state: "pending" };
+    s.facts.status = {
+      head: s.facts.pull!.head,
+      state: "pending",
+      at: Date.now(),
+    };
     s.merge();
     s.facts.request.open = false;
     await s.workflow.poll();

@@ -41,8 +41,6 @@ export interface Publication {
     at: number;
     head: string;
     preview: string;
-    bodyHash: string;
-    evidence: { id: string; url: string; bodyHash: string }[];
   };
   deployments: { at: number; preview: Preview }[];
   reports: NonNullable<Publication["report"]>[];
@@ -127,14 +125,4 @@ export function validPreview(
     preview.state === "success" &&
     preview.access === "verified"
   );
-}
-
-export function fenced(text: string) {
-  let longest = 2;
-  for (const match of text.matchAll(/`+/g)) {
-    longest = Math.max(longest, match[0].length);
-  }
-  const fence = "`".repeat(longest + 1);
-
-  return `${fence}text\n${text}\n${fence}`;
 }

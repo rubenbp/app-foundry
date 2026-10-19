@@ -7,6 +7,7 @@ import type {
   PublicationPort,
 } from "./ports.ts";
 import { readyToMerge } from "./reviewPolicy.ts";
+import { pullDescription } from "./description.ts";
 
 class StatusSkippedAfterMerge extends Error {}
 
@@ -50,6 +51,7 @@ export class PublicationRuntime {
 
       workspace: run.workspace!,
       pull: run.publication!.pull,
+      description: pullDescription(run),
     };
   }
 
@@ -114,7 +116,7 @@ export class PublicationRuntime {
   ) {
     const context = this.context(run);
     try {
-      await this.effect(
+      const confirmation = await this.effect(
         run,
         `status:${context.head}:${state}`,
         async () => {
@@ -130,14 +132,21 @@ export class PublicationRuntime {
           const status = facts.status;
 
           return status?.head === context.head && status.state === state
-            ? true
+            ? { at: status.at }
             : undefined;
         },
-        async () => {
-          await this.port.status(context, state);
-          return true;
-        },
+        () => this.port.status(context, state),
       );
+      if (state === "success") {
+        const publication = run.publication!;
+        const report = publication.report!;
+        // El merge y los estados usan el reloj de GitHub. Un registro local no
+        // puede compararse con ellos: el reloj y la precisión pueden diferir.
+        report.at = confirmation.at;
+        publication.reports.find((entry) => entry.id === report.id)!.at =
+          confirmation.at;
+        this.save(run);
+      }
     } catch (error) {
       if (!(error instanceof StatusSkippedAfterMerge)) {
         throw error;
@@ -151,12 +160,7 @@ export class PublicationRuntime {
     }
   }
 
-  async comment(
-    run: Run,
-    key: string,
-    text: string,
-    source: "pull" | "issue" = "pull",
-  ) {
+  async comment(run: Run, key: string, text: string) {
     const origin = `<!-- app-foundry:${run.id}:${key} -->`;
     const body = this.factory.clean(
       `${origin}\n${text}`,
@@ -182,13 +186,10 @@ export class PublicationRuntime {
         }
 
         return facts.comments.find(
-          (comment) => comment.source === source && comment.body === body,
+          (comment) => comment.source === "issue" && comment.body === body,
         );
       },
-      () =>
-        source === "issue"
-          ? this.port.commentIssue(this.context(run), body)
-          : this.port.comment(this.context(run), body),
+      () => this.port.commentIssue(this.context(run), body),
     );
     if (!run.publication!.ownComments.includes(result.id)) {
       run.publication!.ownComments.push(result.id);

@@ -7,6 +7,21 @@ import { verificationFixture } from "./verification.ts";
 import type { GitHubPort } from "../../src/application/ports.ts";
 import type { IssueConversation } from "../../src/application/issueConversation.ts";
 
+export const catalogueDelivery = `feat(catálogo): mostrar el catálogo con navegación por teclado
+
+## Resumen
+Las personas pueden consultar el catálogo y recorrerlo con el teclado. Se conserva el pie existente. El pago queda fuera de esta entrega. No hay migraciones ni variables nuevas.
+
+## Evidencia
+Antes faltaba el catálogo. Después se puede consultar sin usar el ratón.
+Prueba de catálogo: node check.mjs, exit 0.
+- [ ] Abrir el catálogo y recorrerlo con Tab.
+- [ ] Comprobar el mensaje cuando no hay productos.
+- [ ] Comprobar el aviso si falla la carga.
+
+## Riesgo de fusión
+Revertir restaura la vista anterior. No deja datos que recuperar ni requiere activar servicios.`;
+
 export function publicationFixture(
   options: {
     body?: string;
@@ -14,7 +29,8 @@ export function publicationFixture(
     github?: GitHubPort;
   } = {},
 ) {
-  const writes: { kind: string; body?: string }[] = [];
+  const writes: { kind: string; title?: string; body?: string }[] = [];
+  const description = { title: "", body: "" };
   const issue = {
     title: "Accessible catalogue",
     body:
@@ -58,7 +74,8 @@ export function publicationFixture(
       }
     },
     async openPull(context) {
-      writes.push({ kind: "pull" });
+      writes.push({ kind: "pull", ...context.description });
+      Object.assign(description, context.description);
       facts.pull = {
         number: 2,
         url: `https://github.com/${context.repository}/pull/2`,
@@ -73,33 +90,26 @@ export function publicationFixture(
       }
       return facts.pull;
     },
-    async comment(context, body) {
-      writes.push({ kind: "comment", body });
-      const comment = {
-        id: `comment-${writes.length}`,
-        url: `${facts.pull!.url}#issuecomment-${writes.length}`,
-        body,
-        author: "shared",
-        human: true,
-        createdAt: (clock += 1000),
-        updatedAt: clock,
-        source: "pull" as const,
-      };
-      facts.comments.push(comment);
-      if (uncertain === "comment") {
+    async updatePull(context) {
+      assert.ok(facts.pull?.open);
+      assert.equal(facts.pull.head, context.head);
+      writes.push({ kind: "description", ...context.description });
+      Object.assign(description, context.description);
+      if (uncertain === "description") {
         uncertain = null;
-        throw new Error("Lost comment response");
+        throw new Error("Lost description response");
       }
-      return comment;
+      return facts.pull;
     },
     async status(context, state) {
       writes.push({ kind: state });
-      facts.status = { head: context.head, state };
       statusAt = clock += 1000;
+      facts.status = { head: context.head, state, at: statusAt };
       if (uncertain === "status") {
         uncertain = null;
         throw new Error("Lost status response");
       }
+      return { at: statusAt };
     },
     async commentIssue() {
       throw new Error("Issue comment transport not initialized");
@@ -164,6 +174,7 @@ export function publicationFixture(
       return s.directory;
     },
     writes,
+    description,
     get sessions() {
       return s.sessions;
     },
@@ -197,10 +208,13 @@ export function publicationFixture(
     uncertainEffect(value: string) {
       uncertain = value;
     },
-    async candidate(contents = "Candidate footer") {
+    async candidate(
+      contents = "Candidate footer",
+      delivery = catalogueDelivery,
+    ) {
       const run = await s.start();
       s.commit("footer.txt", contents, "Add footer");
-      s.finish();
+      s.finish(delivery);
       await s.workflow.poll();
       const head = s.git("rev-parse", "HEAD");
       facts.preview = {

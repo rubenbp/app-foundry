@@ -325,7 +325,11 @@ for (const change of [
           s.facts.pull!.head = "b".repeat(40);
           break;
         case "report":
-          s.facts.comments[0].body = "Changed report";
+          {
+            const current = s.workflow.view(run.id)!;
+            current.publication!.reports = [];
+            s.workflow.factory.persist(current);
+          }
           break;
         case "status":
           s.facts.mergeStatus = null;

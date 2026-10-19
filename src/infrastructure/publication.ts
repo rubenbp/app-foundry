@@ -434,8 +434,7 @@ export class GitHubPublication implements PublicationPort {
   async openPull(context: PublicationContext) {
     return this.pull(
       await this.api(`repos/${context.repository}/pulls`, {
-        title: `Factory: candidate for issue #${context.issue}`,
-        body: `Issue: https://github.com/${context.repository}/issues/${context.issue}\nEjecución: ${context.runId}\n\nLa Factory publicará el informe cuando la preview del Commit candidato esté verificada. Revisa la preview y haz merge de esta PR para aceptar los cambios.`,
+        ...context.description,
         head: context.workspace.branch,
         base: context.project.baseBranch,
       }),
@@ -443,18 +442,26 @@ export class GitHubPublication implements PublicationPort {
     );
   }
 
-  async comment(context: PublicationContext, body: string) {
+  async updatePull(context: PublicationContext) {
     if (!context.pull) {
-      throw new Error("PR required for publication report");
+      throw new Error("PR required to update its description");
     }
-    return this.conversation(
-      await this.api(
-        `repos/${context.repository}/issues/${context.pull.number}/comments`,
-        { body },
-      ),
+    return this.pull(
+      JSON.parse(
+        await this.command(
+          "gh",
+          [
+            "api",
+            `repos/${context.repository}/pulls/${context.pull.number}`,
+            "--method",
+            "PATCH",
+            "--input",
+            "-",
+          ],
+          context.description,
+        ),
+      ) as unknown,
       context,
-      "pull",
-      context.pull.number,
     );
   }
 
@@ -462,17 +469,21 @@ export class GitHubPublication implements PublicationPort {
     context: PublicationContext,
     state: "pending" | "success" | "failure" | "error",
   ) {
-    await this.api(`repos/${context.repository}/statuses/${context.head}`, {
-      state,
-      context: mergeContext,
-      description:
-        state === "success"
-          ? "Verificaciones y preview listas; revisión y merge humanos pendientes"
-          : "Verificaciones, preview e informe vigentes requeridos",
-      target_url:
-        context.pull?.url ??
-        `https://github.com/${context.repository}/issues/${context.issue}`,
-    });
+    const result = record(
+      await this.api(`repos/${context.repository}/statuses/${context.head}`, {
+        state,
+        context: mergeContext,
+        description:
+          state === "success"
+            ? "Verificaciones y preview listas; revisión y merge humanos pendientes"
+            : "Verificaciones y preview vigentes requeridas",
+        target_url:
+          context.pull?.url ??
+          `https://github.com/${context.repository}/issues/${context.issue}`,
+      }),
+    );
+
+    return { at: timestamp(result.created_at) };
   }
 
   async canWrite(repository: string, author: string) {

@@ -1,7 +1,7 @@
 import type { Factory } from "../factory.ts";
 import type { Run } from "../../domain/run.ts";
 
-export function candidateEvidence(factory: Factory, run: Run) {
+export function assertCandidateEvidence(factory: Factory, run: Run) {
   const verification = run.verification!;
   const output = (id: string) => {
     const part = run.parts.find((part) => part.id === id);
@@ -27,22 +27,11 @@ export function candidateEvidence(factory: Factory, run: Run) {
       "Valid complete technical evidence for the current head required",
     );
   }
-  return [
-    `Issue: ${run.request!.title}\n${run.request!.body}`,
-    `Diff acumulado completo ${verification.baseSha}..${verification.headSha}\n${output(verification.diffPartId)}`,
-    `Configuración\n${output(verification.configurationPartId)}`,
-    ...(verification.controls.length
-      ? [
-          `Cambios en controles (informativos)\n${verification.controls.join("\n")}`,
-        ]
-      : []),
-    ...verification.checks.map(
-      (check) =>
-        `Verificación ${check.command}: exit ${check.code}\n${output(check.partId)}`,
-    ),
-    ...verification.criteria.map(
-      (criterion, index) =>
-        `Criterio ${index + 1}: ${criterion.text}\nJuicio humano pendiente\nEvidencia técnica: ${criterion.evidence.join(", ")}\nFalta: ${criterion.missing.join("; ")}`,
-    ),
-  ].join("\n\n");
+  for (const id of [
+    verification.diffPartId,
+    verification.configurationPartId,
+    ...verification.checks.map((check) => check.partId),
+  ]) {
+    output(id);
+  }
 }
