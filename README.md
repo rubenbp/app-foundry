@@ -41,6 +41,7 @@ node --experimental-strip-types scripts/configureMergeProtection.ts config/manag
 Añade `Factory / ready-to-merge` y `Vercel`, exige PR, rama actualizada y conversaciones resueltas e incluye administradores. Conserva checks existentes y sus aplicaciones, restricciones, número de reviews y demás flags. La Factory no ejecuta este ajuste durante polling. Esta configuración no acredita por sí sola el recorrido de un Commit candidato.
 
 ```sh
+npm run test:opencode -- --config factory.local.json
 npm start -- serve --config factory.local.json --port 4310
 ```
 

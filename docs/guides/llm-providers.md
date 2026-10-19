@@ -67,6 +67,44 @@ OpenCode descubre el modelo directamente. No se instala un intermediario ni se n
 
 ## 4. Arrancar y cambiar la selección
 
+Antes de arrancar la Factory, comprueba que OpenCode puede obtener una respuesta
+con el proveedor y modelo del JSON:
+
+```sh
+npm run test:opencode -- --config factory.local.json
+npm run test:opencode -- --config factory.local.json --prompt "Responde OK sin usar herramientas"
+```
+
+`--config` es obligatorio. Se reutiliza la validación de la Factory, incluidas
+las rutas y la configuración del Managed project; puede crear `dataDir`.
+Se prueba únicamente la selección de ese archivo, sin opciones para cambiar
+proveedor/modelo, fallback ni reenvíos del prompt. Si has editado el JSON con la
+Factory arrancada, la prueba comprueba la selección del próximo arranque.
+
+El comando levanta su propia instancia temporal mediante el adaptador de
+OpenCode y la autenticación configurada. No necesita arrancar la Factory ni
+preparar un clon: el directorio de trabajo está vacío. El prompt predeterminado
+pide `OK` sin herramientas; `--prompt` permite sustituirlo. Una respuesta final
+de texto no vacía es válida, aunque no coincida literalmente con `OK`, siempre
+que se observe el proveedor/modelo configurado en ese mismo mensaje.
+
+El plazo fijo es de 120 segundos desde el inicio de la prueba de OpenCode;
+no admite `--timeout`. Un error, una laguna de observación, una respuesta vacía,
+una intervención pendiente o superar el plazo producen `FAIL` y código de
+salida `1`. El comando espera a que termine la llamada del adaptador en curso
+antes de cerrar el proceso; el arranque y las llamadas HTTP conservan sus
+propios límites. El cierre y la limpieza pueden prolongar la duración total.
+Cancelar con Ctrl+C también intenta cerrar OpenCode.
+
+La terminal muestra proveedor/modelo, respuesta saneada, duración y `PASS` o
+`FAIL`. `PASS` devuelve código `0` y exige confirmar el cierre del proceso.
+No se guardan informes y se elimina el runtime temporal tras confirmar la
+parada. Si el cierre queda incierto, falla e indica la ruta conservada para
+inspección. Esta prueba acredita configuración y generación; no comprueba
+ejecución de herramientas ni el workflow completo de la Factory.
+
+Para arrancar la Factory:
+
 ```sh
 npm start -- serve --config factory.local.json --port 4310
 ```
@@ -89,7 +127,7 @@ Los issues en cola que **nunca empezaron** adoptan la selección nueva al comenz
 | Error de autenticación o cuota al trabajar      | Acceso y cuota en el proveedor; resuelve la causa y solicita `Reintentar` en el issue.    |
 | Arranque bloqueado por otra selección           | Recupera la selección anterior y termina o cancela el trabajo pendiente.                  |
 
-Hay [evidencia histórica](../evidence/opencode-panel/README.md) con OpenAI `gpt-6-luna` mediante OAuth y variante `low`; ahora la variante queda a OpenCode. Las pruebas usan OpenCode real, claves ficticias y Ollama simulado, **sin generar respuestas**. No acreditan flujos completos nuevos con Gemini, Claude o local.
+Hay [evidencia histórica](../evidence/opencode-panel/README.md) con OpenAI `gpt-6-luna` mediante OAuth y variante `low`; ahora la variante queda a OpenCode. Las pruebas usan OpenCode real, claves ficticias y Ollama simulado, **sin llamar a modelos reales**. El diagnóstico comprueba también petición, respuesta y limpieza contra el simulador local. No acreditan flujos completos nuevos con Gemini, Claude o local.
 
 Para declarar una combinación comprobada, completa un issue hasta merge humano y cierre, y anota proveedor/modelo. En local, registra también memoria y contexto. Las demás combinaciones siguen siendo seleccionables y experimentales.
 

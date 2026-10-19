@@ -440,12 +440,13 @@ export class OpenCode implements AgentPort {
     };
   }
 
-  async create() {
+  async create(title?: string) {
     if (!this.client) {
       throw new Error("OpenCode not started");
     }
     const session = await this.client.session.create({
       agent: "factory",
+      ...(title !== undefined ? { title } : {}),
       model: { providerID: this.config.provider, id: this.config.model },
       location: { directory: this.config.projectDir },
     });

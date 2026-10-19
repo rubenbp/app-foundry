@@ -24,7 +24,8 @@ export interface AgentPort {
     emit: (fact: Fact) => void,
     protect?: (secrets: string[]) => void,
   ): Promise<NonNullable<Run["process"]>>;
-  create(): Promise<string>;
+  /** An explicit title avoids automatic model calls to name the conversation. */
+  create(title?: string): Promise<string>;
   /** Observe an existing conversation without creating a session or resending its original task. */
   resume(sessionId: string): Promise<void>;
   send(sessionId: string, task: string): Promise<void>;

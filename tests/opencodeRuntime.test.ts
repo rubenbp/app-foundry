@@ -14,6 +14,7 @@ import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
 import { snapshotSkills } from "../src/infrastructure/opencode/skills.ts";
 import { createServer } from "node:http";
 import { once } from "node:events";
+import { main as testOpenCode } from "../scripts/testOpenCode.ts";
 
 for (const mode of ["manual", "workflow"]) {
   test(
@@ -454,6 +455,145 @@ test(
         if (agent.ownedPid) {
           await agent.stop(null);
         }
+      }
+      server.closeAllConnections();
+      server.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "el diagnóstico obtiene una respuesta con OpenCode real y Ollama simulado y elimina el runtime",
+  { timeout: 60_000 },
+  async (t) => {
+    const root = mkdtempSync(join(tmpdir(), "foundry-smoke-runtime-"));
+    const projectDir = join(root, "project");
+    mkdirSync(projectDir);
+    const configPath = join(root, "factory.json");
+    const name = "factory-smoke-coder:local";
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        dataDir: join(root, "factory-data"),
+        projectDir,
+        provider: "ollama",
+        model: name,
+        auth: "opencode",
+      }),
+    );
+    const generated: string[] = [];
+    const server = createServer(async (request, response) => {
+      response.setHeader("content-type", "application/json");
+      if (request.url === "/api/tags") {
+        response.end(
+          JSON.stringify({
+            models: [
+              {
+                name,
+                model: name,
+                modified_at: "2026-10-19T00:00:00Z",
+                size: 1000,
+                digest: "test-digest",
+                details: {
+                  format: "gguf",
+                  family: "qwen3",
+                  parameter_size: "8B",
+                  quantization_level: "Q4_K_M",
+                },
+              },
+            ],
+          }),
+        );
+      } else if (request.url === "/api/show") {
+        response.end(
+          JSON.stringify({
+            capabilities: ["completion", "tools"],
+            model_info: {
+              "general.architecture": "qwen3",
+              "qwen3.context_length": 65536,
+            },
+          }),
+        );
+      } else if (request.url === "/v1/chat/completions") {
+        let body = "";
+        for await (const chunk of request) {
+          body += chunk;
+        }
+        generated.push(body);
+        response.setHeader("content-type", "text/event-stream");
+        const common = {
+          id: "completion-smoke",
+          object: "chat.completion.chunk",
+          model: name,
+          created: 1792368000,
+        };
+        response.end(
+          [
+            `data: ${JSON.stringify({
+              ...common,
+              choices: [
+                {
+                  index: 0,
+                  delta: { role: "assistant", content: "OK" },
+                  finish_reason: null,
+                },
+              ],
+            })}`,
+            `data: ${JSON.stringify({
+              ...common,
+              choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+              usage: {
+                prompt_tokens: 10,
+                completion_tokens: 1,
+                total_tokens: 11,
+              },
+            })}`,
+            "data: [DONE]",
+            "",
+          ].join("\n\n"),
+        );
+      } else {
+        response.statusCode = 404;
+        response.end(
+          JSON.stringify({ error: `Unexpected path: ${request.url}` }),
+        );
+      }
+    });
+    let agent: OpenCode | undefined;
+    const output: string[] = [];
+    t.mock.method(console, "log", (text: string) => output.push(text));
+    t.mock.method(console, "error", (text: string) => output.push(text));
+    try {
+      server.listen(11434, "127.0.0.1");
+      try {
+        await once(server, "listening");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") {
+          t.skip(
+            "A local Ollama service owns port 11434; do not contact or replace it",
+          );
+          return;
+        }
+        throw error;
+      }
+      const code = await testOpenCode(["--config", configPath], (config) => {
+        agent = new OpenCode(config);
+        return agent;
+      });
+      assert.equal(code, 0, output.join("\n"));
+      assert.match(output.join("\n"), /Response: OK/);
+      assert.match(output.join("\n"), /Result: PASS/);
+      assert.equal(generated.length, 1);
+      assert.equal(JSON.parse(generated[0]).model, name);
+      assert.match(generated[0], /Reply with OK/);
+      assert.ok(agent);
+      assert.equal(agent.ownedPid, null);
+      assert.equal(existsSync(agent.config.dataDir), false);
+      assert.equal(existsSync(agent.config.projectDir), false);
+    } finally {
+      if (agent?.ownedPid) {
+        await agent.stop(null);
       }
       server.closeAllConnections();
       server.close();
