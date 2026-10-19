@@ -19,6 +19,10 @@ Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disp
 | [5. Variantes e intervención](05-variantes-e-intervencion.md)              | Errores, cambios, cancelación, reinicio y límites actuales.            |
 | [6. Guía práctica de un issue completo](06-guia-de-un-issue.md)            | Ejemplo de petición y pasos de la persona responsable.                 |
 
+## Proveedor y modelo
+
+Cada instalación selecciona un proveedor/modelo global al arrancar. Admite OpenAI con OAuth, Gemini y Claude con API key, y Ollama local experimental, sin catálogo manual de modelos. La [guía de configuración](../guides/llm-providers.md) explica el acceso y sus límites. Cambiar la selección exige terminar o cancelar las Ejecuciones iniciadas pendientes; los issues que nunca empezaron pueden usar la selección nueva.
+
 ## La regla principal
 
 Para ponerla en marcha, sigue [la prueba local contra GitHub y Vercel](07-prueba-local-github-vercel.md). Incluye comandos adaptados al equipo y [una descripción de issue lista para copiar](ejemplo-issue-prueba-local.md).

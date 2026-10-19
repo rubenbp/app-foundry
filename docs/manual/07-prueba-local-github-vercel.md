@@ -2,7 +2,7 @@
 
 [Índice](README.md) · [Descripción del issue lista para copiar](ejemplo-issue-prueba-local.md)
 
-Esta guía arranca la Factory en el Mac y trabaja contra el GitHub y Vercel reales de Rebobina. El agente consume la cuenta OAuth activa de OpenCode. El merge que hagas al final actualizará producción.
+Esta guía arranca la Factory en el Mac y trabaja contra el GitHub y Vercel reales de Rebobina. El ejemplo usa la cuenta OpenAI OAuth activa de OpenCode. Para Gemini, Claude o modelos locales, sigue la [guía de proveedores y modelos](../guides/llm-providers.md) y adapta `provider`/`model`. El merge que hagas al final actualizará producción.
 
 ## 1. Estado comprobado en este equipo
 
@@ -54,7 +54,7 @@ npm run typecheck
 npm run build
 ```
 
-El binario debe mostrar `2.0.32`. Se ejecuta directamente; no se pasa a `node`. El global puede tener otra versión porque solo se usa para leer en memoria la cuenta OAuth activa existente.
+El binario debe mostrar `2.0.32`. Se ejecuta directamente; no se pasa a `node`. El global puede tener otra versión porque solo se usa para leer en memoria la credencial activa existente del proveedor remoto elegido.
 
 Comprueba pnpm desde el Managed project, que declara `pnpm@12.14.0`:
 

@@ -2,6 +2,10 @@
 
 El comportamiento implementado se describe en el [manual de negocio](manual/README.md) y la [arquitectura](architecture.md). Para ejecutar una prueba con el Managed project configurado, sigue la [guía local de GitHub y Vercel](manual/07-prueba-local-github-vercel.md).
 
+## Proveedores y modelos
+
+La Factory admite OpenAI con OAuth, Gemini y Claude con API key, y Ollama local experimental. La selección global se fija al arrancar; cualquier modelo habilitado por OpenCode con herramientas es seleccionable. No hay lista manual de modelos permitidos ni cambio automático. Una Ejecución iniciada y pendiente con otra selección bloquea el arranque; la cola nunca iniciada puede adoptar la nueva. Sigue la [guía breve de configuración](guides/llm-providers.md), que incluye credenciales, selección, Ollama y diagnóstico.
+
 ## Autonomía local del MVP
 
 El agente puede mantener las pruebas existentes, actualizar dependencias, lockfiles, scripts y configuración del producto y ejecutar los comandos de desarrollo necesarios dentro del clon. Los cambios en archivos relacionados con la verificación se muestran como información para revisar, sin bloquear el contrato técnico ni la publicación. La configuración externa y las credenciales de la Factory siguen separadas. El MVP presupone operadores y repositorios de confianza y no ofrece aislamiento del sistema operativo.

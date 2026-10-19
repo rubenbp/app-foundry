@@ -27,6 +27,18 @@ Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos.
 
 La configuración operativa tiene un contrato propio en `application/configuration.ts`. Los registros de dominio y el consumo están en `domain/run.ts`; no se agrupan puertos y configuración en un módulo genérico de tipos.
 
+## Proveedores y selección global
+
+OpenCode es el único adaptador LLM. La Factory admite `openai` con OAuth, `google` y `anthropic` con API key, y `ollama` local experimental. No mantiene un catálogo de modelos: consulta el catálogo efectivo del servidor privado, exige modelo habilitado y capacidad de herramientas y comprueba proveedor/modelo del agente y de la sesión. No sustituye una selección no disponible. La variante queda a los valores predeterminados de OpenCode.
+
+`infrastructure/opencode/credentials.ts` exporta únicamente la credencial activa del proveedor configurado, valida su tipo y registra sus secretos para saneamiento antes de importarla mediante el SDK. Los errores de exportación no incluyen stdout ni stderr. Ollama omite la exportación/importación y usa descubrimiento nativo en loopback. Se preservan HOME/XDG privados, configuración de proyecto deshabilitada y permisos y skills de la Factory.
+
+La configuración global se lee al arrancar. Antes de modificar registros por recuperación, `Factory` rechaza cualquier Ejecución iniciada y no terminal con proveedor/modelo distintos. El workflow aporta la reserva persistida para reconocer incluso un arranque interrumpido antes de la preparación. Un reintento `queued` con fase previa sigue iniciado; `startedAt` no distingue esos casos porque se escribe al encolar. El error impide abrir socket, Dashboard y polling y libera la propiedad adquirida. Las Ejecuciones terminadas no bloquean.
+
+Al confirmar el primer comienzo, una petición nunca iniciada actualiza su selección capturada con la global en la misma escritura que marca el inicio. Los Intentos posteriores usan la configuración global compatible, incluida la ruta actual de la CLI; no importan rutas antiguas del snapshot. Las Ejecuciones manuales nuevas también guardan su selección para el control de reinicio. No se migran conversaciones entre proveedores/modelos.
+
+La [guía de proveedores y modelos](guides/llm-providers.md) describe la preparación. `tests/providers.test.ts` cubre configuración, saneamiento y reglas de arranque/cola con SQLite real; `tests/opencodeRuntime.test.ts` comprueba OpenCode real y fronteras de proveedores controladas, sin generar respuestas.
+
 ## Autonomía local del Managed project
 
 El MVP presupone operadores y repositorios de confianza. El agente puede mantener código y pruebas, actualizar dependencias y lockfiles y modificar scripts y configuración del producto. OpenCode permite comandos de desarrollo sin una lista literal de comandos shell. El entorno reducido, la protección local de Git y las instrucciones del agente mantienen la separación operativa: no recibe credenciales de publicación, no cambia la identidad del clon y no publica ni integra por su cuenta. Son controles frente a errores accidentales del mismo usuario de macOS, no aislamiento del sistema operativo.
