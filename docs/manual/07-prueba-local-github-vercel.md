@@ -187,15 +187,15 @@ La espera no caduca y conserva el puesto. Para comprobar la recuperación, puede
 
 ## 8. Revisar y aceptar
 
-Espera el aviso de revisión en el issue y la etiqueta `factory:pending-review`. El aviso incluye la preview y la PR, sin SHA ni fórmulas de aceptación. Abre la PR y lee el informe vigente. Abre su preview con tu sesión Vercel y comprueba:
+Espera el aviso de revisión en el issue y la etiqueta `factory:pending-review`. El aviso incluye la preview y la PR, sin SHA ni fórmulas de aceptación. Abre la PR y lee su descripción funcional en castellano: Resumen, Evidencia y Riesgo de fusión. Consulta el Dashboard para las salidas técnicas completas; la PR no debe tener un comentario de informe técnico. Abre su preview con tu sesión Vercel y comprueba:
 
 1. El nuevo texto del pie en `/`.
 2. El mismo texto en `/sobre-rebobina/`.
 3. Que el enlace de marca del pie permite volver al inicio.
 
-Publica un comentario nuevo en el issue o la conversación principal de la PR, copiando SHA completo y URL del informe:
+Puedes corregir una frase de la descripción de la PR y esperar una consulta: la Ejecución debe seguir en `awaiting_review` y conservar el control favorable. Una nueva entrega del agente sustituirá ese texto por la descripción completa actualizada.
 
-No publiques un comentario de aceptación. Espera `awaiting_review` y `Factory / ready-to-merge: success`: el control acredita las comprobaciones técnicas; la aceptación humana se expresa al hacer merge. Si cambia el candidato, revisa la nueva preview y el informe vigente.
+No publiques un comentario de aceptación. Espera `awaiting_review` y `Factory / ready-to-merge: success`: el control acredita las comprobaciones técnicas; la aceptación humana se expresa al hacer merge. Si cambia el candidato, revisa la nueva preview, la descripción y la evidencia vigente del Dashboard.
 
 ## 9. Hacer merge y comprobar el cierre
 

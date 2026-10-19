@@ -22,7 +22,7 @@ flowchart TD
 
 En Rebobina, el contrato incluye build, lint, comprobación de tipos, pruebas unitarias y pruebas de navegador. Un comando fallido detiene la secuencia; los posteriores quedan sin ejecutar. No hay un bucle automático para pedir al agente que corrija y vuelva a probar. La persona puede publicar `Corregir: instrucciones` en el issue para iniciar otro Intento y repetir la verificación completa, o `Reintentar` para volver a ejecutar la fase tras corregir la causa. El aviso identifica el comando y su código de salida y dirige a la salida completa del Dashboard. Reintentar la verificación no encarga al agente que cambie el código; para ello se utiliza `Corregir: instrucciones`.
 
-La Factory compara con la base los archivos de comandos, configuración, manifests, lockfiles, scripts y pruebas. Las observaciones aparecen en el Dashboard y en el informe de la PR como información para revisar; no impiden ejecutar los comandos ni publicar un candidato que supere el contrato. El agente puede mantener las pruebas existentes, actualizar expectativas, cambiar dependencias y ajustar la configuración del producto. Por ejemplo, cambiar el mensaje del pie y la expectativa de su test es parte del mismo encargo y no necesita una autorización adicional. La configuración de confianza de la Factory sigue fuera del clon y no puede cambiarla el agente.
+La Factory compara con la base los archivos de comandos, configuración, manifests, lockfiles, scripts y pruebas. Las observaciones aparecen en el Dashboard como información para revisar; no impiden ejecutar los comandos ni publicar un candidato que supere el contrato. El agente puede mantener las pruebas existentes, actualizar expectativas, cambiar dependencias y ajustar la configuración del producto. Por ejemplo, cambiar el mensaje del pie y la expectativa de su test es parte del mismo encargo y no necesita una autorización adicional. La configuración de confianza de la Factory sigue fuera del clon y no puede cambiarla el agente.
 
 Las pruebas de navegador usan un servidor propio para el build del Commit candidato. Un puerto ocupado falla; no se reutiliza otro servidor. Hace falta informe válido y pruebas ejecutadas, sin fallos, omisiones ni resultados inestables. Un código de salida cero, por sí solo, no acredita la comprobación.
 
@@ -30,7 +30,7 @@ Las pruebas de navegador usan un servidor propio para el build del Commit candid
 
 ## Publicar PR y comprobar preview
 
-La Factory publica la rama y abre una PR que referencia el issue sin cerrarlo automáticamente. La integración Git de Vercel genera la preview. La Factory comprueba repositorio, proyecto, entorno, SHA desplegado y marcador de versión servido. Abrir un enlace no basta: debe corresponder al Commit candidato verificado.
+La Factory publica la rama y abre una PR con el título y la descripción funcional redactados por el agente, que referencia el issue sin cerrarlo automáticamente. La descripción está disponible desde la apertura, antes de acreditar la preview. La integración Git de Vercel genera la preview. La Factory comprueba repositorio, proyecto, entorno, SHA desplegado y marcador de versión servido. Abrir un enlace no basta: debe corresponder al Commit candidato verificado.
 
 El acceso protegido se comprueba con las credenciales configuradas, conservando Deployment Protection. Un 401, 403 o redirección deja el acceso sin acreditar. `pending` e `inactive` significan espera; `failure` y `error` requieren intervención. Un error de consulta no demuestra que haya fallado la build.
 
@@ -40,10 +40,10 @@ sequenceDiagram
     participant G as GitHub
     participant V as Vercel
     actor H as Persona revisora
-    F->>G: Publicar rama y abrir PR
+    F->>G: Publicar rama y abrir PR con descripción funcional
     G->>V: Generar preview mediante integración Git
     F->>V: Comprobar identidad, acceso y versión servida
-    F->>G: Publicar informe y evidencias
+    F->>F: Conservar evidencia técnica en el Dashboard
     F->>G: Avisar en el issue con preview y PR
     F->>G: Habilitar Factory / ready-to-merge
     H->>V: Revisar comportamiento y criterios
@@ -54,35 +54,43 @@ sequenceDiagram
 
 ## Aviso en el issue
 
-Cuando la preview está verificada y el informe disponible, la Factory publica un comentario breve en el issue con la URL de preview, el enlace a la PR y estas instrucciones: revisar la preview y hacer merge de la PR para aceptar; publicar `Corregir: instrucciones` en el issue para pedir cambios. El aviso no muestra el SHA.
+Cuando la preview está verificada y la evidencia técnica disponible, la Factory publica un comentario breve en el issue con la URL de preview, el enlace a la PR y estas instrucciones: revisar la preview y hacer merge de la PR para aceptar; publicar `Corregir: instrucciones` en el issue para pedir cambios. El aviso no muestra el SHA.
 
 El issue recibe `factory:pending-review`. Antes de que la preview esté acreditada conserva `factory:in-progress`: esa espera es automática, no una revisión humana.
 
-Cada nueva entrega revisable tiene un aviso identificado. La Factory consulta si ya existe antes de repetir un comentario cuya respuesta se perdió. Los reintentos u observaciones repetidas no duplican el aviso. Una nueva versión o informe puede generar otro aviso; no se editan avisos antiguos. La PR y su informe vigente identifican la entrega que se puede integrar.
+Cada nueva entrega revisable tiene un aviso identificado. La Factory consulta si ya existe antes de repetir un comentario cuya respuesta se perdió. Los reintentos u observaciones repetidas no duplican el aviso. Una nueva entrega o preview puede generar otro aviso; no se editan avisos antiguos. La PR y el Commit candidato vigente identifican la entrega que se puede integrar.
 
 Un fallo al publicar el aviso utiliza la intervención y conciliación existentes. No vuelve a ejecutar desarrollo ni despliegue para repetir un comentario.
 
 ## Qué debe revisar una persona
 
-El informe de la PR reúne el Issue autorizado, la Ejecución, la base, el Commit candidato, el diff acumulado, las verificaciones, los cambios informativos en controles del producto, las evidencias por criterio, las lagunas y la preview. Si no cabe en un comentario, se divide en fragmentos enlazados sin truncar evidencia. La persona valora también si las pruebas modificadas siguen comprobando el comportamiento solicitado.
+La PR tiene un título que nombra la característica y tres secciones en castellano, con enfoque funcional para personas no técnicas:
+
+- **Resumen:** problema o necesidad, quién lo sufre, enlace al Issue autorizado, comportamiento nuevo y alcance incluido y excluido. Integra los cambios de API, esquema, configuración, variables de entorno, migraciones o flags y cualquier paso de despliegue o activación. Añade diseño, un flujo breve o una alternativa descartada solo cuando ayuden a entender el cambio.
+- **Evidencia:** resultados reales seleccionados y pasos para reproducir los casos feliz, vacío y de error cuando existan. Los cambios visibles describen el antes y el después observados con salidas reales. Se identifican la prueba del caso nuevo y su resultado; los pasos manuales quedan como checklist pendiente. Una captura no sustituye haber ejercido el flujo. El agente distingue resultados obtenidos, fallos y comprobaciones pendientes.
+- **Riesgo de fusión:** reversibilidad, datos o estado que no se deshacen solos, dependencias y orden de despliegue cuando corresponda. El MVP no incluye radio de impacto.
+
+Estas piezas se integran en el texto; no requieren un encabezado individual. La calidad y suficiencia de la descripción son responsabilidad del agente, que pide intervención cuando necesita una decisión humana. La Factory no valida secciones ni añade bloqueos editoriales. La descripción contiene evidencia seleccionada, no el diff entero ni todos los logs. El runtime no conserva capturas o vídeos E2E ni añade infraestructura de medios para esta entrega.
+
+La Factory deja de publicar el informe técnico como comentario de la PR y no genera fragmentos adicionales. El Dashboard local conserva base, Commit candidato, diff completo, configuración, comandos, códigos, salidas saneadas, cambios informativos de controles, criterios y limitaciones. Las salidas se consultan bajo demanda y corresponden a la verificación vigente; no se añade un archivo histórico completo por versión ni un enlace remoto compartible. La persona valora también si las pruebas modificadas siguen comprobando el comportamiento solicitado.
 
 Para aceptar los cambios, **revisa la preview y haz merge de la PR en GitHub** cuando estén favorables `Factory / ready-to-merge` y los demás controles requeridos. No hace falta escribir un comentario de aceptación, copiar un SHA ni usar una fórmula especial. El merge de una persona con permiso efectivo de escritura registra la Aceptación del resultado para ese Commit candidato.
 
-`Factory / ready-to-merge: success` acredita preparación técnica: verificaciones completas, preview válida e informe íntegro de la versión vigente. No acredita que la persona haya revisado el resultado. La Ejecución permanece en `awaiting_review` hasta el merge; no hay una espera de aceptación seguida de otra espera de merge.
+`Factory / ready-to-merge: success` acredita preparación técnica: verificaciones completas y preview válida de la versión vigente, con la evidencia técnica local disponible. No acredita que la persona haya revisado el resultado. La Ejecución permanece en `awaiting_review` hasta el merge; no hay una espera de aceptación seguida de otra espera de merge.
 
 ## Árbol de decisión de los comentarios
 
 Las aclaraciones ya entregadas al agente no se reinterpretan como instrucciones de revisión. Los comentarios propios o de bots se excluyen. Los demás comentarios ordinarios, incluidas fórmulas anteriores de aceptación, son informativos: solo el merge acepta el resultado.
 
-Para pedir cambios, publica `Corregir: instrucciones` en el **issue**. Abre otro Intento en la misma conversación y rama y exige nuevas verificaciones, preview e informe antes de otro merge. `Cancelar` detiene el trabajo antes de integrar. Estas órdenes operativas no comprueban permisos del autor. `Reintentar` recupera una fase fallida según el aviso de intervención.
+Para pedir cambios, publica `Corregir: instrucciones` en el **issue**. Abre otro Intento en la misma conversación y rama y exige nuevas verificaciones, preview y revisión antes de otro merge. El agente reescribe el título y la descripción para el cambio acumulado desde la base, no solo para el último commit. `Cancelar` detiene el trabajo antes de integrar. Estas órdenes operativas no comprueban permisos del autor. `Reintentar` recupera una fase fallida según el aviso de intervención.
 
 Las fórmulas anteriores de bloqueo, como «Corrige el pie», «Cancela» o «Revoco», siguen retirando el control favorable si proceden de una persona con escritura. No sustituyen las órdenes operativas completas. Cada ID se consume una vez. Editar un comentario procesado no lo convierte en una nueva orden.
 
 ## Si algo cambia antes de integrar
 
-- Un nuevo SHA invalida las comprobaciones, la preview y el informe vigentes. La Factory obtiene ese head en el mismo clon, verifica de nuevo y publica la nueva entrega para revisión.
+- Un nuevo SHA invalida las comprobaciones, la preview y el registro de revisión vigentes. La Factory obtiene ese head en el mismo clon y verifica de nuevo. Cada nueva entrega del agente sustituye el título y la descripción completos, incluidas las ediciones humanas anteriores.
 - Una preview sin acreditar retira el control favorable y vuelve a `awaiting_preview`.
-- Un informe o fragmento editado o eliminado exige republicar evidencia íntegra antes de volver a habilitar merge.
+- Editar el título o la descripción de la PR no altera el estado de la Ejecución ni sus verificaciones. No se compara el texto con una copia ni se comprueba su igualdad mediante hashes. La edición se conserva hasta la siguiente entrega.
 - Una corrección o cancelación retira el control favorable y sigue la recuperación correspondiente.
 - Una PR cerrada sin merge requiere intervención. Cerrar el issue tampoco acepta ni detiene el trabajo.
 

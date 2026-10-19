@@ -31,7 +31,7 @@ La configuración operativa tiene un contrato propio en `application/configurati
 
 El MVP presupone operadores y repositorios de confianza. El agente puede mantener código y pruebas, actualizar dependencias y lockfiles y modificar scripts y configuración del producto. OpenCode permite comandos de desarrollo sin una lista literal de comandos shell. El entorno reducido, la protección local de Git y las instrucciones del agente mantienen la separación operativa: no recibe credenciales de publicación, no cambia la identidad del clon y no publica ni integra por su cuenta. Son controles frente a errores accidentales del mismo usuario de macOS, no aislamiento del sistema operativo.
 
-`domain/verificationControls.ts` identifica cambios en archivos relacionados con la verificación para el informe humano. Estas observaciones se conservan en `Verification.controls` y su artefacto; no son rechazos. `infrastructure/verification.ts` ejecuta después el contrato de la configuración externa de confianza. `application/publication/evidence.ts` incluye las observaciones en el informe y permite continuar si el commit y las comprobaciones tienen evidencia válida. No declara que las pruebas modificadas mantengan su calidad semántica.
+`domain/verificationControls.ts` identifica cambios en archivos relacionados con la verificación para el informe humano. Estas observaciones se conservan en `Verification.controls` y su artefacto; no son rechazos. `infrastructure/verification.ts` ejecuta después el contrato de la configuración externa de confianza. `application/publication/evidence.ts` comprueba que el commit y las comprobaciones tengan evidencia local completa y válida. Los detalles se consultan en el Dashboard. No declara que las pruebas modificadas mantengan su calidad semántica.
 
 La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: instrucciones` abre otro Intento. No se añaden iteraciones automáticas ni recuperación automática general tras reiniciar. El Dashboard continúa siendo de lectura y la aceptación y el merge continúan siendo humanos.
 
@@ -41,11 +41,20 @@ La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: i
 
 - `publication/runtime.ts` registra intención y confirmación, reconcilia efectos remotos, observa merges concurrentes e impide efectos nuevos durante una parada.
 - `publication/evidence.ts` exige evidencia técnica completa del SHA vigente.
-- `publication/reviewReport.ts` construye y fragmenta el informe de revisión.
-- `publication/reviewPolicy.ts` comprueba integridad del informe, identidad del Commit candidato, preview e instrucciones pendientes.
+- `publication/description.ts` separa el título de la respuesta final del agente y conserva el Markdown, añadiendo el enlace al Issue autorizado. No valida el contenido editorial.
+- `publication/reviewReport.ts` actualiza la descripción por Commit candidato, registra qué versión y preview se presentaron a revisión y publica el aviso breve en el issue. No publica informes técnicos en la PR.
+- `publication/reviewPolicy.ts` comprueba identidad del Commit candidato, preview e instrucciones pendientes. No comprueba hashes ni igualdad de textos publicados.
 - `publication/integration.ts` registra la aceptación mediante merge humano, publica el resumen de integración y confirma el cierre del issue.
 
 Los adaptadores mantienen separados el protocolo GitHub, la ejecución de comandos y el acceso autenticado a Vercel. Las credenciales y respuestas nativas permanecen en infraestructura.
+
+## Descripción funcional de la PR
+
+`application/agentTask.ts` pide una respuesta final en castellano: título en la primera línea, una línea vacía y Markdown con **Resumen**, **Evidencia** y **Riesgo de fusión**. El prompt inicial y las correcciones incluyen las mismas instrucciones. El agente selecciona evidencia real, declara limitaciones y solicita intervención mediante el protocolo existente cuando la necesita. La Factory no evalúa calidad, suficiencia ni presencia de secciones. Una respuesta anterior sin cuerpo conserva como contenido de respaldo la petición capturada; no se inventan resultados de pruebas.
+
+`PublicationContext.description` transporta título y cuerpo. `GitHubPublication.openPull()` los envía al crear la PR y `updatePull()` utiliza PATCH sobre la misma PR. El registro de operaciones confirma la descripción por head: una vez publicada no se observa ni se compara el texto, por lo que una edición humana no altera la Ejecución. El head de la siguiente entrega hace que se sustituya el título y el cuerpo completos. Un PATCH sin confirmación puede repetirse con los mismos campos; no crea otra PR ni exige conciliación por igualdad editorial.
+
+`Publication.report` y `reports` conservan metadatos locales de la revisión (identificador, fecha, head, PR y preview), necesarios para correlacionar la preparación técnica anterior al merge. La fecha de preparación favorable se toma del commit status de GitHub para compararla con el merge usando el mismo reloj y precisión. No conservan hashes ni IDs de comentarios de evidencia. Los controles de versión, preview, permisos y estado favorable de GitHub siguen vigentes. El informe técnico permanece en la verificación y los artefactos locales. Las salidas vigentes se sobrescriben al verificar otra versión; el histórico de metadatos no equivale a un archivo completo de informes por SHA.
 
 ## Consulta y presentación
 
@@ -73,7 +82,7 @@ La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Fa
 
 `domain/recovery.ts` reconoce únicamente las órdenes completas `Reintentar`, `Corregir: instrucciones` y `Cancelar`, y determina las acciones disponibles según el estado y la integración. `application/issueRecovery.ts` publica el aviso de intervención, consume comentarios humanos del issue sin comprobar permisos y delega la operación en el workflow. Los IDs consumidos quedan persistidos y se excluyen de la revisión posterior de la PR. No hay cola de notificaciones ni protocolo adicional para recuperar comunicaciones con GitHub.
 
-El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y control favorable vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview, informe y aceptación.
+El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y control favorable vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview y aceptación. El agente reescribe la descripción funcional del cambio acumulado desde la base.
 
 Cancelar reutiliza la parada operativa y cierra el issue con `state_reason: not_planned` solo después de confirmar la parada. La CLI `stop` conserva su contrato de parada local. Después del merge, la recuperación queda limitada al resumen y al cierre pendientes; no corrige código ni cancela lo integrado.
 
@@ -81,6 +90,6 @@ Cancelar reutiliza la parada operativa y cierra el issue con `state_reason: not_
 
 `domain/issueLabels.ts` proyecta los estados existentes de Ejecución sobre seis etiquetas operativas. `factory:ready` sigue siendo la entrada de autorización y se retira después de capturar el encargo. `Workflow.syncIssueLabels()` persiste intención antes de modificar GitHub y confirmación después; una actualización incierta se concilia en la consulta siguiente. El adaptador `GitHub.setRunLabel()` crea la definición si falta, añade el estado nuevo y retira únicamente los nombres conocidos anteriores. No reemplaza todas las etiquetas del issue ni crea una cola adicional de trabajo.
 
-`ReviewReport.notify()` publica el aviso breve de revisión en el issue mediante `PublicationRuntime.comment()`, que ahora selecciona issue o conversación de PR. Conserva el mismo protocolo de marcadores, observación previa y conciliación de comentarios. El informe completo permanece en la PR; el aviso no muestra el SHA. Una nueva entrega puede publicar otro aviso sin editar el historial.
+`ReviewReport.notify()` publica el aviso breve de revisión en el issue mediante `PublicationRuntime.comment()`. Conserva el protocolo de marcadores, observación previa y conciliación de comentarios, identificando la entrega por su deployment. El aviso no muestra el SHA. Una nueva entrega puede publicar otro aviso sin editar el historial. El comentario de integración también se conserva.
 
 Los cambios se destinan a ejecuciones nuevas. No se migra el contrato de aceptación de ejecuciones antiguas en marcha; la prueba local debe reiniciarse desde una ejecución nueva.

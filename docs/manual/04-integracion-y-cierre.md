@@ -4,11 +4,11 @@
 
 ## El merge lo hace una persona
 
-`Factory / ready-to-merge: success` acredita verificaciones, preview e informe vigentes del Commit candidato. El merge humano constituye la aceptación. La persona integra en GitHub respetando los demás controles del repositorio. El creador del issue se responsabiliza de conseguir la revisión del preview; cualquier persona con permiso efectivo de escritura puede aceptar la versión concreta.
+`Factory / ready-to-merge: success` acredita verificaciones y preview vigentes, con evidencia técnica disponible del Commit candidato. El merge humano constituye la aceptación. La persona integra en GitHub respetando los demás controles del repositorio. El creador del issue se responsabiliza de conseguir la revisión del preview; cualquier persona con permiso efectivo de escritura puede aceptar la versión concreta.
 
-La Factory observa el merge y conserva por separado base, Commit candidato aceptado y commit integrado. Un squash puede generar otro SHA. Comprueba la rama destino, los permisos, el informe anterior al merge y el control favorable vigente al integrar. Un merge fuera de este contrato queda en intervención, aunque el issue ya esté cerrado.
+La Factory observa el merge y conserva por separado base, Commit candidato aceptado y commit integrado. Un squash puede generar otro SHA. Comprueba la rama destino, los permisos, el registro local de revisión anterior al merge y el control favorable vigente al integrar. Un merge fuera de este contrato queda en intervención, aunque el issue ya esté cerrado.
 
-La observación puede coincidir con el merge. El historial del informe y el control de GitHub permite reconstruir qué versión estaba preparada al integrar. Una preview retirada después del merge no necesita seguir activa.
+La observación puede coincidir con el merge. El historial local de revisión y el control de GitHub permiten reconstruir qué versión estaba preparada al integrar. Una preview retirada después del merge no necesita seguir activa.
 
 ## Secuencia hasta completar
 

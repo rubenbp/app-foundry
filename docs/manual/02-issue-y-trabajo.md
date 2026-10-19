@@ -12,7 +12,7 @@ Las etiquetas reflejan los estados de la Ejecución; no añaden fases ni pasos d
 | `factory:queued`         | Encargo capturado, esperando el único puesto.                                                 |
 | `factory:in-progress`    | Preparación, desarrollo, verificaciones, espera automática de preview o cierre tras el merge. |
 | `factory:needs-human`    | Pregunta del agente o incidencia operativa.                                                   |
-| `factory:pending-review` | Preview verificada e informe disponibles; falta revisión y aceptación mediante merge.         |
+| `factory:pending-review` | Preview verificada y evidencia disponibles; falta revisión y aceptación mediante merge.       |
 | `factory:completed`      | Integración, resumen y cierre confirmados.                                                    |
 | `factory:stopped`        | Parada confirmada.                                                                            |
 
@@ -106,7 +106,7 @@ sequenceDiagram
 
 Comprobar primero la base permite distinguir un problema anterior de una regresión introducida por el Commit candidato. Si la base falla, la Factory conserva la causa y el puesto; no encarga al agente arreglarla automáticamente.
 
-El agente recibe la petición fijada, las instrucciones de la base y el contrato de verificación. Puede mantener el código y las pruebas, instalar o actualizar dependencias, cambiar lockfiles, scripts y configuración del producto y crear commits locales. Los comandos de desarrollo no se restringen a una lista literal de verificaciones. La configuración externa de la Factory permanece fuera del clon. La Factory conserva el control del push, la PR, los informes y los estados remotos. No entrega al agente las credenciales de publicación. El MVP presupone operadores y repositorios de confianza; el entorno reducido y la protección de Git no son un sandbox del sistema operativo.
+El agente recibe la petición fijada, las instrucciones de la base y el contrato de verificación. Puede mantener el código y las pruebas, instalar o actualizar dependencias, cambiar lockfiles, scripts y configuración del producto y crear commits locales. Los comandos de desarrollo no se restringen a una lista literal de verificaciones. La configuración externa de la Factory permanece fuera del clon. La Factory conserva el control del push, la PR y su descripción, los avisos y los estados remotos. No entrega al agente las credenciales de publicación. El MVP presupone operadores y repositorios de confianza; el entorno reducido y la protección de Git no son un sandbox del sistema operativo.
 
 ## Aclaraciones por comentarios
 

@@ -8,7 +8,7 @@
 flowchart TB
     H["Persona responsable"] -->|"Autoriza, responde, recupera y acepta mediante merge"| G["GitHub del Managed project<br/>Issues, ramas, PR y controles"]
     F["Factory<br/>Coordina y conserva evidencias"] -->|"Lee peticiones y decisiones"| G
-    F -->|"Publica dudas, rama, PR, informes y estado"| G
+    F -->|"Publica dudas, rama, PR con descripción y estado"| G
     F -->|"Encarga un Intento"| A["Agente de código<br/>OpenCode"]
     A -->|"Edita y crea commits locales"| W["Clon propio del Managed project"]
     F -->|"Prepara y verifica"| W
@@ -63,7 +63,7 @@ flowchart TD
     Y -->|"Primer comentario humano nuevo<br/>Continuar el mismo thread"| O
     T --> R["Publicar rama y PR"]
     R --> V["Esperar y comprobar preview de Vercel"]
-    V --> E["Publicar informe y esperar revisión"]
+    V --> E["Conservar evidencia y esperar revisión"]
     E --> G["Factory habilita su control de merge"]
     G --> M["Persona revisa la preview y acepta mediante merge"]
     M --> C["Publicar resumen de integración y cerrar issue"]

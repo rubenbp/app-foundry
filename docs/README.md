@@ -10,7 +10,7 @@ Se mantienen verificación independiente, revisión de la preview, aceptación m
 
 ## Revisión desde GitHub
 
-El issue muestra su [estado mediante etiquetas](manual/02-issue-y-trabajo.md#estados-visibles-en-github), separando la cola del trabajo en curso. Al disponer de preview verificada e informe, recibe `factory:pending-review` y un aviso con enlaces a preview y PR. La persona revisa el resultado y lo acepta haciendo merge de la PR; no se necesita un comentario de aceptación ni copiar un SHA. Consulta el [flujo de revisión](manual/03-verificacion-y-aceptacion.md).
+El issue muestra su [estado mediante etiquetas](manual/02-issue-y-trabajo.md#estados-visibles-en-github), separando la cola del trabajo en curso. Al disponer de preview verificada y evidencia técnica, recibe `factory:pending-review` y un aviso con enlaces a preview y PR. La persona revisa el resultado y lo acepta haciendo merge de la PR; no se necesita un comentario de aceptación ni copiar un SHA. Consulta el [flujo de revisión](manual/03-verificacion-y-aceptacion.md).
 
 ## Continuación del agente por el issue
 
