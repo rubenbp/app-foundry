@@ -11,7 +11,10 @@ import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
 const defaultPrompt = "Reply with OK. Do not use tools or ask questions.";
 const timeoutMs = 120_000;
 const usage = 'Usage: npm run test:opencode -- --config PATH [--prompt "TEXT"]';
-type CreateAgent = (config: FactoryConfig) => AgentPort;
+type ProbeAgent = AgentPort & {
+  availableReasoningEfforts(): Promise<string[]>;
+};
+type CreateAgent = (config: FactoryConfig) => ProbeAgent;
 
 /** Probe one configured selection; no Factory workflow or persistent conversation. */
 export async function probeOpenCode(
@@ -26,7 +29,8 @@ export async function probeOpenCode(
   const abort = new AbortController();
   const response = Promise.withResolvers<string>();
   const completedMessages = new Set<string>();
-  let agent: AgentPort | undefined;
+  let agent: ProbeAgent | undefined;
+  const catalog: { efforts: string[] | null } = { efforts: null };
   let processStarted = false;
   let sessionId: string | null = null;
   let stopping = false;
@@ -88,6 +92,9 @@ export async function probeOpenCode(
       projectDir,
       provider: config.provider,
       model: config.model,
+      ...(config.reasoningEffort !== undefined
+        ? { reasoningEffort: config.reasoningEffort }
+        : {}),
       auth: config.auth,
       ...(config.opencodeCli ? { opencodeCli: config.opencodeCli } : {}),
     });
@@ -96,6 +103,16 @@ export async function probeOpenCode(
       await activeAgent.start(emit, (values) => secrets.push(...values));
       processStarted = true;
       abort.signal.throwIfAborted();
+      catalog.efforts = await activeAgent.availableReasoningEfforts();
+      abort.signal.throwIfAborted();
+      if (
+        config.reasoningEffort !== undefined &&
+        !catalog.efforts.includes(config.reasoningEffort)
+      ) {
+        throw new Error(
+          `Unsupported reasoningEffort: ${JSON.stringify(config.reasoningEffort)}`,
+        );
+      }
       sessionId = await activeAgent.create("Factory provider smoke test");
       abort.signal.throwIfAborted();
       await activeAgent.send(sessionId, prompt);
@@ -142,6 +159,7 @@ export async function probeOpenCode(
     response: failure ? "" : clean(text),
     error: clean(failure),
     durationMs: Math.round(performance.now() - startedAt),
+    reasoningEfforts: catalog.efforts?.map(clean) ?? null,
   };
 }
 
@@ -166,11 +184,29 @@ export async function main(args: string[], createAgent?: CreateAgent) {
     console.log(
       sanitizer()(`Provider/model: ${config.provider}/${config.model}`).text,
     );
+    console.log(
+      sanitizer()(
+        `Configured reasoningEffort: ${config.reasoningEffort === undefined ? "OpenCode default (field omitted)" : JSON.stringify(config.reasoningEffort)}`,
+      ).text,
+    );
     const result = await probeOpenCode(
       config,
       values.prompt ?? defaultPrompt,
       createAgent,
     );
+    if (result.reasoningEfforts !== null) {
+      if (result.reasoningEfforts.length) {
+        console.log("Available reasoningEffort values for this model:");
+        for (const effort of result.reasoningEfforts) {
+          console.log(
+            sanitizer()(`  "reasoningEffort": ${JSON.stringify(effort)}`).text,
+          );
+        }
+        console.log('Omit "reasoningEffort" to use the OpenCode default.');
+      } else {
+        console.log('No reasoning efforts available; omit "reasoningEffort".');
+      }
+    }
     if (result.ok) {
       console.log(`Response: ${result.response}`);
     } else {

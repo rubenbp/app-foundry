@@ -5,6 +5,7 @@ export interface FactoryConfig {
   projectDir: string;
   provider: string;
   model: string;
+  reasoningEffort?: string;
   auth: "opencode";
   opencodeCli?: string;
   vercelCli?: string;

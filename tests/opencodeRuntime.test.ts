@@ -14,7 +14,10 @@ import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
 import { snapshotSkills } from "../src/infrastructure/opencode/skills.ts";
 import { createServer } from "node:http";
 import { once } from "node:events";
-import { main as testOpenCode } from "../scripts/testOpenCode.ts";
+import {
+  main as testOpenCode,
+  probeOpenCode,
+} from "../scripts/testOpenCode.ts";
 
 for (const mode of ["manual", "workflow"]) {
   test(
@@ -70,6 +73,7 @@ for (const mode of ["manual", "workflow"]) {
         projectDir: projectDirectory,
         provider: "openai",
         model: "gpt-6-luna",
+        reasoningEffort: mode === "manual" ? "low" : "high",
         auth: "opencode" as const,
         opencodeCli: exporter,
         conversationId: "issue-1",
@@ -116,6 +120,28 @@ for (const mode of ["manual", "workflow"]) {
         ).data;
         const actual = agents?.find((agent) => agent.id === "factory");
         assert.ok(actual);
+        assert.equal(actual.model?.variant, config.reasoningEffort);
+        assert.ok(
+          (await first.availableReasoningEfforts()).includes(
+            config.reasoningEffort,
+          ),
+        );
+        if (mode === "manual") {
+          const diagnostic = await probeOpenCode(
+            { ...config, reasoningEffort: "factory-unsupported-effort" },
+            "Must not generate",
+            (runtime) => {
+              const agent = new OpenCode(runtime);
+              agent.create = async () =>
+                assert.fail("Invalid effort must not create a session");
+
+              return agent;
+            },
+          );
+          assert.equal(diagnostic.ok, false);
+          assert.match(diagnostic.error, /Unsupported reasoningEffort/);
+          assert.ok(diagnostic.reasoningEfforts?.includes("low"));
+        }
         const start = actual.permissions.findLastIndex(
           (rule) =>
             rule.action === "*" &&
@@ -153,6 +179,11 @@ for (const mode of ["manual", "workflow"]) {
           );
         }
         sessionId = await first.create();
+        assert.equal(
+          (await first.client!.session.get({ sessionID: sessionId })).model
+            ?.variant,
+          config.reasoningEffort,
+        );
         for (const [action, resource, expected] of [
           ["skill", "review", "allow"],
           ["skill", "global-review", "deny"],
@@ -234,6 +265,7 @@ for (const mode of ["manual", "workflow"]) {
         });
         assert.equal(restored.info.id, original.info.id);
         assert.equal(restored.info.title, "Dudas de producto pendientes");
+        assert.equal(restored.info.model?.variant, config.reasoningEffort);
         assert.deepEqual(restored.messages, original.messages);
         const reused = await attached.start(() => {});
         assert.equal(reused.pid, process.pid);

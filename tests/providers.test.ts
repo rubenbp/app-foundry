@@ -29,6 +29,16 @@ test("la configuración admite modelos sin lista manual y exige CLI solo para pr
   };
   try {
     assert.equal(read().model, "my-coder:custom");
+    assert.equal(read().reasoningEffort, undefined);
+    assert.equal(read({ reasoningEffort: "high" }).reasoningEffort, "high");
+    // Native compatibility is checked only by test:opencode.
+    assert.equal(
+      read({ reasoningEffort: "future-native-variant" }).reasoningEffort,
+      "future-native-variant",
+    );
+    for (const reasoningEffort of [null, 1, "", " ", "low\0"]) {
+      assert.throws(() => read({ reasoningEffort }), /reasoningEffort/);
+    }
     for (const provider of ["google", "anthropic", "openai"]) {
       assert.throws(() => read({ provider }), /opencodeCli/);
       assert.equal(
@@ -135,6 +145,7 @@ test("el arranque rechaza otra selección en todas las fases iniciadas sin modif
     for (const change of [
       { provider: "google" },
       { model: "different-model" },
+      { reasoningEffort: "high" },
     ]) {
       assert.throws(
         () =>
@@ -198,6 +209,7 @@ test("la cola nunca iniciada adopta la selección global al empezar y el histori
       ...s.config,
       provider: "google",
       model: "a-new-model",
+      reasoningEffort: "high",
       opencodeCli: "/new/opencode",
     };
     workflow = createWorkflow(config, {
@@ -221,8 +233,10 @@ test("la cola nunca iniciada adopta la selección global al empezar y el histori
     assert.equal(started?.status, "running", started?.error ?? "");
     assert.equal(started.request?.runtime.provider, "google");
     assert.equal(started.request?.runtime.model, "a-new-model");
+    assert.equal(started.request?.runtime.reasoningEffort, "high");
     assert.equal(selections.at(-1)?.provider, "google");
     assert.equal(selections.at(-1)?.model, "a-new-model");
+    assert.equal(selections.at(-1)?.reasoningEffort, "high");
     await workflow.stop(started.id);
   } finally {
     workflow.close();
@@ -240,6 +254,52 @@ test("una Ejecución manual también conserva su selección al reiniciar", async
   );
   const restored = createFactory(s.config, s.agent);
   try {
+    await restored.stop(run.id);
+  } finally {
+    restored.close();
+  }
+});
+
+test("el esfuerzo explícito se conserva al admitir y bloquea cambios o su retirada mientras haya trabajo pendiente", async () => {
+  const s = setup();
+  const config = { ...s.config, reasoningEffort: "low" };
+  const workflow = createWorkflow(config, { createAgent: () => s.agent });
+  await workflow.observe([s.ready()]);
+  const run = workflow.list()[0];
+  assert.equal(run.request?.runtime.reasoningEffort, "low");
+  run.status = "awaiting_review";
+  run.phase = "publication";
+  workflow.factory.persist(run);
+  workflow.close();
+  for (const selection of [s.config, { ...config, reasoningEffort: "high" }]) {
+    assert.throws(
+      () => createWorkflow(selection, { createAgent: () => s.agent }),
+      /No se puede arrancar.*reasoningEffort: low/,
+    );
+  }
+  const restored = createWorkflow(config, { createAgent: () => s.agent });
+  restored.close();
+});
+
+test("una variante observada antigua no convierte el esfuerzo predeterminado en explícito", async () => {
+  const s = setup();
+  const factory = createFactory(s.config, s.agent);
+  const run = await factory.run("Manual task with historical evidence");
+  delete run.runtime;
+  run.process!.configuration.model = {
+    providerID: s.config.provider,
+    id: s.config.model,
+    variant: "low",
+  };
+  factory.persist(run);
+  factory.close();
+  assert.throws(
+    () => createFactory({ ...s.config, reasoningEffort: "low" }, s.agent),
+    /No se puede arrancar.*predeterminado/,
+  );
+  const restored = createFactory(s.config, s.agent);
+  try {
+    assert.equal(restored.view(run.id)?.runtime, undefined);
     await restored.stop(run.id);
   } finally {
     restored.close();

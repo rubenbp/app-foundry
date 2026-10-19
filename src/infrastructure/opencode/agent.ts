@@ -128,6 +128,14 @@ export class OpenCode implements AgentPort {
             protect,
           );
     const model = `${this.config.provider}/${this.config.model}`;
+    const configuredModel =
+      this.config.reasoningEffort === undefined
+        ? model
+        : {
+            providerID: this.config.provider,
+            model: this.config.model,
+            variant: this.config.reasoningEffort,
+          };
     if (
       this.config.conversationId &&
       !/^[a-zA-Z0-9-]+$/.test(this.config.conversationId)
@@ -171,7 +179,7 @@ export class OpenCode implements AgentPort {
       );
     }
     const effective = {
-      model,
+      model: configuredModel,
       default_agent: "factory",
       update: "disable",
       warming: false,
@@ -182,7 +190,7 @@ export class OpenCode implements AgentPort {
       agents: {
         factory: {
           mode: "primary",
-          model,
+          model: configuredModel,
           description: "Bounded Factory task",
           permissions: activePolicy,
           system:
@@ -447,7 +455,13 @@ export class OpenCode implements AgentPort {
     const session = await this.client.session.create({
       agent: "factory",
       ...(title !== undefined ? { title } : {}),
-      model: { providerID: this.config.provider, id: this.config.model },
+      model: {
+        providerID: this.config.provider,
+        id: this.config.model,
+        ...(this.config.reasoningEffort !== undefined
+          ? { variant: this.config.reasoningEffort }
+          : {}),
+      },
       location: { directory: this.config.projectDir },
     });
     const id = session.id;
@@ -470,6 +484,28 @@ export class OpenCode implements AgentPort {
     await this.client.session.prompt({ sessionID: sessionId, text: task });
 
     this.observer!.watch();
+  }
+
+  /** Read native variant IDs for the standalone configuration diagnostic. */
+  async availableReasoningEfforts(): Promise<string[]> {
+    if (!this.client) {
+      throw new Error("OpenCode not started");
+    }
+    const model = (
+      await this.client.model.list({
+        location: { directory: this.config.projectDir },
+      })
+    ).data.find(
+      (entry) =>
+        entry.providerID === this.config.provider &&
+        entry.id === this.config.model &&
+        entry.enabled,
+    );
+    if (!model) {
+      throw new Error("Configured OpenCode model unavailable");
+    }
+
+    return model.variants.map((variant) => variant.id);
   }
 
   async resume(sessionId: string) {

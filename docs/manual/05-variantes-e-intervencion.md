@@ -113,7 +113,7 @@ Una parada confirmada no borra commits, elimina PR, revierte un merge ni retira 
 
 ## Reinicio y pérdida de evidencia
 
-Antes de recuperar el historial, la Factory compara la selección global con cada Ejecución iniciada pendiente. Si cambia proveedor o modelo, muestra un error por consola y no arranca. Incluye esperas humanas, revisión, intervención y reintentos en cola. Arranca con la selección anterior para terminar o cancelar el trabajo y después cambia la configuración. La cola nunca iniciada adopta la selección nueva al comenzar; `completed` y `stopped` no bloquean. Consulta la [guía de proveedores](../guides/llm-providers.md).
+Antes de recuperar el historial, la Factory compara la selección global con cada Ejecución iniciada pendiente. Si cambia proveedor, modelo o `reasoningEffort`, muestra un error por consola y no arranca. Añadir o retirar un esfuerzo explícito también cambia la selección; la ausencia del campo en registros antiguos representa el predeterminado de OpenCode. Incluye esperas humanas, revisión, intervención y reintentos en cola. Arranca con la selección anterior para terminar o cancelar el trabajo y después cambia la configuración. La cola nunca iniciada adopta la selección nueva al comenzar; `completed` y `stopped` no bloquean. Consulta la [guía de proveedores](../guides/llm-providers.md).
 
 ```mermaid
 flowchart TD

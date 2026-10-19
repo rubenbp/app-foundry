@@ -37,6 +37,7 @@ export interface ReadyIssue {
 export interface AgentConfiguration {
   provider: string;
   model: string;
+  reasoningEffort?: string;
   auth: "opencode";
   opencodeCli?: string;
 }

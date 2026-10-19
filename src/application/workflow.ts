@@ -206,6 +206,9 @@ export class Workflow {
           {
             provider: this.factory.config.provider,
             model: this.factory.config.model,
+            ...(this.factory.config.reasoningEffort !== undefined
+              ? { reasoningEffort: this.factory.config.reasoningEffort }
+              : {}),
             auth: this.factory.config.auth,
             ...(this.factory.config.opencodeCli
               ? { opencodeCli: this.factory.config.opencodeCli }

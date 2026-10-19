@@ -31,6 +31,14 @@ export function readConfig(path: string): FactoryConfig {
     );
   }
   if (
+    config.reasoningEffort !== undefined &&
+    (typeof config.reasoningEffort !== "string" ||
+      !config.reasoningEffort.trim() ||
+      config.reasoningEffort.includes("\0"))
+  ) {
+    throw new Error("reasoningEffort must be a nonempty variant ID");
+  }
+  if (
     (config.provider !== "ollama" || config.opencodeCli !== undefined) &&
     (typeof config.opencodeCli !== "string" || !isAbsolute(config.opencodeCli))
   ) {
@@ -102,6 +110,9 @@ export function readConfig(path: string): FactoryConfig {
     projectDir,
     provider: String(config.provider),
     model: String(config.model),
+    ...(typeof config.reasoningEffort === "string"
+      ? { reasoningEffort: config.reasoningEffort }
+      : {}),
     auth: "opencode",
     ...(typeof config.opencodeCli === "string"
       ? { opencodeCli: config.opencodeCli }

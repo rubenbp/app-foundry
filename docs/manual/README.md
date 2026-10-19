@@ -21,7 +21,7 @@ Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disp
 
 ## Proveedor y modelo
 
-Cada instalación selecciona un proveedor/modelo global al arrancar. Admite OpenAI con OAuth, Gemini y Claude con API key, y Ollama local experimental, sin catálogo manual de modelos. La [guía de configuración](../guides/llm-providers.md) explica el acceso y sus límites. Cambiar la selección exige terminar o cancelar las Ejecuciones iniciadas pendientes; los issues que nunca empezaron pueden usar la selección nueva.
+Cada instalación selecciona un proveedor/modelo global y, opcionalmente, un esfuerzo mediante `reasoningEffort` al arrancar. El diagnóstico `test:opencode` lista los esfuerzos disponibles con los valores exactos para configurar el JSON; omitir el campo mantiene el predeterminado de OpenCode. Admite OpenAI con OAuth, Gemini y Claude con API key, y Ollama local experimental, sin catálogo manual de modelos. La [guía de configuración](../guides/llm-providers.md) explica el acceso y sus límites. Cambiar la selección exige terminar o cancelar las Ejecuciones iniciadas pendientes; los issues que nunca empezaron pueden usar la selección nueva.
 
 ## La regla principal
 

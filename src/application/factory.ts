@@ -1,4 +1,8 @@
-import type { AuthorizedIssue, Workspace } from "../domain/request.ts";
+import type {
+  AgentConfiguration,
+  AuthorizedIssue,
+  Workspace,
+} from "../domain/request.ts";
 import { randomUUID } from "node:crypto";
 import type { RunRepository } from "./runRepository.ts";
 import { sanitizer, sanitizedRecord } from "./sanitize.ts";
@@ -52,10 +56,11 @@ export class Factory {
         initiated &&
         selection &&
         (selection.provider !== config.provider ||
-          selection.model !== config.model)
+          selection.model !== config.model ||
+          selection.reasoningEffort !== config.reasoningEffort)
       ) {
         throw new Error(
-          `No se puede arrancar la Factory: la Ejecución ${run.id} usa ${selection.provider}/${selection.model}; la configuración global indica ${config.provider}/${config.model}. Arranca con la selección anterior y termina o cancela esa Ejecución antes de cambiar.`,
+          `No se puede arrancar la Factory: la Ejecución ${run.id} usa ${selection.provider}/${selection.model} (reasoningEffort: ${selection.reasoningEffort ?? "predeterminado"}); la configuración global indica ${config.provider}/${config.model} (reasoningEffort: ${config.reasoningEffort ?? "predeterminado"}). Arranca con la selección anterior y termina o cancela esa Ejecución antes de cambiar.`,
         );
       }
     }
@@ -113,7 +118,11 @@ export class Factory {
     }
   }
 
-  private recordedSelection(run: Run) {
+  private recordedSelection(
+    run: Run,
+  ):
+    | Pick<AgentConfiguration, "provider" | "model" | "reasoningEffort">
+    | undefined {
     const selection = run.request?.runtime ?? run.runtime;
     if (selection) {
       return selection;
@@ -220,6 +229,9 @@ export class Factory {
     return {
       provider: this.config.provider,
       model: this.config.model,
+      ...(this.config.reasoningEffort !== undefined
+        ? { reasoningEffort: this.config.reasoningEffort }
+        : {}),
       auth: this.config.auth,
       ...(this.config.opencodeCli
         ? { opencodeCli: this.config.opencodeCli }

@@ -1,6 +1,6 @@
 # Configurar proveedor y modelo
 
-La Factory usa **un proveedor y un modelo globales**, leídos al arrancar. Todas las Ejecuciones usan esa selección. Para cambiarla, edita la configuración y reinicia. El MVP se opera en macOS.
+La Factory usa **un proveedor, un modelo y un esfuerzo globales**, leídos al arrancar. Todas las Ejecuciones usan esa selección. Para cambiarla, edita la configuración y reinicia. El esfuerzo es opcional. El MVP se opera en macOS.
 
 ## 1. Preparar el acceso
 
@@ -47,7 +47,15 @@ Cambia `provider` a `google` o `anthropic` y `model` al ID que muestre tu OpenCo
 
 **No hay lista manual de modelos permitidos en la Factory.** El modelo debe estar habilitado en el catálogo efectivo de OpenCode y admitir herramientas. La Factory lo comprueba al preparar el agente; una clave inválida, una cuota agotada o un modelo inaccesible pueden fallar después, al pedir la primera respuesta. No se cambia automáticamente de modelo ni proveedor.
 
-Usa el ID sin sufijo `#variante`: se emplean los valores predeterminados de OpenCode para el modelo. Que aparezca en el catálogo no acredita que complete bien el trabajo de la Factory.
+Usa el ID sin sufijo `#variante`. Para elegir el esfuerzo, añade el campo opcional `reasoningEffort` con el ID exacto de una variante del modelo. No hay una escala común a todos los proveedores: consulta las opciones mediante `npm run test:opencode -- --config factory.local.json`. El comando muestra líneas listas para copiar al JSON, por ejemplo, si el modelo anuncia esa variante:
+
+```json
+"reasoningEffort": "low"
+```
+
+Si omites el campo, OpenCode usa su valor predeterminado. Si el modelo no ofrece variantes, el diagnóstico lo indica y debes omitirlo. Las configuraciones y Ejecuciones antiguas sin ese campo conservan el significado de selección predeterminada, aunque su evidencia registre una variante efectiva.
+
+Solo `test:opencode` comprueba la compatibilidad del esfuerzo con el catálogo antes de enviar el prompt. La Factory transmite el valor a OpenCode y propaga sus errores; no añade comprobaciones del esfuerzo efectivo ni cambia automáticamente la selección. Que una variante aparezca en el catálogo no acredita que complete bien el trabajo de la Factory.
 
 ## 3. Usar Ollama local
 
@@ -78,7 +86,7 @@ npm run test:opencode -- --config factory.local.json --prompt "Responde OK sin u
 `--config` es obligatorio. Se reutiliza la validación de la Factory, incluidas
 las rutas y la configuración del Managed project; puede crear `dataDir`.
 Se prueba únicamente la selección de ese archivo, sin opciones para cambiar
-proveedor/modelo, fallback ni reenvíos del prompt. Si has editado el JSON con la
+proveedor/modelo/esfuerzo, fallback ni reenvíos del prompt. Si has editado el JSON con la
 Factory arrancada, la prueba comprueba la selección del próximo arranque.
 
 El comando levanta su propia instancia temporal mediante el adaptador de
@@ -96,8 +104,7 @@ antes de cerrar el proceso; el arranque y las llamadas HTTP conservan sus
 propios límites. El cierre y la limpieza pueden prolongar la duración total.
 Cancelar con Ctrl+C también intenta cerrar OpenCode.
 
-La terminal muestra proveedor/modelo, respuesta saneada, duración y `PASS` o
-`FAIL`. `PASS` devuelve código `0` y exige confirmar el cierre del proceso.
+La terminal muestra proveedor/modelo, el esfuerzo configurado, las variantes disponibles con el valor exacto de `"reasoningEffort"` para cada una, respuesta saneada, duración y `PASS` o `FAIL`. Si no hay variantes, indica que se omita el campo. Un esfuerzo explícito no anunciado produce `FAIL` antes de crear la sesión o enviar el prompt; se conserva el listado para corregir la configuración. El listado se muestra también si falla después la generación. `PASS` devuelve código `0` y exige confirmar el cierre del proceso.
 No se guardan informes y se elimina el runtime temporal tras confirmar la
 parada. Si el cierre queda incierto, falla e indica la ruta conservada para
 inspección. Esta prueba acredita configuración y generación; no comprueba
@@ -109,7 +116,7 @@ Para arrancar la Factory:
 npm start -- serve --config factory.local.json --port 4310
 ```
 
-Si hay una Ejecución iniciada y pendiente con otro proveedor **o** modelo, la Factory muestra un error por consola y no arranca. Incluye esperas humanas, revisión, intervención, recuperación y reintentos en cola. Para cambiar:
+Si hay una Ejecución iniciada y pendiente con otro proveedor, modelo **o esfuerzo**, la Factory muestra un error por consola y no arranca. Incluye esperas humanas, revisión, intervención, recuperación y reintentos en cola. Pasar de un esfuerzo explícito al predeterminado, o al revés, también cambia la selección. Para cambiar:
 
 1. Arranca con la selección anterior.
 2. Termina o cancela las Ejecuciones pendientes y confirma su estado `completed` o `stopped`.
@@ -124,10 +131,11 @@ Los issues en cola que **nunca empezaron** adoptan la selección nueva al comenz
 | No hay credencial activa / no se puede exportar | Ruta `opencodeCli`, `auth login`, método de conexión y cuenta activa.                     |
 | Modelo no disponible                            | ID exacto, proveedor, cuenta conectada o servicio Ollama activo con el modelo descargado. |
 | El modelo no admite herramientas                | Elige un modelo que OpenCode anuncie con esa capacidad.                                   |
+| Esfuerzo incompatible en `test:opencode`        | Copia un valor de `reasoningEffort` del listado; si no hay variantes, omite el campo.     |
 | Error de autenticación o cuota al trabajar      | Acceso y cuota en el proveedor; resuelve la causa y solicita `Reintentar` en el issue.    |
 | Arranque bloqueado por otra selección           | Recupera la selección anterior y termina o cancela el trabajo pendiente.                  |
 
-Hay [evidencia histórica](../evidence/opencode-panel/README.md) con OpenAI `gpt-6-luna` mediante OAuth y variante `low`; ahora la variante queda a OpenCode. Las pruebas usan OpenCode real, claves ficticias y Ollama simulado, **sin llamar a modelos reales**. El diagnóstico comprueba también petición, respuesta y limpieza contra el simulador local. No acreditan flujos completos nuevos con Gemini, Claude o local.
+Hay [evidencia histórica](../evidence/opencode-panel/README.md) con OpenAI `gpt-6-luna` mediante OAuth y variante `low`; ahora se puede elegir mediante `reasoningEffort` o dejar el predeterminado de OpenCode. Las pruebas usan OpenCode real, claves ficticias y Ollama simulado, **sin llamar a modelos reales**. El diagnóstico comprueba también petición, respuesta y limpieza contra el simulador local. No acreditan flujos completos nuevos con Gemini, Claude o local.
 
 Para declarar una combinación comprobada, completa un issue hasta merge humano y cierre, y anota proveedor/modelo. En local, registra también memoria y contexto. Las demás combinaciones siguen siendo seleccionables y experimentales.
 

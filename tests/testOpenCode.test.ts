@@ -60,13 +60,18 @@ function completed(
   ];
 }
 
-function fixture(facts: Fact[] = completed()) {
+function fixture(facts: Fact[] = completed(), efforts: string[] = []) {
   let emit: (fact: Fact) => void = () => {};
   let runtime: FactoryConfig;
   const sent: string[] = [];
   const stopped: (string | null)[] = [];
   const secret = "fictional-credential-value";
-  const agent: AgentPort = {
+  const agent: AgentPort & {
+    availableReasoningEfforts(): Promise<string[]>;
+  } = {
+    async availableReasoningEfforts() {
+      return efforts;
+    },
     async start(receive, protect) {
       emit = receive;
       protect?.([secret]);
@@ -126,6 +131,47 @@ test("prueba solo la selección configurada en un directorio vacío y elimina el
   assert.deepEqual(fake.sent, ["Custom prompt"]);
   assert.deepEqual(fake.stopped, ["session"]);
   assert.equal(existsSync(dirname(fake.runtime().dataDir)), false);
+});
+
+test("el diagnóstico transmite el esfuerzo elegido y consulta las variantes del modelo", async () => {
+  const fake = fixture(completed(), ["low", "high"]);
+  const result = await probeOpenCode(
+    { ...config, reasoningEffort: "high" },
+    "Probe",
+    fake.createAgent,
+  );
+  assert.equal(result.ok, true, result.error);
+  assert.equal(fake.runtime().reasoningEffort, "high");
+  assert.deepEqual(result.reasoningEfforts, ["low", "high"]);
+  assert.deepEqual(fake.sent, ["Probe"]);
+});
+
+test("un esfuerzo incompatible falla antes de crear sesión y conserva las opciones disponibles", async () => {
+  for (const efforts of [[], ["low", "high"]]) {
+    const fake = fixture(completed(), efforts);
+    fake.agent.create = async () => assert.fail("Must not create a session");
+    const result = await probeOpenCode(
+      { ...config, reasoningEffort: "unsupported" },
+      "Probe",
+      fake.createAgent,
+    );
+    assert.equal(result.ok, false);
+    assert.match(result.error, /Unsupported reasoningEffort/);
+    assert.deepEqual(result.reasoningEfforts, efforts);
+    assert.deepEqual(fake.sent, []);
+    assert.deepEqual(fake.stopped, [null]);
+    assert.equal(existsSync(dirname(fake.runtime().dataDir)), false);
+  }
+});
+
+test("el diagnóstico permite el esfuerzo predeterminado con y sin variantes", async () => {
+  for (const efforts of [[], ["low", "high"]]) {
+    const fake = fixture(completed(), efforts);
+    const result = await probeOpenCode(config, "Probe", fake.createAgent);
+    assert.equal(result.ok, true, result.error);
+    assert.equal(fake.runtime().reasoningEffort, undefined);
+    assert.deepEqual(result.reasoningEfforts, efforts);
+  }
 });
 
 const failures: [string, Fact[], RegExp][] = [
@@ -337,6 +383,35 @@ test("el comando lee y valida el JSON explícito y permite el prompt predetermin
     assert.match(output.join("\n"), /Response: OK/);
     assert.match(output.join("\n"), /Duration: \d+ ms/);
     assert.match(output.join("\n"), /Result: PASS/);
+    assert.match(output.join("\n"), /No reasoning efforts available/);
+    output.length = 0;
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        ...config,
+        projectDir,
+        dataDir,
+        reasoningEffort: "high",
+      }),
+    );
+    const supported = fixture(completed(), ["low", "high"]);
+    assert.equal(
+      await main(["--config", configPath], supported.createAgent),
+      0,
+    );
+    assert.match(output.join("\n"), /Configured reasoningEffort: "high"/);
+    assert.match(output.join("\n"), /"reasoningEffort": "low"/);
+    assert.match(output.join("\n"), /"reasoningEffort": "high"/);
+    output.length = 0;
+    const unsupported = fixture(completed(), ["low"]);
+    assert.equal(
+      await main(["--config", configPath], unsupported.createAgent),
+      1,
+    );
+    assert.match(output.join("\n"), /Unsupported reasoningEffort/);
+    assert.match(output.join("\n"), /"reasoningEffort": "low"/);
+    assert.match(output.join("\n"), /Result: FAIL/);
+    assert.deepEqual(unsupported.sent, []);
     writeFileSync(
       configPath,
       JSON.stringify({ ...config, projectDir: "/missing-project", dataDir }),
