@@ -4,10 +4,10 @@ import { IssueDetails } from "./issue.tsx";
 import { VerificationDetails } from "./verification.tsx";
 import { IntegrationDetails } from "./integration.tsx";
 import { PublicationDetails } from "./publication.tsx";
-import { PhaseNavigation, phases, currentPhase } from "./phases.tsx";
+import { PhaseNavigation } from "./phases.tsx";
 import { poll } from "./polling.ts";
 import type { FactoryView } from "../src/application/factoryView.ts";
-import { Output } from "./components/output.tsx";
+import { Timeline } from "./components/timeline.tsx";
 import { labels, time, age, dateTime } from "./format.ts";
 import "./style.css";
 
@@ -368,59 +368,7 @@ function App() {
                 </p>
               </section>
             ) : (
-              <>
-                <div className="activity-heading">
-                  <h2>{phases[currentPhase(run)]}</h2>
-                  <span className="small muted">Actividad observada</span>
-                </div>
-                <section className="card">
-                  <div className="section-heading">
-                    <h2>Cronología</h2>
-                    <span className="count">
-                      {run.history.length} registros
-                    </span>
-                  </div>
-                  <ol className="timeline">
-                    {run.history.map((entry, i) => (
-                      <li key={i}>
-                        <time>{time(entry.at)}</time>
-                        <div>
-                          <span className="eyebrow">{entry.kind}</span>
-                          <p>{entry.text}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </section>
-                <section className="card">
-                  <div className="section-heading">
-                    <h2>Mensajes y herramientas</h2>
-                    <span className="count">{run.parts.length}</span>
-                  </div>
-                  <p className="small muted">
-                    Salidas saneadas bajo demanda. El contenido se muestra como
-                    texto.
-                  </p>
-                  <ul className="outputs">
-                    {run.parts.map((part) => (
-                      <Output
-                        key={`${run.id}:${part.id}`}
-                        runId={run.id}
-                        part={part}
-                      />
-                    ))}
-                  </ul>
-                  {!run.parts.length ? (
-                    <p className="muted">Sin mensajes observados.</p>
-                  ) : null}
-                </section>
-                {run.result !== null ? (
-                  <section className="card">
-                    <h2>Resultado del agente · Sin verificar</h2>
-                    <pre tabIndex={0}>{run.result}</pre>
-                  </section>
-                ) : null}
-              </>
+              <Timeline key={run.id} run={run} />
             )}
           </section>
           <aside
