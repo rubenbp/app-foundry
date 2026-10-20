@@ -1,77 +1,7 @@
-import { test, expect, type Page } from "@playwright/test";
-import { mkdtempSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { once } from "node:events";
-import { createFactory } from "../../src/composition/factory.ts";
+import { test, expect } from "@playwright/test";
+import { rmSync } from "node:fs";
 import { Store } from "../../src/infrastructure/persistence/store.ts";
-import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
-import type { Fact } from "../../src/application/agent.ts";
-
-async function timelineFixture(page: Page) {
-  const root = mkdtempSync(join(tmpdir(), "foundry-timeline-"));
-  let emit: (fact: Fact) => void = () => {};
-  let now = Date.now();
-  const factory = createFactory(
-    {
-      dataDir: root,
-      projectDir: join(root, "project"),
-      provider: "google",
-      model: "gemini-2.5-flash",
-      auth: "opencode",
-    },
-    {
-      async start(sink) {
-        emit = sink;
-        return { pid: 123, version: "test", configuration: {} };
-      },
-      async resume() {},
-      async create() {
-        return "s1";
-      },
-      async send() {},
-      async stop() {
-        return { exited: true, detail: "Owned process stopped" };
-      },
-    },
-    { now: () => now, secrets: ["fictional-secret-123"] },
-  );
-  const run = await factory.run("Relacionar actividad y evidencia");
-  const part = (id: string, text: string, kind = "text", label = id) => {
-    now += 1000;
-    emit({ type: "part", id, messageId: "message", kind, label, text });
-  };
-  let persistenceClosed = false;
-  const server = panelServer(factory);
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-
-  return {
-    factory,
-    run,
-    part,
-    emit,
-    origin,
-    async open() {
-      await page.goto(origin);
-    },
-    closePersistence() {
-      if (!persistenceClosed) {
-        factory.close();
-      }
-      persistenceClosed = true;
-    },
-    async close() {
-      server.closeAllConnections();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-      if (!persistenceClosed) {
-        factory.close();
-      }
-      rmSync(root, { recursive: true, force: true });
-    },
-  };
-}
+import { timelineFixture } from "../support/timeline.ts";
 
 test("una cronología relaciona mensajes, herramientas y fallos; el registro original conserva todos los hechos sin duplicar salidas", async ({
   page,
@@ -212,7 +142,7 @@ test("el registro original localiza y abre con teclado una salida truncada sin m
     await link.focus();
     const before = await page.evaluate(() => ({
       body: document.scrollingElement!.scrollTop,
-      top: document.querySelector(".activity-scroll")!.scrollTop,
+      top: document.querySelector(".timeline-viewport")!.scrollTop,
     }));
     await page.keyboard.press("Enter");
     const button = page.locator("#output-toggle-large");
@@ -228,7 +158,7 @@ test("el registro original localiza y abre con teclado una salida truncada sin m
     ).toBeVisible();
     const after = await page.evaluate(() => ({
       body: document.scrollingElement!.scrollTop,
-      top: document.querySelector(".activity-scroll")!.scrollTop,
+      top: document.querySelector(".timeline-viewport")!.scrollTop,
     }));
     expect(after.body).toBe(before.body);
     expect(after.top).toBeLessThan(before.top);

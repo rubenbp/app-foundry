@@ -116,7 +116,7 @@ test("Cabina mantiene la Ejecución, fases y regiones de lectura dentro del view
     }
     await page.setViewportSize({ width: 1440, height: 960 });
     const activity = page.getByRole("region", {
-      name: "Actividad de la Ejecución",
+      name: "Entradas de la cronología",
     });
     await activity.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
