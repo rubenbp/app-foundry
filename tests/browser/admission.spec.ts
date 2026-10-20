@@ -99,7 +99,9 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
         .getByRole("region", { name: "Cola de peticiones" })
         .getByRole("listitem"),
     ).toHaveCount(2);
-    await page.getByText("Issue autorizado", { exact: true }).click();
+    await page
+      .getByRole("link", { name: "Encargo y criterios", exact: true })
+      .click();
     await expect(
       page.getByText("Mostrar todos los juegos y conservar el teclado.", {
         exact: false,
@@ -110,13 +112,17 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
     await expect(page.locator(".badge.preparing")).toHaveText(
       "Preparando base",
     );
+    await page.getByText("Código de la Ejecución", { exact: true }).click();
     await expect(
       page.getByText("a".repeat(40), { exact: true }).first(),
     ).toBeVisible();
     release();
     await started;
     await expect(
-      page.getByRole("listitem").filter({ hasText: /^Implementación$/ }),
+      page
+        .getByRole("navigation", { name: "Fases de la Ejecución" })
+        .getByRole("listitem")
+        .filter({ hasText: "Implementación" }),
     ).toHaveAttribute("aria-current", "step");
     await expect(
       page

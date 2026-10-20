@@ -27,3 +27,14 @@ export const age = (value: number | null, now: number) =>
   value === null
     ? "Sin observación"
     : `Hace ${Math.max(0, Math.floor((now - value) / 1000))} s`;
+
+export const dateTime = (value: number | null) =>
+  value === null
+    ? "No disponible"
+    : new Date(value).toLocaleString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });

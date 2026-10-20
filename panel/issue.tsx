@@ -5,43 +5,11 @@ export function IssueDetails({ run }: { run: Run }) {
     return null;
   }
   const request = run.request;
-  const current =
-    run.status === "completed"
-      ? "Completada"
-      : run.publication?.mergeSha
-        ? "Integración y cierre"
-        : run.status === "queued"
-          ? "Cola"
-          : run.phase === "preparation"
-            ? "Preparación de la base"
-            : run.phase === "verification"
-              ? "Verificación"
-              : run.phase === "publication"
-                ? "Preview y aceptación"
-                : "Implementación";
 
   return (
     <>
-      <section className="card" aria-label="Fases de la Ejecución">
-        <h2>Fases</h2>
-        <ol className="phases">
-          {[
-            "Cola",
-            "Preparación de la base",
-            "Implementación",
-            "Verificación",
-            "Preview y aceptación",
-            "Integración y cierre",
-            "Completada",
-          ].map((phase) => (
-            <li
-              key={phase}
-              aria-current={phase === current ? "step" : undefined}
-            >
-              {phase}
-            </li>
-          ))}
-        </ol>
+      <details className="card">
+        <summary>Código de la Ejecución</summary>
         <dl className="usage">
           <div>
             <dt>Repositorio</dt>
@@ -59,14 +27,10 @@ export function IssueDetails({ run }: { run: Run }) {
             <dt>Rama de la Ejecución</dt>
             <dd>{run.workspace?.branch ?? "Pendiente de preparar"}</dd>
           </div>
-          <div>
-            <dt>Fase conservada</dt>
-            <dd>{current}</dd>
-          </div>
         </dl>
-      </section>
+      </details>
       <details className="card">
-        <summary>Issue autorizado</summary>
+        <summary>Encargo y criterios</summary>
         <p>
           <a href={request.url} target="_blank" rel="noreferrer">
             Issue #{request.number}: {request.title} ↗

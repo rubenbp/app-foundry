@@ -107,8 +107,10 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       "Provider unavailable",
     );
     await expect(
-      page.getByRole("link", { name: "Registrar la intervención en GitHub" }),
-    ).toHaveAttribute("href", /github.com/);
+      page.getByText(
+        "Ejecución manual sin issue de GitHub. Consulta el contexto local y la CLI para detener el trabajo.",
+      ),
+    ).toBeVisible();
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     factory.close();

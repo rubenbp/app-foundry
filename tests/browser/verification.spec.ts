@@ -55,7 +55,10 @@ test("el dashboard muestra la verificación independiente, el diff completo, las
       "Verificando Commit candidato",
     );
     await expect(
-      page.getByRole("listitem").filter({ hasText: /^Verificación$/ }),
+      page
+        .getByRole("navigation", { name: "Fases de la Ejecución" })
+        .getByRole("listitem")
+        .filter({ hasText: "Verificación" }),
     ).toHaveAttribute("aria-current", "step");
     await expect(
       page.getByRole("region", { name: "Verificación independiente" }),
