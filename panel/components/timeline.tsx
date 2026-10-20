@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Run } from "../../src/domain/run.ts";
 import { timelineEntries, type TimelineEntry } from "../timeline.ts";
+import { timelineReading } from "../reading.ts";
+import { Button } from "./button.tsx";
 import { Output } from "./output.tsx";
 import { time } from "../format.ts";
 import { phases, currentPhase } from "../phases.tsx";
@@ -71,10 +73,31 @@ function Entry({ entry, runId }: { entry: TimelineEntry; runId: string }) {
 export function Timeline({ run }: { run: Run }) {
   const [technical, setTechnical] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const viewport = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const reading = useRef<ReturnType<typeof timelineReading> | null>(null);
+  const [readingState, setReadingState] = useState({
+    following: true,
+    pending: 0,
+  });
   const entries = timelineEntries(run);
   const visible = entries.filter(
     (entry) => technical || entry.kind !== "technical",
   );
+
+  useLayoutEffect(() => {
+    const session = timelineReading(
+      viewport.current!,
+      content.current!,
+      setReadingState,
+    );
+    reading.current = session;
+    return () => session.close();
+  }, []);
+
+  useLayoutEffect(() => {
+    reading.current?.observe(entries, visible);
+  });
 
   useEffect(() => {
     const reveal = (partId: string) => {
@@ -87,13 +110,7 @@ export function Timeline({ run }: { run: Run }) {
         button.click();
       }
       button.focus({ preventScroll: true });
-      const region = root.current.closest<HTMLElement>(".activity-scroll");
-      if (region) {
-        region.scrollTop +=
-          button.getBoundingClientRect().top -
-          region.getBoundingClientRect().top -
-          24;
-      }
+      reading.current?.locate(button);
     };
     const openOutput = (event: Event) => {
       const detail: unknown =
@@ -150,42 +167,78 @@ export function Timeline({ run }: { run: Run }) {
           Salidas: última actualización observada.
         </span>
       </div>
-      <ol className="timeline" aria-label="Cronología">
-        {visible.map((entry) => (
-          <Entry key={entry.id} entry={entry} runId={run.id} />
-        ))}
-      </ol>
-      {!visible.length ? (
-        <p className="muted">Sin actividad observada.</p>
-      ) : null}
-      <details
-        className="original-record"
-        onToggle={(event) => {
-          if (event.currentTarget.open) {
-            document.dispatchEvent(new CustomEvent("cabina:inspect"));
-          }
-        }}
+      <div
+        ref={viewport}
+        className="timeline-viewport"
+        role="region"
+        aria-label="Entradas de la cronología"
+        tabIndex={0}
       >
-        <summary>Ver registro original</summary>
-        <section role="region" aria-label="Registro original">
-          <h3>Historial íntegro · {run.history.length} registros</h3>
-          <ol className="original-history">
-            {run.history.map((entry, index) => (
-              <li key={index}>
-                <time>{time(entry.at)}</time> {entry.kind}: {entry.text}
-              </li>
+        <div ref={content} className="timeline-content">
+          <ol className="timeline" aria-label="Cronología">
+            {visible.map((entry) => (
+              <Entry key={entry.id} entry={entry} runId={run.id} />
             ))}
           </ol>
-          <h3>Salidas retenidas · {run.parts.length}</h3>
-          <ul>
-            {run.parts.map((part) => (
-              <li key={part.id}>
-                <a href={`#part-${part.id}`}>{part.label}</a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </details>
+          {!visible.length ? (
+            <p className="muted">Sin actividad observada.</p>
+          ) : null}
+          <details
+            className="original-record"
+            onToggle={(event) => {
+              if (event.currentTarget.open) {
+                document.dispatchEvent(new CustomEvent("cabina:inspect"));
+              }
+            }}
+          >
+            <summary>Ver registro original</summary>
+            <section role="region" aria-label="Registro original">
+              <h3>Historial íntegro · {run.history.length} registros</h3>
+              <ol className="original-history">
+                {run.history.map((entry, index) => (
+                  <li key={index}>
+                    <time>{time(entry.at)}</time> {entry.kind}: {entry.text}
+                  </li>
+                ))}
+              </ol>
+              <h3>Salidas retenidas · {run.parts.length}</h3>
+              <ul>
+                {run.parts.map((part) => (
+                  <li key={part.id}>
+                    <a href={`#part-${part.id}`}>{part.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </details>
+        </div>
+      </div>
+      <footer
+        className="timeline-footer"
+        aria-label="Seguimiento de la cronología"
+      >
+        <div role="status" aria-live="polite">
+          <strong>
+            {readingState.following
+              ? "Siguiendo la actividad"
+              : "Leyendo el historial"}
+          </strong>
+          {!readingState.following ? (
+            <span>
+              {readingState.pending}{" "}
+              {readingState.pending === 1 ? "novedad" : "novedades"}
+            </span>
+          ) : null}
+        </div>
+        <div>
+          <Button variant="ghost" onClick={() => reading.current?.beginning()}>
+            Consultar desde el inicio
+          </Button>
+          <Button variant="outline" onClick={() => reading.current?.resume()}>
+            Volver al final
+          </Button>
+        </div>
+      </footer>
     </div>
   );
 }

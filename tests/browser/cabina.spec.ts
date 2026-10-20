@@ -126,7 +126,7 @@ test("Cabina mantiene la Ejecución, fases y regiones de lectura dentro del view
     ).toContainText("Sin Issue autorizado retenido");
     await page.getByRole("button", { name: "Cerrar diálogo" }).click();
     const activity = page.getByRole("region", {
-      name: "Actividad de la Ejecución",
+      name: "Entradas de la cronología",
     });
     await activity.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
