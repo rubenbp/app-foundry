@@ -21,6 +21,20 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     await expect(section).toContainText("deployment-1 · Preview · Correcto");
     await expect(section).toContainText("Autorizado y comprobado");
     await expect(section).toContainText("Sin aceptación registrada");
+    await page
+      .getByRole("button", { name: "Código de la Ejecución", exact: true })
+      .click();
+    const code = page.getByRole("dialog", {
+      name: "Código de la Ejecución",
+      exact: true,
+    });
+    await expect(
+      code.getByRole("link", {
+        name: `Diff de la PR #${s.facts.pull!.number} ↗`,
+        exact: true,
+      }),
+    ).toHaveAttribute("href", `${s.facts.pull!.url}/files`);
+    await page.keyboard.press("Escape");
     const report = section.getByRole("link", {
       name: "Consultar verificación y salidas completas",
     });
@@ -32,12 +46,6 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
       name: "Verificación independiente",
     });
     await expect(verification).toBeInViewport();
-    await page
-      .locator('button[aria-controls="output-verification-check-1"]')
-      .click();
-    await expect(page.locator("#output-verification-check-1")).toContainText(
-      "catalogue checked",
-    );
     for (const limitation of s.workflow.view(run.id)!.verification!
       .limitations) {
       await expect(verification).toContainText(limitation);
@@ -47,6 +55,16 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
         await expect(verification).toContainText(missing);
       }
     }
+    await verification
+      .getByRole("link", { name: "Consultar salida de node check.mjs" })
+      .click();
+    await expect(page.locator("#output-verification-check-1")).toContainText(
+      "catalogue checked",
+    );
+    await expect(
+      page.getByRole("button", { name: /− node check.mjs · exit 0/ }),
+    ).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(
       section.getByRole("link", { name: /informe.*GitHub/ }),
     ).toHaveCount(0);
