@@ -868,6 +868,39 @@ body:has(.factory-dashboard) {
   overflow-wrap: anywhere;
   text-align: right;
 }
+.dashboard-review-criteria {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dashboard-line);
+  font-size: 11px;
+}
+.dashboard-review-criteria h4 {
+  margin: 0;
+  color: #5c6752;
+  font-size: inherit;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.dashboard-review-criteria ol {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  list-style: decimal;
+  color: #617054;
+  line-height: 1.6;
+}
+.dashboard-review-criteria li {
+  padding-left: 3px;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  text-wrap: pretty;
+}
+.dashboard-review-criteria li + li {
+  margin-top: 10px;
+}
+.dashboard-review-criteria li::marker {
+  color: var(--dashboard-muted);
+  font-variant-numeric: tabular-nums;
+}
 .dashboard-inline-details {
   margin-top: 10px;
 }

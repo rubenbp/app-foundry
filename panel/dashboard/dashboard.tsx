@@ -251,7 +251,7 @@ function TaskContext({
           </p>
         </section>
       ) : null}
-      {inspected >= 4 && run.publication ? (
+      {inspected >= 4 && (run.publication || inspected === 4) ? (
         <section className="dashboard-context-section">
           <h3>{inspected === 5 ? "Resultado" : "Revisión del resultado"}</h3>
           <dl className="dashboard-facts">
@@ -264,12 +264,31 @@ function TaskContext({
               {previewMatches ? "✓ Disponible" : "Pendiente"}
             </Fact>
             <Fact label="Aceptación">
-              {accepted && run.publication.acceptance
+              {accepted && run.publication?.acceptance
                 ? `Merge por ${run.publication.acceptance.author}`
                 : "Pendiente de merge humano"}
             </Fact>
           </dl>
-          {run.publication.pull ? (
+          {inspected === 4 ? (
+            <section
+              className="dashboard-review-criteria"
+              aria-label="Criterios de aceptación"
+            >
+              <h4>Criterios de aceptación</h4>
+              {report?.criteria.length ? (
+                <ol>
+                  {report.criteria.map((criterion, index) => (
+                    <li key={index}>
+                      {criterion.text.replace(/^\s*(?:[-*]\s+|\d+\.\s+)/, "")}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p>No hay criterios de aceptación disponibles.</p>
+              )}
+            </section>
+          ) : null}
+          {run.publication?.pull ? (
             <a
               className="dashboard-primary-link"
               href={run.publication.pull.url}
