@@ -62,6 +62,7 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
       "Esperando revisión y merge humano en GitHub",
     );
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "Consultar contexto" }).click();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -102,8 +103,11 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y el 
     );
     await expect(page.locator(".badge.completed")).toHaveText("Completada");
     await expect(
-      page.getByRole("region", { name: "Fases de la Ejecución" }),
-    ).toContainText("Integración y cierre");
+      page
+        .getByRole("navigation", { name: "Fases de la Ejecución" })
+        .getByRole("listitem")
+        .filter({ hasText: "Cierre" }),
+    ).toHaveAttribute("aria-current", "step");
     await expect(page.getByText("Producción", { exact: true })).toHaveCount(0);
     const integration = page.getByRole("region", {
       name: "Integración y cierre",
