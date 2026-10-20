@@ -63,7 +63,10 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       page.getByRole("heading", { name: "Centro de ejecuciones" }),
     ).toBeVisible();
     await expect(page.locator(".badge.running")).toHaveText("En curso");
-    await expect(page.locator(".timeline")).toContainText("busy");
+    await page.getByRole("checkbox", { name: "Registro técnico" }).check();
+    await expect(page.getByRole("list", { name: "Cronología" })).toContainText(
+      "busy",
+    );
     await expect(page.locator(".timeline")).toContainText("idle");
     emit({
       type: "part",
@@ -81,7 +84,9 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     await expect(
       page.getByRole("heading", { name: "Solicitudes pendientes" }),
     ).toBeVisible();
-    await expect(page.locator(".outputs > li")).toHaveCount(1);
+    await expect(
+      page.getByRole("list", { name: "Cronología" }).locator(".output"),
+    ).toHaveCount(1);
     const output = page.getByRole("button", { name: /\+ text/ });
     await output.focus();
     await page.keyboard.press("Enter");
@@ -122,7 +127,10 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     await expect(page.locator(".notice.danger")).toContainText(
       "no se reenvió la tarea",
     );
-    await expect(page.locator(".timeline")).toContainText("busy");
+    await page.getByRole("checkbox", { name: "Registro técnico" }).check();
+    await expect(page.getByRole("list", { name: "Cronología" })).toContainText(
+      "busy",
+    );
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
       await page.evaluate(
