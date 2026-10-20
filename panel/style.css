@@ -1287,6 +1287,83 @@ main {
   margin: 10px 0;
 }
 
+/* Verification keeps the command and evidence readable in the phase context. */
+.verification-checks {
+  list-style: none;
+  padding: 0;
+}
+.verification-checks > li {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+.verification-check-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+}
+.verification-check-row strong {
+  flex: 1 1 170px;
+  min-width: 0;
+  font-family: monospace;
+}
+.verification details {
+  margin-top: 10px;
+}
+.verification summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.verification details p {
+  font-size: 12px;
+  margin: 8px 0;
+}
+.verification pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.criteria {
+  list-style: none;
+  padding: 0;
+}
+.criteria > li {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.criterion-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.criterion-heading h4 {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+  margin: 0;
+  min-width: 0;
+}
+.criterion-number {
+  display: inline-flex;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  height: 24px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.criteria strong {
+  font-size: 12px;
+}
+.shared-evidence {
+  border-left: 2px solid var(--color-border);
+  padding-left: 12px;
+}
+
 /* The reading controls stay outside the entries' independent viewport. */
 .activity-scroll:has(.unified-activity) {
   overflow: hidden;
