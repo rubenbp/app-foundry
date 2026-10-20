@@ -52,6 +52,9 @@ export async function timelineFixture(page: Page) {
     part,
     emit,
     origin,
+    advance(milliseconds = 1000) {
+      now += milliseconds;
+    },
     async open() {
       await page.goto(origin);
     },

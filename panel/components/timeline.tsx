@@ -16,7 +16,17 @@ const presentation = {
   technical: { label: "Registro técnico", icon: "⚙" },
 };
 
-function Entry({ entry, runId }: { entry: TimelineEntry; runId: string }) {
+function Entry({
+  entry,
+  runId,
+  operationOpen,
+  onOperationToggle,
+}: {
+  entry: TimelineEntry;
+  runId: string;
+  operationOpen: boolean;
+  onOperationToggle: (open: boolean) => void;
+}) {
   const appearance = presentation[entry.kind];
   const label =
     entry.kind === "error" && entry.part?.kind === "tool"
@@ -44,6 +54,59 @@ function Entry({ entry, runId }: { entry: TimelineEntry; runId: string }) {
         </span>
         {entry.part ? (
           <Output runId={runId} part={entry.part} />
+        ) : entry.operation ? (
+          <>
+            <strong className="entry-title">{entry.label}</strong>
+            <p className="operation-state">
+              {entry.operation.state === "started"
+                ? "Intención sin confirmar"
+                : entry.operation.state === "confirmed"
+                  ? entry.operation.records[0]?.record.kind === "confirmed"
+                    ? "Confirmación sin inicio observado"
+                    : "Confirmada"
+                  : "Observación"}
+              {entry.operation.category
+                ? ` · ${entry.operation.records.length} ${entry.operation.records.length === 1 ? "registro" : "registros"}`
+                : ""}
+            </p>
+            {entry.kind === "error" ? <p>{entry.text}</p> : null}
+            <details
+              className="operation-detail"
+              open={operationOpen}
+              onToggle={(event) => {
+                onOperationToggle(event.currentTarget.open);
+                if (event.currentTarget.open) {
+                  document.dispatchEvent(new CustomEvent("cabina:inspect"));
+                }
+              }}
+            >
+              <summary>Detalle de la operación</summary>
+              {entry.operation.note ? <p>{entry.operation.note}</p> : null}
+              {entry.operation.references.length ? (
+                <dl className="operation-references">
+                  {entry.operation.references.map((reference) => (
+                    <div key={reference.label}>
+                      <dt>{reference.label}</dt>
+                      <dd>{reference.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+              <ol
+                className="technical-records"
+                aria-label="Observaciones retenidas"
+              >
+                {entry.operation.records.map(({ index, record }) => (
+                  <li key={index}>
+                    <time>{time(record.at)}</time>{" "}
+                    <span>
+                      {record.kind}: {record.text}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          </>
         ) : (
           <>
             <strong className="entry-title">{entry.label}</strong>
@@ -72,6 +135,7 @@ function Entry({ entry, runId }: { entry: TimelineEntry; runId: string }) {
 /** One chronological projection; the unfiltered source remains available for inspection. */
 export function Timeline({ run }: { run: Run }) {
   const [technical, setTechnical] = useState(false);
+  const [openOperations, setOpenOperations] = useState(new Set<string>());
   const root = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -152,7 +216,10 @@ export function Timeline({ run }: { run: Run }) {
       </div>
       <div className="section-heading">
         <h3>Cronología</h3>
-        <span className="count">{visible.length} entradas</span>
+        <span className="count">
+          {visible.length} entradas visibles · {run.history.length} registros de
+          origen
+        </span>
       </div>
       <div className="timeline-controls">
         <label>
@@ -177,7 +244,23 @@ export function Timeline({ run }: { run: Run }) {
         <div ref={content} className="timeline-content">
           <ol className="timeline" aria-label="Cronología">
             {visible.map((entry) => (
-              <Entry key={entry.id} entry={entry} runId={run.id} />
+              <Entry
+                key={entry.id}
+                entry={entry}
+                runId={run.id}
+                operationOpen={openOperations.has(entry.id)}
+                onOperationToggle={(open) =>
+                  setOpenOperations((previous) => {
+                    const next = new Set(previous);
+                    if (open) {
+                      next.add(entry.id);
+                    } else {
+                      next.delete(entry.id);
+                    }
+                    return next;
+                  })
+                }
+              />
             ))}
           </ol>
           {!visible.length ? (

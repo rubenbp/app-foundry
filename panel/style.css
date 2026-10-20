@@ -1475,3 +1475,50 @@ main {
   font-size: 11px;
   padding: 5px 8px;
 }
+
+/* Technical operations are individual rows; only their retained detail folds. */
+.timeline > .timeline-entry,
+.timeline > .timeline-entry:last-child {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.timeline > .timeline-entry > time {
+  line-height: 18px;
+}
+.timeline > .entry-error > div {
+  border-left-width: 1px;
+  box-shadow: inset 2px 0 #ad3e37;
+}
+.operation-state {
+  color: var(--color-muted);
+}
+.operation-detail {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.operation-detail > summary {
+  cursor: pointer;
+}
+.operation-references {
+  overflow-wrap: anywhere;
+}
+.operation-references > div {
+  margin: 10px 0;
+}
+.operation-references dt {
+  color: var(--color-muted);
+}
+.operation-references dd {
+  margin: 3px 0 0;
+  font-family: ui-monospace, monospace;
+}
+.technical-records {
+  padding: 0;
+  list-style: none;
+}
+.timeline .technical-records > li {
+  display: block;
+  padding: 8px 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

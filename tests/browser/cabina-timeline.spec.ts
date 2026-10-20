@@ -47,7 +47,7 @@ test("una cronología relaciona mensajes, herramientas y fallos; el registro ori
     await expect(output).not.toContainText("fictional-secret-123");
     await expect(timeline).not.toContainText("Create OpenCode session");
     await page.getByRole("checkbox", { name: "Registro técnico" }).check();
-    await expect(timeline).toContainText("Create OpenCode session");
+    await expect(timeline).toContainText("Crear la sesión de OpenCode");
     await expect(timeline.locator("#part-tool")).toHaveCount(1);
     await page.getByText("Ver registro original", { exact: true }).click();
     const original = page.getByRole("region", { name: "Registro original" });
