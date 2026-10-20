@@ -1,4 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { once } from "node:events";
+import { createFactory } from "../../src/composition/factory.ts";
+import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { timelineFixture } from "../support/timeline.ts";
 
 test("la admisión manual se identifica sin atribuir un Issue autorizado", async ({
@@ -17,8 +23,115 @@ test("la admisión manual se identifica sin atribuir un Issue autorizado", async
     await expect(
       timeline.getByText("Issue autorizado · En cola", { exact: true }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", {
+        name: "Detención de procesos sin confirmar",
+      }),
+    ).toHaveCount(0);
   } finally {
     await fixture.close();
+  }
+});
+
+test("la detención incierta antes de capturar el proceso permanece visible sin inventar un PID", async ({
+  page,
+}) => {
+  const root = mkdtempSync(join(tmpdir(), "foundry-stop-starting-"));
+  const startup = Promise.withResolvers<never>();
+  const entered = Promise.withResolvers<void>();
+  let exited = false;
+  const factory = createFactory(
+    {
+      dataDir: root,
+      projectDir: join(root, "project"),
+      provider: "google",
+      model: "gemini-2.5-flash",
+      auth: "opencode",
+    },
+    {
+      async start() {
+        entered.resolve();
+        return startup.promise;
+      },
+      async resume() {},
+      async create() {
+        return "s1";
+      },
+      async send() {},
+      async stop() {
+        return {
+          exited,
+          detail: exited
+            ? "Owned agent confirmed absent"
+            : "Startup pending; no process handle captured",
+        };
+      },
+    },
+  );
+  const launching = factory.run(
+    "Detener durante el arranque sin proceso capturado",
+  );
+  await entered.promise;
+  const server = panelServer(factory);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    await page.goto(
+      `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    );
+    const warning = page
+      .getByRole("alert")
+      .filter({ hasText: "Detención de procesos sin confirmar" });
+    await expect(page.getByText("Preparando", { exact: true })).toBeVisible();
+    await expect(warning).toHaveCount(0);
+    const run = factory.list()[0]!;
+    await factory.stop(run.id);
+    await expect(warning).toBeVisible();
+    await expect(
+      page.getByRole("checkbox", { name: "Registro técnico" }),
+    ).not.toBeChecked();
+    await page.reload();
+    await expect(warning).toBeVisible();
+    await page
+      .getByRole("button", { name: "Observación y procedencia" })
+      .click();
+    const observation = page.getByRole("dialog", {
+      name: "Observación y procedencia",
+    });
+    await observation
+      .getByText("Configuración, procesos y lagunas", { exact: true })
+      .click();
+    await expect(observation).toContainText("Proceso propioNo registrado");
+    await expect(observation).not.toContainText("PID");
+    await page.keyboard.press("Escape");
+    await page.getByRole("checkbox", { name: "Registro técnico" }).check();
+    const operation = page
+      .getByRole("list", { name: "Cronología", exact: true })
+      .getByRole("listitem")
+      .filter({
+        hasText: "Detener la sesión y el grupo de procesos de la Factory",
+      });
+    await expect(
+      operation.getByText("Observación", { exact: true }),
+    ).toBeVisible();
+    await operation
+      .getByText("Detalle de la operación", { exact: true })
+      .click();
+    await expect(operation).toContainText(
+      "Startup pending; no process handle captured",
+    );
+    exited = true;
+    await factory.stop(run.id);
+    await expect(warning).toHaveCount(0);
+  } finally {
+    startup.reject(
+      new Error("Simulated startup cancelled without a captured process"),
+    );
+    await launching;
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    factory.close();
+    rmSync(root, { recursive: true, force: true });
   }
 });
 
