@@ -174,6 +174,17 @@ test("los detalles conservan el encargo autorizado, destinos de código y foco c
         .click();
       await expect(code).toContainText(run.workspace!.branch);
       await expect(code).toContainText("Keep keyboard navigation.");
+      for (let index = 0; index < 12; index++) {
+        await page.keyboard.press("Tab");
+        const focused = await page.evaluate(() => {
+          const box = document.activeElement!.getBoundingClientRect();
+
+          return { top: box.top, bottom: box.bottom };
+        });
+        const viewport = (await code.boundingBox())!;
+        expect(focused.top).toBeLessThan(viewport.y + viewport.height);
+        expect(focused.bottom).toBeGreaterThan(viewport.y);
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

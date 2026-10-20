@@ -55,7 +55,7 @@ export function DetailDialog({
         const next =
           (index + (event.shiftKey ? -1 : 1) + controls.length) %
           controls.length;
-        controls[next]!.focus({ preventScroll: true });
+        controls[next]!.focus();
       }}
       onCancel={(event) => {
         event.preventDefault();

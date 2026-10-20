@@ -58,12 +58,13 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     await verification
       .getByRole("link", { name: "Consultar salida de node check.mjs" })
       .click();
-    await page
-      .locator('button[aria-controls="output-verification-check-1"]')
-      .click();
     await expect(page.locator("#output-verification-check-1")).toContainText(
       "catalogue checked",
     );
+    await expect(
+      page.getByRole("button", { name: /− node check.mjs · exit 0/ }),
+    ).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(
       section.getByRole("link", { name: /informe.*GitHub/ }),
     ).toHaveCount(0);
