@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { IssueDetails } from "./issue.tsx";
+import { IssueDetails, CodeDetails } from "./issue.tsx";
 import { VerificationDetails } from "./verification.tsx";
-import { IntegrationDetails } from "./integration.tsx";
-import { PublicationDetails } from "./publication.tsx";
 import { PhaseNavigation, phases, currentPhase } from "./phases.tsx";
+import { ObservationsDetails } from "./observations.tsx";
+import { DetailDialog } from "./dialog.tsx";
+import { PhaseContext } from "./phase-context.tsx";
 import { poll } from "./polling.ts";
 import type { FactoryView } from "../src/application/factoryView.ts";
 import { Output } from "./components/output.tsx";
-import { labels, time, age, dateTime } from "./format.ts";
+import { labels, time, dateTime } from "./format.ts";
 import "./style.css";
 
 function App() {
@@ -18,7 +19,13 @@ function App() {
   const [now, setNow] = useState(() => Date.now());
   const [failing, setFailing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [contextOpen, setContextOpen] = useState(false);
+  const [consulted, setConsulted] = useState<{
+    runId: string;
+    phase: number;
+  } | null>(null);
+  const [dialog, setDialog] = useState<
+    "brief" | "code" | "context" | "verification" | "observation" | null
+  >(null);
   useEffect(
     () =>
       poll<FactoryView>(
@@ -43,6 +50,16 @@ function App() {
     return () => clearInterval(timer);
   }, []);
   const run = view?.run;
+  const consultedPhase =
+    run && consulted?.runId === run.id
+      ? consulted.phase
+      : run
+        ? currentPhase(run)
+        : 0;
+  const openDialog = (detail: NonNullable<typeof dialog>) => {
+    document.dispatchEvent(new Event("cabina:inspect"));
+    setDialog(detail);
+  };
   const disconnected = now - (lastLocal ?? mountedAt) >= 30_000;
   const silent =
     run &&
@@ -64,14 +81,40 @@ function App() {
   const chooseRun = (id: string) => {
     setSelected(id);
     setLoading(true);
-    setContextOpen(false);
+    setDialog(null);
+    setConsulted(null);
     setView((previous) =>
       previous ? { ...previous, run: null, consumption: null } : null,
     );
   };
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onClick={(event) => {
+        const link =
+          event.target instanceof Element
+            ? event.target.closest<HTMLAnchorElement>("a[href]")
+            : null;
+        const href = link?.getAttribute("href");
+        if (href === "#verification-title") {
+          event.preventDefault();
+          openDialog("verification");
+        }
+        if (href?.startsWith("#part-") && dialog) {
+          event.preventDefault();
+          const partId = href.slice(6);
+          setDialog(null);
+          requestAnimationFrame(() =>
+            document.dispatchEvent(
+              new CustomEvent("cabina:open-output", {
+                detail: { runId: run?.id, partId },
+              }),
+            ),
+          );
+        }
+      }}
+    >
       <a className="skip-link" href="#content">
         Saltar al contenido
       </a>
@@ -229,30 +272,35 @@ function App() {
               <dd>
                 <a
                   href="#brief"
+                  aria-haspopup="dialog"
                   onClick={(event) => {
                     event.preventDefault();
-                    setContextOpen(true);
-                    requestAnimationFrame(() => {
-                      const context = document.getElementById("run-context");
-                      const brief = document.querySelector<HTMLDetailsElement>(
-                        "#brief details:last-child",
-                      );
-                      if (brief) {
-                        brief.open = true;
-                      }
-                      if (context) {
-                        context.scrollTop = 0;
-                      }
-                    });
+                    openDialog("brief");
                   }}
                 >
                   Encargo y criterios
                 </a>
+                <button
+                  className="observation-access"
+                  aria-haspopup="dialog"
+                  onClick={() => openDialog("observation")}
+                >
+                  Observación y procedencia
+                </button>
               </dd>
             </div>
           </dl>
         </section>
-        <PhaseNavigation run={run} />
+        <PhaseNavigation
+          run={run}
+          consulted={consultedPhase}
+          onSelect={(phase) => {
+            if (run) {
+              setConsulted({ runId: run.id, phase });
+            }
+          }}
+          onCurrent={() => setConsulted(null)}
+        />
         <div className="alerts" role="status" aria-live="polite">
           {disconnected ? (
             <p className="notice danger">
@@ -308,8 +356,11 @@ function App() {
             </section>
           ) : null}
           {run?.pending.length ? (
-            <section className="notice warning pending">
-              <h2>Solicitudes pendientes</h2>
+            <section
+              className="notice warning pending"
+              aria-labelledby="pending-title"
+            >
+              <h2 id="pending-title">Solicitudes pendientes</h2>
               <ul>
                 {run.pending.map((p) => (
                   <li key={p.id}>
@@ -337,11 +388,11 @@ function App() {
         <div className="mobile-context">
           <button
             className="button button-outline"
-            aria-expanded={contextOpen}
-            aria-controls="run-context"
-            onClick={() => setContextOpen((open) => !open)}
+            aria-haspopup="dialog"
+            aria-expanded={dialog === "context"}
+            onClick={() => openDialog("context")}
           >
-            {contextOpen ? "Cerrar contexto" : "Consultar contexto"}
+            Consultar contexto
           </button>
         </div>
         <div className="cabina-body">
@@ -425,116 +476,70 @@ function App() {
           </section>
           <aside
             id="run-context"
-            className={`context-scroll ${contextOpen ? "context-open" : ""}`}
-            aria-label="Contexto de la Ejecución"
+            className="context-scroll"
+            aria-label="Contexto de la fase consultada"
             tabIndex={0}
           >
             {run ? (
               <>
-                <div id="brief" tabIndex={-1}>
-                  {run.request ? (
-                    <IssueDetails run={run} />
-                  ) : (
-                    <section className="card">
-                      <h2>Encargo y criterios</h2>
-                      <p>Ejecución manual · Sin issue de GitHub</p>
-                      <pre tabIndex={0}>{run.task}</pre>
-                    </section>
-                  )}
-                </div>
-                <VerificationDetails run={run} />
-                <PublicationDetails run={run} />
-                <IntegrationDetails run={run} />
-                <details className="card provenance">
-                  <summary>Observación y procedencia</summary>
-                  <dl className="usage">
-                    <div>
-                      <dt>Servidor local</dt>
-                      <dd>
-                        {age(lastLocal, now)} · {time(lastLocal)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>OpenCode</dt>
-                      <dd>
-                        {age(run.lastObservation, now)} ·{" "}
-                        {time(run.lastObservation)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Actividad del agente</dt>
-                      <dd>
-                        {age(run.lastActivity, now)} · {time(run.lastActivity)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Inicio</dt>
-                      <dd>{dateTime(run.startedAt)}</dd>
-                    </div>
-                    <div>
-                      <dt>Estado del agente</dt>
-                      <dd>{run.agentStatus ?? "No observado"}</dd>
-                    </div>
-                  </dl>
-                  <p>{view?.consumption?.source}</p>
-                  <p>
-                    Cobertura: {view?.consumption?.coverage ?? "No disponible"}
-                  </p>
-                  <p>
-                    El resultado requiere verificación independiente. El estado
-                    idle y el texto del agente no acreditan éxito.
-                  </p>
-                </details>
-                <details className="card provenance">
-                  <summary>Configuración, procesos y lagunas</summary>
-                  <dl className="usage">
-                    <div>
-                      <dt>Sesión OpenCode</dt>
-                      <dd>{run.sessionId ?? "No registrada"}</dd>
-                    </div>
-                    <div>
-                      <dt>Proceso propio</dt>
-                      <dd>
-                        {run.process
-                          ? `PID ${run.process.pid} · ${run.process.exited ? "Ausencia comprobada o salida observada" : "Sin confirmar detención"}`
-                          : "No registrado"}
-                      </dd>
-                    </div>
-                  </dl>
-                  <pre tabIndex={0}>
-                    {JSON.stringify(run.process?.configuration ?? {}, null, 2)}
-                  </pre>
-                  <ul>
-                    {run.gaps.map((gap, i) => (
-                      <li key={i}>{gap}</li>
-                    ))}
-                  </ul>
-                </details>
+                {dialog !== "context" &&
+                !(dialog === "verification" && consultedPhase === 3) ? (
+                  <PhaseContext
+                    run={run}
+                    phase={consultedPhase}
+                    onCode={() => openDialog("code")}
+                  />
+                ) : null}
               </>
             ) : (
               <p className="muted">
                 Selecciona una Ejecución para consultar su contexto.
               </p>
             )}
-            {view?.source ? (
-              <details className="card">
-                <summary>Entrada de GitHub</summary>
-                <p>
-                  Última consulta correcta: {time(view.admission.lastSuccess)} ·{" "}
-                  {age(view.admission.lastSuccess, now)}
-                </p>
-                {view.admission.error ? (
-                  <p className="notice danger" role="alert">
-                    {view.admission.error}
-                  </p>
-                ) : null}
-                <a href={view.source} target="_blank" rel="noreferrer">
-                  Revisar autorización en GitHub ↗
-                </a>
-              </details>
-            ) : null}
           </aside>
         </div>
+        {run && dialog ? (
+          <DetailDialog
+            key={run.id}
+            title={
+              dialog === "brief"
+                ? "Encargo y criterios"
+                : dialog === "code"
+                  ? "Código de la Ejecución"
+                  : dialog === "verification"
+                    ? "Verificación y evidencias"
+                    : dialog === "observation"
+                      ? "Observación y procedencia"
+                      : `Contexto · ${phases[consultedPhase]}`
+            }
+            onClose={() => setDialog(null)}
+          >
+            {dialog === "brief" ? (
+              <IssueDetails run={run} />
+            ) : dialog === "code" ? (
+              <CodeDetails run={run} />
+            ) : dialog === "verification" ? (
+              run.verification ? (
+                <VerificationDetails run={run} />
+              ) : (
+                <p>Sin informe de verificación disponible.</p>
+              )
+            ) : dialog === "observation" && view ? (
+              <ObservationsDetails
+                run={run}
+                view={view}
+                lastLocal={lastLocal}
+                now={now}
+              />
+            ) : (
+              <PhaseContext
+                run={run}
+                phase={consultedPhase}
+                onCode={() => openDialog("code")}
+              />
+            )}
+          </DetailDialog>
+        ) : null}
       </main>
     </div>
   );

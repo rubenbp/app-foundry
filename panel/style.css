@@ -1079,3 +1079,123 @@ main {
 .sidebar-queue .sidebar-heading {
   padding-left: 0;
 }
+
+.phases li > button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  border-radius: 5px;
+}
+.phases button > span:first-child {
+  flex: 0 0 22px;
+  display: grid;
+  place-items: center;
+  height: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+}
+.phases [aria-current="step"] button > span:first-child {
+  background: var(--color-primary);
+  color: white;
+}
+.phases button[aria-pressed="true"] {
+  border-color: #88aa9f;
+  background: #edf5f1;
+}
+.return-phase {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  text-decoration: underline;
+  padding: 5px 0 0;
+  font-size: 11px;
+}
+.phase-context p {
+  margin: 10px 0;
+}
+.detail-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(900px, calc(100vw - 32px));
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  overflow: hidden;
+}
+.detail-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.detail-dialog::backdrop {
+  background: #0f282da6;
+}
+.dialog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 14px;
+  padding: 14px 18px;
+  background: white;
+  border-bottom: 1px solid var(--color-border);
+}
+.dialog-heading h2 {
+  overflow-wrap: anywhere;
+}
+.dialog-heading button {
+  flex-shrink: 0;
+}
+.dialog-scroll {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+  overflow-wrap: anywhere;
+}
+.dialog-scroll > .card {
+  margin: 0;
+}
+.dialog-scroll .usage > div {
+  min-width: 0;
+}
+.dialog-scroll .usage dd {
+  min-width: 0;
+}
+@media (max-width: 899px) {
+  .detail-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .dialog-scroll {
+    padding: 12px;
+  }
+  .dialog-scroll .usage > div {
+    display: block;
+  }
+  .dialog-scroll .usage dd {
+    text-align: left;
+    margin-top: 4px;
+  }
+}
+@media (max-width: 520px) {
+  .phases li > button {
+    gap: 4px;
+    padding: 2px;
+  }
+  .phases button > span:first-child {
+    flex-basis: 18px;
+    height: 18px;
+  }
+}
