@@ -41,6 +41,13 @@ export function PhaseContext({
         >
           Código de la Ejecución
         </button>
+        {phase === 3 && run.verification ? (
+          <p>
+            <a href="#verification-title" aria-haspopup="dialog">
+              Verificación y evidencias
+            </a>
+          </p>
+        ) : null}
       </section>
       {phase === 3 ? (
         run.verification ? (
@@ -57,7 +64,7 @@ export function PhaseContext({
         )
       ) : null}
       {phase === 5 ? (
-        run.publication?.mergeSha ? (
+        run.publication ? (
           <IntegrationDetails run={run} />
         ) : (
           <p className="card">Sin integración observada todavía.</p>

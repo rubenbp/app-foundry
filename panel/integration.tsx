@@ -1,43 +1,108 @@
 import type { Run } from "../src/domain/run.ts";
+import { dateTime } from "./format.ts";
+import { publicationState } from "./publication-state.ts";
+
+function Commit({ run, head }: { run: Run; head: string | undefined }) {
+  if (!head) {
+    return <>Sin observar</>;
+  }
+  return run.request ? (
+    <a
+      href={`https://github.com/${run.request.repository}/commit/${head}`}
+      target="_blank"
+      rel="noreferrer"
+      title={head}
+    >
+      <code>{head.slice(0, 7)}</code> ↗
+    </a>
+  ) : (
+    <code title={head}>{head.slice(0, 7)}</code>
+  );
+}
 
 export function IntegrationDetails({ run }: { run: Run }) {
   const publication = run.publication;
-  if (!publication?.mergeSha) {
+  const state = publicationState(run);
+  if (!publication || !state) {
     return null;
   }
+  const { acceptance, pull } = publication;
 
   return (
-    <section className="card verification" aria-labelledby="integration-title">
+    <section
+      className="card verification integration"
+      aria-labelledby="integration-title"
+    >
       <h2 id="integration-title">Integración y cierre</h2>
       <dl className="usage">
         <div>
-          <dt>Base verificada</dt>
-          <dd>{run.workspace?.baseSha}</dd>
+          <dt>Versión de partida</dt>
+          <dd>
+            <Commit run={run} head={run.workspace?.baseSha} />
+          </dd>
         </div>
         <div>
-          <dt>Candidato aceptado</dt>
-          <dd>{publication.acceptance?.head ?? "Sin aceptación acreditada"}</dd>
+          <dt>Commit candidato aceptado</dt>
+          <dd>
+            {acceptance ? (
+              <>
+                <Commit run={run} head={acceptance.head} /> ·{" "}
+                {state.acceptanceLabel}
+              </>
+            ) : (
+              "Sin aceptación acreditada"
+            )}
+          </dd>
         </div>
         <div>
           <dt>Commit integrado</dt>
-          <dd>{publication.mergeSha}</dd>
+          <dd>
+            <Commit run={run} head={publication.mergeSha} />
+          </dd>
         </div>
         <div>
           <dt>Merge observado</dt>
           <dd>
-            {publication.pull?.mergedBy ?? "Autor sin acreditar"}
-            {publication.pull?.mergedAt
-              ? ` · ${new Date(publication.pull.mergedAt).toLocaleString("es-ES")}`
-              : ""}
+            {pull?.merged ? (
+              <>
+                {pull.mergedBy ?? "Autor sin acreditar"} ·{" "}
+                {pull.mergedAt === undefined ? (
+                  "Fecha sin acreditar"
+                ) : (
+                  <time dateTime={new Date(pull.mergedAt).toISOString()}>
+                    {dateTime(pull.mergedAt)}
+                  </time>
+                )}
+              </>
+            ) : (
+              "Sin merge observado"
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Cierre del issue</dt>
+          <dd>
+            {publication.closedAt === undefined ? (
+              "Cierre del issue pendiente"
+            ) : (
+              <>
+                Issue cerrado ·{" "}
+                <time dateTime={new Date(publication.closedAt).toISOString()}>
+                  {dateTime(publication.closedAt)}
+                </time>
+              </>
+            )}
           </dd>
         </div>
       </dl>
       <p role="status">
-        {run.status === "completed"
+        {publication.mergeSha && publication.closedAt !== undefined
           ? "Integración completada e issue cerrado."
           : run.status === "intervention"
             ? "Integración o cierre pendientes de intervención."
-            : "Merge observado. Publicando el resumen y cerrando el issue."}
+            : publication.mergeSha
+              ? "Merge observado. Resumen de integración y cierre se acreditan por separado."
+              : "Sin Commit integrado observado."}
       </p>
       {publication.integrationReport ? (
         <p>
@@ -49,7 +114,36 @@ export function IntegrationDetails({ run }: { run: Run }) {
             Revisar resumen de integración en GitHub
           </a>
         </p>
-      ) : null}
+      ) : (
+        <p>Resumen de integración pendiente.</p>
+      )}
+      <p className="small muted">
+        La finalización de la Ejecución no acredita una validación de
+        producción.
+      </p>
+      <details
+        onToggle={(event) => {
+          if (event.currentTarget.open) {
+            document.dispatchEvent(new Event("cabina:inspect"));
+          }
+        }}
+      >
+        <summary>Identificadores de integración</summary>
+        <dl className="usage">
+          <div>
+            <dt>Versión de partida completa</dt>
+            <dd>{run.workspace?.baseSha ?? "Sin observar"}</dd>
+          </div>
+          <div>
+            <dt>Commit de la aceptación completo</dt>
+            <dd>{acceptance?.head ?? "Sin aceptación acreditada"}</dd>
+          </div>
+          <div>
+            <dt>Commit integrado completo</dt>
+            <dd>{publication.mergeSha ?? "Sin observar"}</dd>
+          </div>
+        </dl>
+      </details>
     </section>
   );
 }

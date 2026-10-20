@@ -18,7 +18,9 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     );
     const section = page.getByRole("region", { name: "Preview y aceptación" });
     await expect(section).toContainText(s.facts.pull!.head);
-    await expect(section).toContainText("deployment-1 · Preview · Correcto");
+    await expect(section).toContainText(
+      "deployment-1 · Preview · Deployment correcto",
+    );
     await expect(section).toContainText("Autorizado y comprobado");
     await expect(section).toContainText("Sin aceptación registrada");
     await page
@@ -69,7 +71,7 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
       section.getByRole("link", { name: /informe.*GitHub/ }),
     ).toHaveCount(0);
     await expect(
-      section.getByRole("link", { name: "Abrir preview en Vercel" }),
+      section.getByRole("link", { name: "Abrir preview ↗" }),
     ).toHaveAttribute("href", s.facts.preview!.url!);
     await s.workflow.poll();
     await expect(page.locator(".badge.awaiting_review")).toHaveText(
@@ -95,7 +97,7 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     await expect(section.getByRole("alert")).toContainText(
       "GitHub unavailable",
     );
-    await expect(section).toContainText("Correcto");
+    await expect(section).toContainText("Disponible");
   } finally {
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -130,6 +132,9 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y el 
     const integration = page.getByRole("region", {
       name: "Integración y cierre",
     });
+    await integration
+      .getByText("Identificadores de integración", { exact: true })
+      .click();
     await expect(integration).toContainText(s.facts.pull!.head);
     await expect(integration).toContainText("a".repeat(40));
     await expect(integration).toContainText(
