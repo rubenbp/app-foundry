@@ -9,7 +9,9 @@ test("operaciones técnicas directas, fallos y registro íntegro conservan etiqu
     fixture.emit({ type: "status", status: "session.busy" });
     fixture.emit({ type: "status", status: "session.idle" });
     fixture.part("activity", "Una actividad corta el tramo técnico");
+    fixture.advance();
     fixture.emit({ type: "status", status: "session.tool.failed" });
+    fixture.advance();
     fixture.emit({ type: "status", status: "session.observed" });
     await fixture.open();
     const timeline = page.getByRole("list", {
@@ -44,6 +46,9 @@ test("operaciones técnicas directas, fallos y registro íntegro conservan etiqu
     await expect(
       page.getByText(/entradas visibles · \d+ registros de origen/),
     ).toBeVisible();
+    await expect(timeline.locator(":scope > li").last()).toHaveClass(
+      /entry-technical/,
+    );
     const geometry = await timeline.evaluate((element) => {
       const rows = [...element.children] as HTMLElement[];
 
