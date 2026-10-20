@@ -8,6 +8,165 @@ import {
 import { recoveryConversation } from "./support/recovery.ts";
 import { execute } from "../src/infrastructure/process.ts";
 
+test("una corrección pendiente sobrevive a dos fallos y Reintentar entrega sus instrucciones una sola vez", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const correction = conversation.add(
+      "Corregir: Evita que el hero tape los botones.",
+    );
+    s.facts.comments.push({
+      ...correction,
+      updatedAt: correction.createdAt,
+      source: "issue",
+    });
+    let fail = true;
+    s.onInspect(() => {
+      if (fail) {
+        fail = false;
+        throw new Error("net/http: TLS handshake timeout");
+      }
+    });
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.match(s.workflow.view(run.id)?.error ?? "", /TLS handshake timeout/);
+    assert.equal(s.tasks.length, 1);
+    assert.notEqual(s.facts.status?.state, "success");
+    fail = true;
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    s.reopen();
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "running",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.workflow.view(run.id)?.attempt, 2);
+    assert.match(s.tasks.at(-1)!.text, /Evita que el hero tape los botones/);
+    await s.workflow.poll();
+    assert.equal(s.tasks.length, 2);
+  } finally {
+    s.close();
+  }
+});
+
+test("Reintentar sin incidencia recibe una explicación una sola vez", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const retry = conversation.add("Reintentar");
+    await s.workflow.poll();
+    await s.workflow.poll();
+    const responses = conversation.comments.filter((c) =>
+      c.body.includes(`recovery-response:${run.id}:${retry.id}`),
+    );
+    assert.equal(responses.length, 1);
+    assert.match(responses[0].body, /no hay.*pendiente/i);
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("un Reintentar recibido durante la recuperación responde sin programar otro Intento", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    conversation.add("Corregir: Ajusta el hero.");
+    let retry: ReturnType<typeof conversation.add> | undefined;
+    s.onInspect(() => {
+      retry ??= conversation.add("Reintentar");
+    });
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(s.tasks.length, 2);
+    assert.equal(s.workflow.view(run.id)?.recovery?.pending, undefined);
+    assert.match(conversation.comments.at(-1)!.body, /ya estaba en curso/);
+    assert.ok(s.workflow.view(run.id)?.recovery?.consumed.includes(retry!.id));
+  } finally {
+    s.close();
+  }
+});
+
+test("un envío al agente sin confirmación queda en intervención y no se reenvía", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const send = s.agent.send.bind(s.agent);
+    s.agent.send = async (id, text) => {
+      await send(id, text);
+      throw new Error("Lost agent response");
+    };
+    conversation.add("Corregir: Ajusta el hero.");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.recovery?.pending?.delivery,
+      "uncertain",
+    );
+    s.reopen();
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(s.tasks.length, 2);
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.match(
+      conversation.comments.at(-1)!.body,
+      /requiere inspección local/,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+for (const remoteConfirmed of [false, true]) {
+  test(`una respuesta perdida se recupera sin repetir la corrección (efecto remoto: ${remoteConfirmed})`, async () => {
+    const conversation = recoveryConversation();
+    const publish = conversation.port.comment;
+    let fail = true;
+    conversation.port.comment = async (repository, issue, body) => {
+      if (body.includes("recovery-response:") && fail) {
+        fail = false;
+        if (remoteConfirmed) {
+          await publish(repository, issue, body);
+        }
+        throw new Error("Lost comment response");
+      }
+      return publish(repository, issue, body);
+    };
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      const correction = conversation.add("Corregir: Ajusta el hero.");
+      await s.workflow.poll();
+      assert.equal(s.tasks.length, 2);
+      assert.equal(s.workflow.view(run.id)?.recovery?.pending, undefined);
+      assert.ok(s.workflow.view(run.id)?.recovery?.response);
+      await s.workflow.poll();
+      assert.equal(s.tasks.length, 2);
+      assert.equal(s.workflow.view(run.id)?.recovery?.response, undefined);
+      assert.equal(
+        conversation.comments.filter((c) =>
+          c.body.includes(`recovery-response:${run.id}:${correction.id}`),
+        ).length,
+        1,
+      );
+    } finally {
+      s.close();
+    }
+  });
+}
+
 test("un fallo se avisa una vez y Reintentar vuelve a verificar sin otro Intento del agente", async () => {
   const conversation = recoveryConversation();
   const s = verificationFixture({ issueConversation: conversation.port });
@@ -331,8 +490,8 @@ test("Cancelar desde un comentario sin permisos confirma parada y cierra como no
       { repository: s.project.repository, issue: 1 },
     ]);
     assert.equal(
-      s.workflow.view(run.id)!.history.find((entry) => entry.comment)?.comment
-        ?.body,
+      s.workflow.view(run.id)!.history.findLast((entry) => entry.comment)
+        ?.comment?.body,
       conversation.comments.at(-1)!.body,
     );
     await s.workflow.poll();

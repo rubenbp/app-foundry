@@ -41,11 +41,13 @@ Para elegir la acción:
 
 La Factory no inicia otra corrección por el mero hecho de observar el fallo. Las órdenes mantienen su significado y cada comentario autoriza una acción concreta.
 
-`Reintentar` necesita el aviso de intervención vigente. No se reejecuta una orden ya consumida. Durante una espera de dudas, una respuesta libre sigue siendo aclaración; `Cancelar` permite cancelar esa espera.
+La Factory acusa recibo antes de ejecutar una orden y publica su resultado. Si la recuperación falla, conserva una única orden pendiente con sus instrucciones y mantiene la intervención; observar el candidato anterior no lo vuelve a habilitar para revisión. `Reintentar` retoma esa orden. Si el envío al agente queda sin confirmar, requiere inspección local y no reenvía la tarea a ciegas.
+
+Sin una orden pendiente, `Reintentar` necesita el aviso de intervención vigente. Una orden incompatible o un reintento sin incidencia recibe una explicación. Una orden recibida durante otra recuperación no programa un nuevo Intento; si vuelve a fallar, publica otra orden después del resultado. No se reejecuta un comentario ya consumido. Durante una espera de dudas, una respuesta libre sigue siendo aclaración; `Cancelar` permite cancelar esa espera.
 
 Después del merge solo se permite `Reintentar` para terminar el resumen y el cierre pendientes. No revierte lo integrado ni encarga cambios nuevos. Las incidencias de un merge fuera del contrato siguen requiriendo inspección; reintentar no convierte una integración inválida en aceptada.
 
-Si hay que arreglar credenciales o procesos locales, lo hace el operador antes de reintentar. El MVP no añade colas de avisos ni un protocolo adicional de recuperación de comunicaciones con GitHub.
+Si hay que arreglar credenciales o procesos locales, lo hace el operador antes de reintentar. Una respuesta pendiente de publicar se concilia en la siguiente consulta sin volver a ejecutar la orden aplicada. El MVP conserva una única orden y una única respuesta pendientes por Ejecución.
 
 ## Variantes antes de publicar
 

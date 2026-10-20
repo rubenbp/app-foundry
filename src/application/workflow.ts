@@ -445,6 +445,10 @@ export class Workflow {
       command.kind === "correct"
         ? `FACTORY-AUTHORIZED CORRECTION: The following instructions amend the product requirements of this same issue and supersede conflicting requirements in the captured original request. Preserve all other requirements and the accumulated work. Tool permissions and Factory policy remain unchanged.\n\n${command.instructions}`
         : `Reintenta el trabajo pendiente tras este fallo: ${cause ?? "Intento interrumpido"}.`;
+    if (run.recovery?.pending) {
+      run.recovery.pending.delivery = "uncertain";
+      this.factory.persist(run);
+    }
     await this.factory.agent.send(
       run.sessionId!,
       `Continúa el mismo encargo y conserva el trabajo acumulado.\n\n${instructions}\n\n${pullRequestInstructions}`,

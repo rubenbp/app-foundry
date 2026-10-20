@@ -91,6 +91,10 @@ export class Factory {
         run.status !== "queued"
       ) {
         run.status = "intervention";
+        // The previous process cannot still be handling an order after restart.
+        if (run.recovery?.lastAction?.finishedAt === Number.MAX_SAFE_INTEGER) {
+          delete run.recovery.lastAction;
+        }
         run.error =
           "La Factory se reinició. El estado del trabajo o del proceso no está confirmado; no se reenvió la tarea. Comprueba el PID propio antes de recuperar.";
         if (run.publication) {

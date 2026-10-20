@@ -59,6 +59,21 @@ export class CandidatePublication {
     run.publication ??= publicationPlan(run.verification.headSha);
     run.phase = "publication";
     const publication = run.publication;
+    if (run.recovery?.pending) {
+      // A failed human order must not be cleared by a successful observation of the old candidate.
+      try {
+        await this.runtime.setStatus(run, "pending");
+      } catch (error) {
+        this.runtime.factory.assertWritable();
+        this.runtime.factory.record(
+          run,
+          "revocation-unconfirmed",
+          String(error),
+        );
+        this.runtime.save(run);
+      }
+      return;
+    }
     if (
       run.status === "awaiting_preview" &&
       run.verification.headSha !== publication.head
@@ -279,7 +294,12 @@ export class CandidatePublication {
         let reason =
           "Comentario informativo; la aceptación se realiza mediante merge";
         const own = isOwn(run, comment);
-        if (isInterventionResponse(run, comment)) {
+        if (
+          comment.source === "issue" &&
+          run.recovery?.consumed.includes(comment.id)
+        ) {
+          reason = "Orden de recuperación registrada; consulta su respuesta";
+        } else if (isInterventionResponse(run, comment)) {
           reason = "Aclaración ya entregada a la conversación del agente";
         } else if (own) {
           reason = "Publicación propia o de bot";

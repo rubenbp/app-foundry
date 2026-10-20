@@ -14,20 +14,24 @@ export function isOwn(run: Run, comment: ConversationComment) {
 export function isInterventionResponse(run: Run, comment: ConversationComment) {
   return (
     comment.source === "issue" &&
-    (run.recovery?.consumed.includes(comment.id) ||
-      Boolean(
-        run.interventions?.some(
-          (intervention) =>
-            intervention.response?.id === comment.id &&
-            intervention.deliveredAt !== undefined,
-        ),
-      ))
+    Boolean(
+      run.interventions?.some(
+        (intervention) =>
+          intervention.response?.id === comment.id &&
+          intervention.deliveredAt !== undefined,
+      ),
+    )
   );
 }
 export function readyToMerge(run: Run, facts: PublicationFacts) {
   const publication = run.publication!;
   const report = publication.report;
-  if (!report || publication.blocked || publication.recoveryRequired) {
+  if (
+    !report ||
+    publication.blocked ||
+    publication.recoveryRequired ||
+    run.recovery?.pending
+  ) {
     return false;
   }
   const project = run.request!.configuration;

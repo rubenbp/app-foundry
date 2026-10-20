@@ -7,6 +7,7 @@ import type { Verification } from "./verification.ts";
 import type { Publication } from "./publication.ts";
 import type { AgentIntervention, IssueComment } from "./intervention.ts";
 import type { IssueLabel } from "./issueLabels.ts";
+import type { RecoveryCommand } from "./recovery.ts";
 export type RunStatus =
   | "queued"
   | "preparing"
@@ -91,6 +92,16 @@ export interface Run {
   recovery?: {
     notice?: IssueComment;
     consumed: string[];
+    /** Admission is separate from delivery. One failed order can be resumed explicitly. */
+    pending?: {
+      command: RecoveryCommand;
+      commentId: string;
+      delivery: "pending" | "uncertain";
+    };
+    /** One outbound response is reconciled before admitting another order. */
+    response?: { commentId: string; body: string };
+    /** GitHub timestamps of the acknowledgement and completion, not the local clock. */
+    lastAction?: { startedAt: number; finishedAt: number };
   };
   lastFinishedMessageId?: string;
   parts: PartView[];
