@@ -5,9 +5,12 @@ import { tmpdir } from "node:os";
 import { once } from "node:events";
 import { createFactory } from "../../src/composition/factory.ts";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
-import type { Fact } from "../../src/application/agent.ts";
+import type { AgentPort, Fact } from "../../src/application/agent.ts";
 
-export async function timelineFixture(page: Page) {
+export async function timelineFixture(
+  page: Page,
+  options: { stop?: AgentPort["stop"] } = {},
+) {
   const root = mkdtempSync(join(tmpdir(), "foundry-timeline-"));
   let emit: (fact: Fact) => void = () => {};
   let now = 1_800_000_000_000;
@@ -29,7 +32,10 @@ export async function timelineFixture(page: Page) {
         return "s1";
       },
       async send() {},
-      async stop() {
+      async stop(sessionId) {
+        if (options.stop) {
+          return options.stop(sessionId);
+        }
         return { exited: true, detail: "Owned process stopped" };
       },
     },

@@ -1,4 +1,5 @@
 import type { Run } from "../src/domain/run.ts";
+import { Commit } from "./commit.tsx";
 import { dateTime } from "./format.ts";
 import { deploymentLabels, publicationState } from "./publication-state.ts";
 
@@ -114,18 +115,7 @@ export function PublicationDetails({ run }: { run: Run }) {
       </div>
       <div className="publication-version">
         <span>Commit candidato</span>
-        {run.request ? (
-          <a
-            href={`https://github.com/${run.request.repository}/commit/${publication.head}`}
-            target="_blank"
-            rel="noreferrer"
-            title={publication.head}
-          >
-            <code>{publication.head.slice(0, 7)}</code> ↗
-          </a>
-        ) : (
-          <code title={publication.head}>{publication.head.slice(0, 7)}</code>
-        )}
+        <Commit run={run} head={publication.head} />
         <a href="#verification-title">
           Consultar verificación y salidas completas
         </a>

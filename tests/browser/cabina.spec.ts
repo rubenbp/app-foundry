@@ -247,20 +247,50 @@ test("Cabina distingue carga, fallo de consulta y ausencia de Ejecuciones sin in
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   try {
-    await page.route("**/api/view*", (route) => route.abort());
+    let release = () => {};
+    const responseGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route("**/api/view*", async (route) => {
+      await responseGate;
+      await route.abort();
+    });
     await page.goto(
       `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     );
+    const queue = page.getByRole("region", {
+      name: "Cola de peticiones",
+      exact: true,
+    });
+    const phases = page.getByRole("navigation", {
+      name: "Fases de la Ejecución",
+    });
+    await expect(
+      page.getByRole("heading", { name: "Cargando ejecución", exact: true }),
+    ).toHaveCount(2);
+    await expect(queue).toContainText("Cola todavía no observada");
+    await expect(queue).not.toContainText("Sin trabajo en cola");
+    await expect(phases.locator("[aria-current]")).toHaveCount(0);
+    await expect(phases.getByRole("button", { pressed: true })).toHaveCount(0);
+    await expect(phases).not.toContainText("Actual");
+    await expect(phases).not.toContainText("Consultada");
+    release();
     await expect(
       page.getByRole("heading", { name: "Error de consulta", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText("No hay una vista disponible todavía.", { exact: false }),
     ).toBeVisible();
+    await expect(queue).toContainText("Cola todavía no observada");
+    await expect(phases.locator("[aria-current]")).toHaveCount(0);
+    await expect(phases.getByRole("button", { pressed: true })).toHaveCount(0);
     await page.unroute("**/api/view*");
     await expect(
       page.getByRole("heading", { name: "Sin Ejecuciones", exact: true }),
     ).toBeVisible();
+    await expect(queue).toContainText("Sin trabajo en cola");
+    await expect(phases.locator("[aria-current]")).toHaveCount(0);
+    await expect(phases.getByRole("button", { pressed: true })).toHaveCount(0);
     await expect(page.getByText("No disponible", { exact: true })).toHaveCount(
       4,
     );

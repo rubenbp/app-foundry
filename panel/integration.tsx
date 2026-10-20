@@ -1,24 +1,7 @@
 import type { Run } from "../src/domain/run.ts";
+import { Commit } from "./commit.tsx";
 import { dateTime } from "./format.ts";
 import { publicationState } from "./publication-state.ts";
-
-function Commit({ run, head }: { run: Run; head: string | undefined }) {
-  if (!head) {
-    return <>Sin observar</>;
-  }
-  return run.request ? (
-    <a
-      href={`https://github.com/${run.request.repository}/commit/${head}`}
-      target="_blank"
-      rel="noreferrer"
-      title={head}
-    >
-      <code>{head.slice(0, 7)}</code> ↗
-    </a>
-  ) : (
-    <code title={head}>{head.slice(0, 7)}</code>
-  );
-}
 
 export function IntegrationDetails({ run }: { run: Run }) {
   const publication = run.publication;

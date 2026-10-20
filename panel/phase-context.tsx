@@ -1,5 +1,5 @@
 import type { Run } from "../src/domain/run.ts";
-import { phases } from "./phases.tsx";
+import { phaseDetails, type Phase } from "./phases.tsx";
 import { VerificationDetails } from "./verification.tsx";
 import { PublicationDetails } from "./publication.tsx";
 import { IntegrationDetails } from "./integration.tsx";
@@ -11,29 +11,19 @@ export function PhaseContext({
   onCode,
 }: {
   run: Run;
-  phase: number;
+  phase: Phase;
   onCode: () => void;
 }) {
+  const details = phaseDetails(phase);
+
   return (
     <>
       <section
         className="card phase-context"
-        aria-label={`Contexto de ${phases[phase]}`}
+        aria-label={`Contexto de ${details.label}`}
       >
-        <h2>{phases[phase]}</h2>
-        <p>
-          {phase === 0
-            ? "El encargo espera su turno en la cola."
-            : phase === 1
-              ? "La Factory prepara la versión de partida y captura las instrucciones del Managed project."
-              : phase === 2
-                ? "El agente trabaja en el encargo autorizado. Su resultado requiere verificación independiente."
-                : phase === 3
-                  ? "Comprobaciones independientes del Commit candidato."
-                  : phase === 4
-                    ? "Preview, PR y aceptación humana del resultado."
-                    : "Integración del resultado aceptado y cierre del issue."}
-        </p>
+        <h2>{details.label}</h2>
+        <p>{details.context}</p>
         <button
           className="button button-outline"
           aria-haspopup="dialog"
@@ -41,7 +31,7 @@ export function PhaseContext({
         >
           Código de la Ejecución
         </button>
-        {phase === 3 && run.verification ? (
+        {phase === "verification" && run.verification ? (
           <p>
             <a href="#verification-title" aria-haspopup="dialog">
               Verificación y evidencias
@@ -49,21 +39,21 @@ export function PhaseContext({
           </p>
         ) : null}
       </section>
-      {phase === 3 ? (
+      {phase === "verification" ? (
         run.verification ? (
           <VerificationDetails run={run} />
         ) : (
           <p className="card">Sin informe de verificación disponible.</p>
         )
       ) : null}
-      {phase === 4 ? (
+      {phase === "review" ? (
         run.publication ? (
           <PublicationDetails run={run} />
         ) : (
           <p className="card">Sin publicación observada todavía.</p>
         )
       ) : null}
-      {phase === 5 ? (
+      {phase === "closure" ? (
         run.publication ? (
           <IntegrationDetails run={run} />
         ) : (

@@ -1,6 +1,98 @@
 import { test, expect } from "@playwright/test";
 import { timelineFixture } from "../support/timeline.ts";
 
+test("la admisión manual se identifica sin atribuir un Issue autorizado", async ({
+  page,
+}) => {
+  const fixture = await timelineFixture(page);
+  try {
+    await fixture.open();
+    const timeline = page.getByRole("list", {
+      name: "Cronología",
+      exact: true,
+    });
+    await expect(
+      timeline.getByText("Ejecución manual · En cola", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      timeline.getByText("Issue autorizado · En cola", { exact: true }),
+    ).toHaveCount(0);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("la detención incierta conserva un aviso fuera del flujo con el diagnóstico oculto", async ({
+  page,
+}) => {
+  let exited = false;
+  const fixture = await timelineFixture(page, {
+    async stop() {
+      return {
+        exited,
+        detail: exited
+          ? "Owned process stopped"
+          : "Process group exit could not be confirmed",
+      };
+    },
+  });
+  try {
+    await fixture.factory.stop(fixture.run.id);
+    await fixture.open();
+    const warning = page.getByRole("alert").filter({
+      hasText: "Detención de procesos sin confirmar",
+    });
+    await expect(warning).toBeVisible();
+    await expect(warning).toContainText(
+      "No se ha confirmado la finalización del grupo de procesos",
+    );
+    await expect(
+      page.getByRole("checkbox", { name: "Registro técnico" }),
+    ).not.toBeChecked();
+    await page
+      .getByRole("button", { name: "Consultar desde el inicio" })
+      .click();
+    await expect(warning).toBeInViewport();
+    await page.reload();
+    await expect(warning).toBeVisible();
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect(warning).toBeInViewport();
+      await expect(
+        page.evaluate(() => document.documentElement.scrollHeight),
+      ).resolves.toBe(844);
+      await page.screenshot({
+        path: test.info().outputPath(`uncertain-stop-${width}.png`),
+      });
+    }
+    await page.setViewportSize({ width: 1440, height: 844 });
+    await page.getByRole("checkbox", { name: "Registro técnico" }).check();
+    const operation = page
+      .getByRole("list", { name: "Cronología", exact: true })
+      .getByRole("listitem")
+      .filter({
+        hasText: "Detener la sesión y el grupo de procesos de la Factory",
+      });
+    await expect(
+      operation.getByText("Observación", { exact: true }),
+    ).toBeVisible();
+    await operation
+      .getByText("Detalle de la operación", { exact: true })
+      .click();
+    await expect(operation).toContainText(
+      "Process group exit could not be confirmed",
+    );
+    await expect(operation).toContainText(
+      "no acredita todos los efectos del proveedor",
+    );
+    exited = true;
+    await fixture.factory.stop(fixture.run.id);
+    await expect(warning).toHaveCount(0);
+  } finally {
+    await fixture.close();
+  }
+});
+
 test("operaciones técnicas directas, fallos y registro íntegro conservan etiquetas y geometría", async ({
   page,
 }) => {
