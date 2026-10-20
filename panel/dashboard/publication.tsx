@@ -1,4 +1,3 @@
-// Throwaway publication layout: review actions first, observation records on demand.
 import type { Run } from "../../src/domain/run.ts";
 import { validPreview } from "../../src/domain/publication.ts";
 
@@ -19,7 +18,7 @@ function dateTime(value: number) {
   });
 }
 
-export function PrototypePublicationDetails({ run }: { run: Run }) {
+export function PublicationDetails({ run }: { run: Run }) {
   const publication = run.publication;
   if (!publication) {
     return null;
@@ -50,45 +49,47 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
 
   return (
     <section
-      className="card proto-publication"
+      className="card dashboard-publication"
       aria-labelledby="publication-title"
     >
-      <header className="proto-evidence-heading">
+      <header className="dashboard-evidence-heading">
         <div>
           <h2 id="publication-title">Preview y aceptación</h2>
           <p>Resultado publicado y revisión humana en GitHub.</p>
         </div>
-        <span className={`proto-evidence-status ${accepted ? "passed" : ""}`}>
+        <span
+          className={`dashboard-evidence-status ${accepted ? "passed" : ""}`}
+        >
           {accepted ? "Resultado aceptado" : "Sin aceptación vigente"}
         </span>
       </header>
 
       {publication.observationError ? (
-        <p className="proto-evidence-alert" role="alert">
+        <p className="dashboard-evidence-alert" role="alert">
           No se pudo actualizar la publicación: {publication.observationError}.
           Se muestra la última observación disponible.
         </p>
       ) : null}
       {publication.blocked ? (
-        <p className="proto-evidence-alert" role="alert">
+        <p className="dashboard-evidence-alert" role="alert">
           {publication.blocked}
         </p>
       ) : null}
       {versionMismatch ? (
-        <p className="proto-evidence-alert" role="alert">
+        <p className="dashboard-evidence-alert" role="alert">
           La preview observada no corresponde al Commit candidato vigente.
         </p>
       ) : null}
 
-      <div className="proto-publication-grid">
+      <div className="dashboard-publication-grid">
         <section
-          className="proto-publication-panel"
-          aria-labelledby="prototype-preview-title"
+          className="dashboard-publication-panel"
+          aria-labelledby="dashboard-preview-title"
         >
-          <div className="proto-publication-panel-heading">
-            <h3 id="prototype-preview-title">Preview</h3>
+          <div className="dashboard-publication-panel-heading">
+            <h3 id="dashboard-preview-title">Preview</h3>
             <span
-              className={`proto-publication-state ${previewMatches ? "ready" : ""}`}
+              className={`dashboard-publication-state ${previewMatches ? "ready" : ""}`}
             >
               {previewMatches
                 ? "Disponible"
@@ -103,7 +104,7 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
                   : "Pendiente"}
             </span>
           </div>
-          <p className="proto-publication-description">
+          <p className="dashboard-publication-description">
             {previewMatches
               ? "Versión vigente y acceso comprobados."
               : !preview
@@ -116,7 +117,7 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
           </p>
           {preview?.url ? (
             <a
-              className="proto-publication-action primary"
+              className="dashboard-publication-action primary"
               href={preview.url}
               target="_blank"
               rel="noreferrer"
@@ -128,15 +129,15 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
         </section>
 
         <section
-          className="proto-publication-panel"
-          aria-labelledby="prototype-review-title"
+          className="dashboard-publication-panel"
+          aria-labelledby="dashboard-review-title"
         >
-          <div className="proto-publication-panel-heading">
-            <h3 id="prototype-review-title">
+          <div className="dashboard-publication-panel-heading">
+            <h3 id="dashboard-review-title">
               {pull ? `PR #${pull.number}` : "Revisión en GitHub"}
             </h3>
             <span
-              className={`proto-publication-state ${accepted ? "ready" : ""}`}
+              className={`dashboard-publication-state ${accepted ? "ready" : ""}`}
             >
               {pull
                 ? pull.merged
@@ -147,7 +148,7 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
                 : "Pendiente"}
             </span>
           </div>
-          <p className="proto-publication-description">
+          <p className="dashboard-publication-description">
             {accepted && acceptance ? (
               <>
                 Aceptado mediante merge por <strong>{acceptance.author}</strong>
@@ -166,7 +167,7 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
           </p>
           {pull ? (
             <a
-              className="proto-publication-action"
+              className="dashboard-publication-action"
               href={pull.url}
               target="_blank"
               rel="noreferrer"
@@ -177,7 +178,7 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
         </section>
       </div>
 
-      <div className="proto-publication-version">
+      <div className="dashboard-publication-version">
         <span>Versión del resultado</span>
         {repository ? (
           <a
@@ -199,9 +200,9 @@ export function PrototypePublicationDetails({ run }: { run: Run }) {
         ) : null}
       </div>
 
-      <details className="proto-evidence-disclosure proto-evidence-audit">
+      <details className="dashboard-evidence-disclosure dashboard-evidence-audit">
         <summary>Detalles de publicación e historial</summary>
-        <dl className="proto-code-identifiers">
+        <dl className="dashboard-code-identifiers">
           <div>
             <dt>Commit candidato vigente</dt>
             <dd>{publication.head}</dd>

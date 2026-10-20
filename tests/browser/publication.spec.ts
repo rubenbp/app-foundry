@@ -16,13 +16,21 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     await page.goto(
       `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     );
+    await page
+      .getByRole("button", { name: "Configuración, procesos y evidencia" })
+      .click();
     const section = page.getByRole("region", { name: "Preview y aceptación" });
+    await section
+      .getByText("Detalles de publicación e historial", { exact: true })
+      .click();
     await expect(section).toContainText(s.facts.pull!.head);
-    await expect(section).toContainText("deployment-1 · Preview · Correcto");
+    await expect(section).toContainText(
+      "deployment-1 · Preview · Deployment correcto",
+    );
     await expect(section).toContainText("Autorizado y comprobado");
     await expect(section).toContainText("Sin aceptación registrada");
     const report = section.getByRole("link", {
-      name: "Consultar verificación y salidas completas",
+      name: "Ver evidencia técnica",
     });
     await expect(report).toHaveAttribute("href", "#verification-title");
     await report.focus();
@@ -38,6 +46,11 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     await expect(page.locator("#output-verification-check-1")).toContainText(
       "catalogue checked",
     );
+    await verification
+      .getByText("Alcance, limitaciones y registro de evidencia", {
+        exact: true,
+      })
+      .click();
     for (const limitation of s.workflow.view(run.id)!.verification!
       .limitations) {
       await expect(verification).toContainText(limitation);
@@ -51,16 +64,14 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
       section.getByRole("link", { name: /informe.*GitHub/ }),
     ).toHaveCount(0);
     await expect(
-      section.getByRole("link", { name: "Abrir preview en Vercel" }),
+      section.getByRole("link", { name: "Abrir preview" }),
     ).toHaveAttribute("href", s.facts.preview!.url!);
     await s.workflow.poll();
-    await expect(page.locator(".badge.awaiting_review")).toHaveText(
+    await expect(page.locator(".dashboard-status")).toHaveText(
       "Esperando revisión y merge humano",
     );
     await expect(section).toContainText("Sin aceptación registrada");
-    await expect(section.getByRole("status")).toContainText(
-      "Esperando revisión y merge humano en GitHub",
-    );
+    await expect(section).toContainText("Sin aceptación vigente");
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
       await page.evaluate(
@@ -76,7 +87,7 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
     await expect(section.getByRole("alert")).toContainText(
       "GitHub unavailable",
     );
-    await expect(section).toContainText("Correcto");
+    await expect(section).toContainText("Deployment correcto");
   } finally {
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -100,11 +111,14 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y el 
     await page.goto(
       `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     );
-    await expect(page.locator(".badge.completed")).toHaveText("Completada");
+    await expect(page.locator(".dashboard-status")).toHaveText("Completada");
     await expect(
-      page.getByRole("region", { name: "Fases de la Ejecución" }),
-    ).toContainText("Integración y cierre");
+      page.getByRole("navigation", { name: "Fases de la Ejecución" }),
+    ).toContainText("Cierre");
     await expect(page.getByText("Producción", { exact: true })).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Configuración, procesos y evidencia" })
+      .click();
     const integration = page.getByRole("region", {
       name: "Integración y cierre",
     });
@@ -125,6 +139,9 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y el 
       page.getByText("Comprobando producción", { exact: true }),
     ).toHaveCount(0);
     await page.reload();
+    await page
+      .getByRole("button", { name: "Configuración, procesos y evidencia" })
+      .click();
     await expect(integration).toContainText(
       "Integración completada e issue cerrado.",
     );

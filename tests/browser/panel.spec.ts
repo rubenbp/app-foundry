@@ -3,6 +3,7 @@ import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { once } from "node:events";
+import { verificationFixture } from "../support/verification.ts";
 import { createFactory } from "../../src/composition/factory.ts";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import type { Fact, AgentPort } from "../../src/application/agent.ts";
@@ -60,11 +61,14 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
   try {
     await page.goto(`http://127.0.0.1:${port}`);
     await expect(
-      page.getByRole("heading", { name: "Centro de ejecuciones" }),
+      page.getByRole("heading", {
+        name: "Inspeccionar el paquete del Managed project",
+      }),
     ).toBeVisible();
-    await expect(page.locator(".badge.running")).toHaveText("En curso");
-    await expect(page.locator(".timeline")).toContainText("busy");
-    await expect(page.locator(".timeline")).toContainText("idle");
+    await expect(page.locator(".dashboard-status")).toHaveText("En curso");
+    await page.getByRole("button", { name: /Registro técnico/ }).click();
+    await expect(page.locator(".dashboard-entries")).toContainText("busy");
+    await expect(page.locator(".dashboard-entries")).toContainText("idle");
     emit({
       type: "part",
       id: "p1",
@@ -79,9 +83,18 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       ],
     });
     await expect(
-      page.getByRole("heading", { name: "Solicitudes pendientes" }),
+      page.getByRole("heading", { name: "El agente tiene una pregunta" }),
     ).toBeVisible();
-    await expect(page.locator(".outputs > li")).toHaveCount(1);
+    await expect(page.locator(".dashboard-message pre")).toContainText(
+      "Resultado [REDACTED] <img src=x onerror=alert(1)>",
+    );
+    await expect(page.locator(".dashboard-message img")).toHaveCount(0);
+    await expect(page.locator(".dashboard-message pre")).not.toContainText(
+      "fictional-secret-123",
+    );
+    await page
+      .getByRole("button", { name: "Configuración, procesos y evidencia" })
+      .click();
     const output = page.getByRole("button", { name: /\+ text/ });
     await output.focus();
     await page.keyboard.press("Enter");
@@ -89,9 +102,7 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       "Resultado [REDACTED] <img src=x onerror=alert(1)>",
     );
     await expect(page.locator(".output img")).toHaveCount(0);
-    await expect(page.locator(".output pre")).not.toContainText(
-      "fictional-secret-123",
-    );
+    await page.getByRole("button", { name: "Cerrar detalle" }).click();
     expect(
       (await page.request.post(`http://127.0.0.1:${port}/api/view`)).status(),
     ).toBe(405);
@@ -103,12 +114,9 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       ).status(),
     ).toBe(403);
     emit({ type: "error", text: "Provider unavailable" });
-    await expect(page.locator(".notice.danger")).toContainText(
+    await expect(page.locator(".dashboard-global-alert").first()).toContainText(
       "Provider unavailable",
     );
-    await expect(
-      page.getByRole("link", { name: "Registrar la intervención en GitHub" }),
-    ).toHaveAttribute("href", /github.com/);
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     factory.close();
@@ -117,10 +125,11 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     server.listen(port, "127.0.0.1");
     await once(server, "listening");
     await page.reload();
-    await expect(page.locator(".notice.danger")).toContainText(
+    await expect(page.locator(".dashboard-global-alert").first()).toContainText(
       "no se reenvió la tarea",
     );
-    await expect(page.locator(".timeline")).toContainText("busy");
+    await page.getByRole("button", { name: /Registro técnico/ }).click();
+    await expect(page.locator(".dashboard-entries")).toContainText("busy");
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
       await page.evaluate(
@@ -174,7 +183,9 @@ test("la conexión local y los avisos automáticos de actividad usan relojes dis
   try {
     await page.clock.install({ time: new Date() });
     await page.goto(origin);
-    await expect(page.locator(".connection")).toHaveText("Dashboard conectado");
+    await expect(page.locator(".dashboard-system-footer")).toContainText(
+      "Factory conectada",
+    );
     await page.clock.fastForward(121_000);
     await expect(
       page.getByText(/Sin actividad del agente durante 2 minutos/),
@@ -197,11 +208,102 @@ test("la conexión local y los avisos automáticos de actividad usan relojes dis
     ).toBeVisible();
     await page.unroute("**/api/view*");
     await page.clock.fastForward(2000);
-    await expect(page.locator(".connection")).toHaveText("Dashboard conectado");
+    await expect(page.locator(".dashboard-system-footer")).toContainText(
+      "Factory conectada",
+    );
     expect(sends).toBe(1);
   } finally {
     server.closeAllConnections();
     server.close();
     factory.close();
+  }
+});
+
+test("el dashboard conserva la lectura al recibir actividad y permite volver al final", async ({
+  page,
+}) => {
+  const s = verificationFixture();
+  const server = panelServer(s.workflow.factory);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  try {
+    await page.goto(origin);
+    await expect(
+      page.getByRole("heading", { name: "Todo empieza con una petición" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Revisar autorización en GitHub" }),
+    ).toHaveAttribute(
+      "href",
+      `https://github.com/${s.project.repository}/issues`,
+    );
+    await s.start();
+    for (let index = 0; index < 50; index++) {
+      s.emit({
+        type: "part",
+        id: `tool-${index}`,
+        messageId: `message-${index}`,
+        kind: "tool",
+        label: `Consultar archivo ${index}`,
+        text: `Contenido del archivo ${index}`,
+      });
+    }
+    await expect(
+      page
+        .locator(".dashboard-output-toggle")
+        .filter({ hasText: "Consultar archivo" }),
+    ).toHaveCount(50);
+    const stream = page.getByLabel("Cronología, desplazamiento independiente");
+    await stream.focus();
+    await page.keyboard.press("Home");
+    await expect(
+      page.getByRole("button", { name: /Volver al final/ }),
+    ).toBeVisible();
+    const firstRow = page.locator('[data-entry-id="part-tool-0"]');
+    await expect
+      .poll(() => stream.evaluate((element) => element.scrollTop))
+      .toBe(0);
+    await expect(firstRow).toBeInViewport();
+    const before = (await firstRow.boundingBox())!.y;
+    s.emit({
+      type: "part",
+      id: "new-tool",
+      messageId: "new-message",
+      kind: "tool",
+      label: "Nueva herramienta",
+      text: "Salida nueva",
+    });
+    await expect(
+      page.getByRole("button", { name: /novedad.*Volver al final/ }),
+    ).toBeVisible();
+    expect(Math.abs((await firstRow.boundingBox())!.y - before)).toBeLessThan(
+      2,
+    );
+    await page.getByRole("button", { name: /Volver al final/ }).click();
+    await expect(
+      page.getByRole("button", { name: /Nueva herramienta/ }),
+    ).toBeInViewport();
+    await expect(page.getByText("Estás al día", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /Nueva herramienta/ }).click();
+    await expect(page.getByText("Salida nueva", { exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: /Ejecuciones.*1/ }).click();
+    await expect(page.getByRole("dialog")).toContainText(
+      "Accessible catalogue",
+    );
+    await page.getByRole("button", { name: /Accessible catalogue/ }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <= innerWidth &&
+          document.documentElement.scrollHeight <= innerHeight,
+      ),
+    ).toBe(true);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    s.close();
   }
 });

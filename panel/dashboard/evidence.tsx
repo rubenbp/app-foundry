@@ -1,8 +1,7 @@
-// Throwaway evidence presentation. Source records and human acceptance stay distinct.
 import type { Run } from "../../src/domain/run.ts";
 import { CompactVerificationCheck } from "../verification.tsx";
 
-export function PrototypeRunDetails({ run }: { run: Run }) {
+export function RunDetails({ run }: { run: Run }) {
   const request = run.request;
   const repository = request
     ? `https://github.com/${request.repository}`
@@ -13,11 +12,11 @@ export function PrototypeRunDetails({ run }: { run: Run }) {
 
   return (
     <section
-      className="card proto-code-details"
-      aria-labelledby="prototype-code-title"
+      className="card dashboard-code-details"
+      aria-labelledby="dashboard-code-title"
     >
-      <h2 id="prototype-code-title">Código de la Ejecución</h2>
-      <dl className="proto-code-links">
+      <h2 id="dashboard-code-title">Código de la Ejecución</h2>
+      <dl className="dashboard-code-links">
         <div>
           <dt>Repositorio</dt>
           <dd>
@@ -80,9 +79,9 @@ export function PrototypeRunDetails({ run }: { run: Run }) {
           </dd>
         </div>
       </dl>
-      <details className="proto-evidence-disclosure">
+      <details className="dashboard-evidence-disclosure">
         <summary>Identificadores, configuración e instrucciones</summary>
-        <dl className="proto-code-identifiers">
+        <dl className="dashboard-code-identifiers">
           <div>
             <dt>Commit de partida</dt>
             <dd>
@@ -150,7 +149,7 @@ export function PrototypeRunDetails({ run }: { run: Run }) {
   );
 }
 
-export function PrototypeVerificationDetails({ run }: { run: Run }) {
+export function VerificationDetails({ run }: { run: Run }) {
   const report = run.verification;
   if (!report) {
     return null;
@@ -178,10 +177,10 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
 
   return (
     <section
-      className="card proto-verification"
+      className="card dashboard-verification"
       aria-labelledby="verification-title"
     >
-      <header className="proto-evidence-heading">
+      <header className="dashboard-evidence-heading">
         <div>
           <h2 id="verification-title">Verificación independiente</h2>
           <p>
@@ -189,12 +188,12 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
             resultado.
           </p>
         </div>
-        <span className={`proto-evidence-status ${report.status}`}>
+        <span className={`dashboard-evidence-status ${report.status}`}>
           {status}
         </span>
       </header>
       <nav
-        className="proto-evidence-links"
+        className="dashboard-evidence-links"
         aria-label="Evidencia del Commit candidato"
       >
         {repository && report.headSha ? (
@@ -212,17 +211,17 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
         </a>
       </nav>
       {report.error ? (
-        <p className="proto-evidence-alert" role="alert">
+        <p className="dashboard-evidence-alert" role="alert">
           {report.error}
         </p>
       ) : null}
       {report.effectsUncertain ? (
-        <p className="proto-evidence-alert" role="alert">
+        <p className="dashboard-evidence-alert" role="alert">
           Hay procesos o efectos sin aclarar. La Ejecución conserva su puesto;
           revisa el diagnóstico antes de recuperarla.
         </p>
       ) : null}
-      <div className="proto-evidence-section-heading">
+      <div className="dashboard-evidence-section-heading">
         <h3>Comprobaciones</h3>
         <span>
           {passed} / {report.checks.length} correctas
@@ -239,14 +238,14 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
       </ol>
       {e2e ? (
         <section
-          className="proto-browser-evidence"
-          aria-labelledby="prototype-e2e-title"
+          className="dashboard-browser-evidence"
+          aria-labelledby="dashboard-e2e-title"
         >
-          <div className="proto-evidence-section-heading">
-            <h3 id="prototype-e2e-title">Pruebas de navegador · E2E</h3>
+          <div className="dashboard-evidence-section-heading">
+            <h3 id="dashboard-e2e-title">Pruebas de navegador · E2E</h3>
             <span>Verificación local</span>
           </div>
-          <dl className="proto-browser-metrics">
+          <dl className="dashboard-browser-metrics">
             <div>
               <dt>Pruebas ejecutadas</dt>
               <dd>{e2e.executedTests}</dd>
@@ -264,13 +263,13 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
             </div>
           </dl>
           {e2e.offline ? (
-            <p className="proto-evidence-alert">
+            <p className="dashboard-evidence-alert">
               Modo offline · alcance reducido de las pruebas.
             </p>
           ) : null}
-          <details className="proto-evidence-disclosure">
+          <details className="dashboard-evidence-disclosure">
             <summary>Entorno de las pruebas</summary>
-            <dl className="proto-code-identifiers">
+            <dl className="dashboard-code-identifiers">
               <div>
                 <dt>Servidor propio</dt>
                 <dd>{e2e.origin}</dd>
@@ -303,19 +302,20 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
         </section>
       ) : null}
       <section
-        className="proto-criteria-section"
-        aria-labelledby="prototype-criteria-title"
+        className="dashboard-criteria-section"
+        aria-labelledby="dashboard-criteria-title"
       >
-        <div className="proto-evidence-section-heading">
-          <h3 id="prototype-criteria-title">Criterios de aceptación</h3>
+        <div className="dashboard-evidence-section-heading">
+          <h3 id="dashboard-criteria-title">Criterios de aceptación</h3>
           <span>{report.criteria.length} criterios</span>
         </div>
-        <p className="proto-criteria-context">
-          {run.publication?.acceptance
+        <p className="dashboard-criteria-context">
+          {run.publication?.acceptance &&
+          run.publication.acceptance.head === run.publication.head
             ? `Aceptación registrada mediante merge por ${run.publication.acceptance.author}. Los criterios no tienen validación automática específica.`
             : "La suite aporta evidencia técnica. Los criterios requieren revisión humana."}
         </p>
-        <ol className="proto-criterion-cards">
+        <ol className="dashboard-criterion-cards">
           {report.criteria.map((criterion, index) => {
             const specificEvidence = criterion.evidence.filter(
               (id) => !sharedEvidence.includes(id),
@@ -323,7 +323,7 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
 
             return (
               <li key={index}>
-                <span className="proto-criterion-number">
+                <span className="dashboard-criterion-number">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div>
@@ -331,7 +331,7 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
                     {criterion.text.replace(/^\s*(?:[-*]\s+|\d+\.\s+)/, "")}
                   </p>
                   {specificEvidence.length ? (
-                    <div className="proto-evidence-chips">
+                    <div className="dashboard-evidence-chips">
                       {specificEvidence.map((id) => (
                         <a key={id} href={`#part-${id}`}>
                           {checkLabel(id)} ↗
@@ -340,7 +340,9 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
                     </div>
                   ) : null}
                 </div>
-                <span className={`proto-criterion-status ${criterion.status}`}>
+                <span
+                  className={`dashboard-criterion-status ${criterion.status}`}
+                >
                   {criterion.status === "human_pending"
                     ? "Revisión humana"
                     : "Falta evidencia"}
@@ -350,10 +352,10 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
           })}
         </ol>
         {sharedEvidence.length ? (
-          <div className="proto-shared-evidence">
+          <div className="dashboard-shared-evidence">
             <h4>Evidencia técnica común</h4>
             <p>Estas comprobaciones aportan contexto a todos los criterios.</p>
-            <div className="proto-evidence-chips">
+            <div className="dashboard-evidence-chips">
               {sharedEvidence.map((id) => (
                 <a key={id} href={`#part-${id}`}>
                   {checkLabel(id)} ↗
@@ -364,7 +366,7 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
         ) : null}
       </section>
       {report.controls.length ? (
-        <section className="proto-control-changes">
+        <section className="dashboard-control-changes">
           <h3>Cambios en pruebas o configuración</h3>
           <p>Información para la revisión del diff.</p>
           <ul>
@@ -391,7 +393,7 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
           </ul>
         </section>
       ) : null}
-      <details className="proto-evidence-disclosure proto-evidence-audit">
+      <details className="dashboard-evidence-disclosure dashboard-evidence-audit">
         <summary>Alcance, limitaciones y registro de evidencia</summary>
         <p>
           Las pruebas locales no acreditan la preview ni la aceptación humana
@@ -403,7 +405,7 @@ export function PrototypeVerificationDetails({ run }: { run: Run }) {
           ))}
         </ul>
         <h4>Identidad de la versión comprobada</h4>
-        <dl className="proto-code-identifiers">
+        <dl className="dashboard-code-identifiers">
           <div>
             <dt>Base</dt>
             <dd>{report.baseSha}</dd>

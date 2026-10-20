@@ -13,7 +13,7 @@ import {
   technicalKinds,
   technicalOperations,
   type TechnicalOperation,
-} from "./technical-prototype.ts";
+} from "./technical.ts";
 
 export interface TimelineEntry {
   id: string;
@@ -22,7 +22,6 @@ export interface TimelineEntry {
   label: string;
   text?: string;
   part?: PartView;
-  simulated?: boolean;
   technical?: TechnicalOperation[];
   version?: string;
 }
@@ -125,11 +124,11 @@ function TechnicalGroup({
   onInspect: () => void;
 }) {
   return (
-    <div className="proto-technical-group" onClick={onInspect}>
+    <div className="dashboard-technical-group" onClick={onInspect}>
       <ol>
         {entry.technical?.map((operation) => (
           <li key={operation.id}>
-            <details className="proto-technical-operation">
+            <details className="dashboard-technical-operation">
               <summary>
                 <time>{time(operation.at)}</time>
                 <span>{operation.label}</span>
@@ -141,7 +140,7 @@ function TechnicalGroup({
                       : "Observado"}
                 </small>
               </summary>
-              <div className="proto-technical-detail">
+              <div className="dashboard-technical-detail">
                 {operation.note ? <p>{operation.note}</p> : null}
                 {operation.references.length ? (
                   <dl>
@@ -228,11 +227,10 @@ function EntryBody({
   const content = entry.text ?? output;
   if (message) {
     return (
-      <div className="proto-message">
-        <div className="proto-entry-heading">
+      <div className="dashboard-message">
+        <div className="dashboard-entry-heading">
           <strong>Agente</strong>
           <span>MENSAJE</span>
-          {entry.simulated ? <small>Simulado</small> : null}
         </div>
         <pre>
           {failed
@@ -244,9 +242,9 @@ function EntryBody({
   }
   if (part || entry.text) {
     return (
-      <div className={`proto-expandable ${open ? "is-open" : ""}`}>
+      <div className={`dashboard-expandable ${open ? "is-open" : ""}`}>
         <button
-          className="proto-output-toggle"
+          className="dashboard-output-toggle"
           aria-expanded={open}
           aria-controls={`body-${entry.id}`}
           onClick={() => {
@@ -254,12 +252,12 @@ function EntryBody({
             setOpen(!open);
           }}
         >
-          <span className="proto-chevron" aria-hidden="true">
+          <span className="dashboard-chevron" aria-hidden="true">
             {open ? "⌄" : "›"}
           </span>
-          <span className="proto-output-label">{entry.label}</span>
+          <span className="dashboard-output-label">{entry.label}</span>
           {part?.truncated ? <small>Truncada</small> : null}
-          <span className={`proto-kind-label ${entry.kind}`}>
+          <span className={`dashboard-kind-label ${entry.kind}`}>
             {entry.kind === "tool"
               ? "HERRAMIENTA"
               : entry.kind === "evidence"
@@ -278,27 +276,23 @@ function EntryBody({
     );
   }
 
-  return <p className="proto-event-text">{entry.label}</p>;
+  return <p className="dashboard-event-text">{entry.label}</p>;
 }
 
-export function TimelinePrototype({
-  compact = false,
+export function Timeline({
   runId,
   entries,
   technicalCount,
   showTechnical,
   onToggleTechnical,
-  onFollowChange,
   action,
   onOriginalRecords,
 }: {
-  compact?: boolean;
   runId: string;
   entries: TimelineEntry[];
   technicalCount: number;
   showTechnical: boolean;
   onToggleTechnical: () => void;
-  onFollowChange: (following: boolean) => void;
   action?: ReactNode;
   onOriginalRecords: () => void;
 }) {
@@ -333,7 +327,6 @@ export function TimelinePrototype({
   function setFollow(value: boolean) {
     followingRef.current = value;
     setFollowing(value);
-    onFollowChange(value);
     if (value) {
       pending.current.clear();
       setUnread(0);
@@ -356,7 +349,6 @@ export function TimelinePrototype({
     followingRef.current = false;
     anchor.current = null;
     setFollowing(false);
-    onFollowChange(false);
   }
 
   useLayoutEffect(() => {
@@ -427,23 +419,23 @@ export function TimelinePrototype({
   }, []);
 
   return (
-    <section className="proto-timeline" aria-label="Actividad cronológica">
-      <header className="proto-stream-header">
+    <section className="dashboard-timeline" aria-label="Actividad cronológica">
+      <header className="dashboard-stream-header">
         <div>
           <h2>Actividad</h2>
           <span>{entries.length} entradas</span>
         </div>
-        <div className="proto-stream-actions">
-          {compact ? (
-            <span
-              className={following ? "proto-live-label" : "proto-reading-label"}
-            >
-              <i />
-              {following ? "Al final" : "Leyendo historial"}
-            </span>
-          ) : null}
+        <div className="dashboard-stream-actions">
+          <span
+            className={
+              following ? "dashboard-live-label" : "dashboard-reading-label"
+            }
+          >
+            <i />
+            {following ? "Al final" : "Leyendo historial"}
+          </span>
           <button
-            className={`proto-quiet-button ${showTechnical ? "selected" : ""}`}
+            className={`dashboard-quiet-button ${showTechnical ? "selected" : ""}`}
             aria-pressed={showTechnical}
             onClick={onToggleTechnical}
             title="Mostrar estados internos, procesos e intenciones"
@@ -454,26 +446,15 @@ export function TimelinePrototype({
         </div>
       </header>
       {showTechnical ? (
-        <div className="proto-technical-toolbar">
+        <div className="dashboard-technical-toolbar">
           <span>{technicalCount} registros de origen agrupados</span>
-          <button className="proto-text-button" onClick={onOriginalRecords}>
+          <button className="dashboard-text-button" onClick={onOriginalRecords}>
             Ver registro original ↗
           </button>
         </div>
       ) : null}
-      {!compact ? (
-        <div className="proto-stream-description">
-          <span>Eventos, mensajes y herramientas en un solo lugar.</span>
-          <span
-            className={following ? "proto-live-label" : "proto-reading-label"}
-          >
-            <i />
-            {following ? "Siguiendo el final" : "Consultando historial"}
-          </span>
-        </div>
-      ) : null}
       <div
-        className="proto-stream-scroll"
+        className="dashboard-stream-scroll"
         ref={viewport}
         tabIndex={0}
         aria-label="Cronología, desplazamiento independiente"
@@ -519,8 +500,8 @@ export function TimelinePrototype({
           }
         }}
       >
-        <ol ref={content} className="proto-entries">
-          <li className="proto-stream-start">
+        <ol ref={content} className="dashboard-entries">
+          <li className="dashboard-stream-start">
             <span>INICIO DE LA EJECUCIÓN</span>
             <span>Orden cronológico ↓</span>
           </li>
@@ -528,7 +509,7 @@ export function TimelinePrototype({
             <li
               key={entry.id}
               data-entry-id={entry.id}
-              className={`proto-entry ${entry.kind}`}
+              className={`dashboard-entry ${entry.kind}`}
             >
               {entry.kind === "technical" ? (
                 <TechnicalGroup
@@ -540,7 +521,7 @@ export function TimelinePrototype({
                   <time dateTime={new Date(entry.at).toISOString()}>
                     {time(entry.at)}
                   </time>
-                  <span className="proto-entry-icon" aria-hidden="true">
+                  <span className="dashboard-entry-icon" aria-hidden="true">
                     {entry.kind === "message"
                       ? "A"
                       : entry.kind === "tool"
@@ -561,13 +542,13 @@ export function TimelinePrototype({
             </li>
           ))}
           {!entries.length ? (
-            <li className="proto-empty-stream">
+            <li className="dashboard-empty-stream">
               Esperando la primera actividad.
             </li>
           ) : null}
         </ol>
       </div>
-      <footer className="proto-stream-footer">
+      <footer className="dashboard-stream-footer">
         <span role="status" aria-live="polite">
           {following
             ? "Estás al día"
@@ -576,7 +557,7 @@ export function TimelinePrototype({
               : "Lectura en pausa"}
         </span>
         {!following ? (
-          <button className="proto-return-live" onClick={scrollToEnd}>
+          <button className="dashboard-return-live" onClick={scrollToEnd}>
             ↓{" "}
             {unread
               ? `${unread} ${unread === 1 ? "novedad" : "novedades"} · `
@@ -585,7 +566,7 @@ export function TimelinePrototype({
           </button>
         ) : canScroll ? (
           <button
-            className="proto-quiet-button"
+            className="dashboard-quiet-button"
             onClick={() => {
               setFollow(false);
               if (viewport.current) {

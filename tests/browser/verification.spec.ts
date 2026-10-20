@@ -51,28 +51,46 @@ test("el dashboard muestra la verificación independiente, el diff completo, las
     await expect(
       page.getByRole("heading", { name: "Verificación independiente" }),
     ).toBeVisible();
-    await expect(page.locator(".badge.verifying")).toHaveText(
+    await expect(page.locator(".dashboard-status")).toHaveText(
       "Verificando Commit candidato",
     );
     await expect(
-      page.getByRole("listitem").filter({ hasText: /^Verificación$/ }),
+      page
+        .getByRole("button", { name: "Verificación", exact: false })
+        .filter({ has: page.locator(".dashboard-phase-number") }),
     ).toHaveAttribute("aria-current", "step");
+    await page
+      .getByRole("button", { name: "Ver evidencia y criterios" })
+      .click();
     await expect(
       page.getByRole("region", { name: "Verificación independiente" }),
-    ).toContainText("En ejecución");
+    ).toContainText("En curso");
     release();
     await verification;
-    await expect(page.locator(".badge.intervention")).toBeVisible();
+    await expect(page.locator(".dashboard-status.attention")).toHaveText(
+      "Requiere atención",
+    );
     const section = page.getByRole("region", {
       name: "Verificación independiente",
     });
-    await expect(section).toContainText("Código de salida: 7");
+    await section
+      .getByText("Detalles técnicos", { exact: true })
+      .first()
+      .click();
+    await expect(
+      section.locator(".verification-check-technical").first(),
+    ).toContainText("7");
+    await section
+      .getByText("Alcance, limitaciones y registro de evidencia", {
+        exact: true,
+      })
+      .click();
     await expect(section).toContainText(s.baseSha);
     await expect(section).toContainText(s.git("rev-parse", "HEAD"));
     await expect(section).toContainText("Keep keyboard navigation.");
     await expect(section).toContainText("Falta evidencia");
     await expect(
-      section.getByRole("link", { name: "Revisar diff acumulado en GitHub" }),
+      section.getByRole("link", { name: "Revisar cambios en GitHub" }),
     ).toHaveAttribute(
       "href",
       `https://github.com/${s.project.repository}/compare/${s.baseSha}...${s.git("rev-parse", "HEAD")}`,
@@ -133,18 +151,25 @@ test("el dashboard muestra los cambios de configuración como información y con
     await page.goto(
       `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     );
+    await page
+      .getByRole("button", { name: "Ver evidencia y criterios" })
+      .click();
     const section = page.getByRole("region", {
       name: "Verificación independiente",
     });
     await expect(
       section.getByRole("heading", {
-        name: "Cambios en controles (informativos)",
+        name: "Cambios en pruebas o configuración",
       }),
     ).toBeVisible();
     await expect(section).toContainText("package.json");
-    await expect(section).toContainText("no bloquean las verificaciones");
-    await expect(page.locator(".badge.awaiting_preview")).toBeVisible();
-    await expect(page.locator(".badge.intervention")).toHaveCount(0);
+    await expect(section).toContainText(
+      "Información para la revisión del diff.",
+    );
+    await expect(page.locator(".dashboard-status")).toHaveText(
+      "Verificado · Preview pendiente",
+    );
+    await expect(page.locator(".dashboard-status.attention")).toHaveCount(0);
     await expect(section.getByRole("alert")).toHaveCount(0);
     const snapshot = await page.request
       .get(new URL(`/api/view?run=${run.id}`, page.url()).href)

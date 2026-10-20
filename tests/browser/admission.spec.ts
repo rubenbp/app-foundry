@@ -91,48 +91,71 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
     await page.goto(
       `http://127.0.0.1:${(server.address() as { port: number }).port}`,
     );
-    await expect(
-      page.getByRole("heading", { name: "Cola de peticiones" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: /En cola/ })).toBeVisible();
     await expect(
       page
-        .getByRole("region", { name: "Cola de peticiones" })
+        .locator(".dashboard-executions-scroll section")
+        .filter({ hasText: "En cola" })
         .getByRole("listitem"),
     ).toHaveCount(2);
-    await page.getByText("Issue autorizado", { exact: true }).click();
+    await page.getByRole("button", { name: "Encargo y criterios" }).click();
     await expect(
       page.getByText("Mostrar todos los juegos y conservar el teclado.", {
         exact: false,
       }),
     ).toBeVisible();
-    await expect(page.getByText("owner", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar detalle" }).click();
     started = workflow.startNext();
-    await expect(page.locator(".badge.preparing")).toHaveText(
+    await expect(page.locator(".dashboard-status")).toHaveText(
       "Preparando base",
     );
+    await page
+      .getByRole("button", { name: "Configuración, procesos y evidencia" })
+      .click();
+    await page
+      .getByText("Identificadores, configuración e instrucciones", {
+        exact: true,
+      })
+      .click();
     await expect(
-      page.getByText("a".repeat(40), { exact: true }).first(),
+      page.getByText("a".repeat(40), { exact: false }).first(),
     ).toBeVisible();
+    await expect(page.getByRole("link", { name: /owner/ })).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar detalle" }).click();
     release();
     await started;
     await expect(
-      page.getByRole("listitem").filter({ hasText: /^Implementación$/ }),
+      page
+        .getByRole("button", { name: /Implementación/ })
+        .filter({ has: page.locator(".dashboard-phase-number") }),
     ).toHaveAttribute("aria-current", "step");
     await expect(
       page
-        .getByRole("region", { name: "Cola de peticiones" })
+        .locator(".dashboard-executions-scroll section")
+        .filter({ hasText: "En cola" })
         .getByRole("listitem"),
     ).toHaveCount(1);
+    const executions = page.locator(".dashboard-executions-scroll");
+    await executions.getByRole("button", { name: /Catálogo 2/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "Catálogo 2", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".dashboard-status")).toHaveText("En cola");
+    await executions.getByRole("button", { name: /Catálogo 1/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "Catálogo 1", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".dashboard-status")).toHaveText("En curso");
     await page.screenshot({
       path: test.info().outputPath("admission-panel.png"),
       fullPage: true,
     });
     emit({ type: "error", text: "Falta decisión sobre el catálogo" });
-    await expect(page.locator(".notice.danger")).toContainText(
+    await expect(page.locator(".dashboard-global-alert").first()).toContainText(
       "Falta decisión sobre el catálogo",
     );
     await expect(
-      page.getByRole("link", { name: "Registrar la intervención en GitHub" }),
+      page.getByRole("link", { name: "Responder en GitHub" }),
     ).toHaveAttribute("href", issue(1).url);
     await page.setViewportSize({ width: 390, height: 844 });
     expect(

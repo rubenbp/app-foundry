@@ -1,6 +1,6 @@
 // Throwaway projection. Preserve every source record while reducing repetition.
 import type { History, Run } from "../../src/domain/run.ts";
-import type { TimelineEntry } from "./timeline-prototype.tsx";
+import type { TimelineEntry } from "./timeline.tsx";
 
 export interface TechnicalOperation {
   id: string;
