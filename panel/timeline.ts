@@ -19,7 +19,6 @@ export interface TimelineEntry {
 }
 
 const historyLabels: Record<string, string> = {
-  admitted: "Issue autorizado · En cola",
   result: "Resultado del agente · Sin verificar",
   verification: "Verificación independiente",
   "agent-stop": "Detención de la edición observada",
@@ -34,6 +33,7 @@ export function timelineEntries(run: {
   parts: PartView[];
   result?: string | null;
   publication?: Run["publication"];
+  request?: Run["request"];
 }): TimelineEntry[] {
   const technical = technicalHistory(run.history, run.publication);
   const history: TimelineEntry[] = run.history.flatMap((entry, index) =>
@@ -61,9 +61,13 @@ export function timelineEntries(run: {
                   : "event",
             label:
               technical.operations.get(index)?.label ??
-              (Object.hasOwn(historyLabels, entry.kind)
-                ? historyLabels[entry.kind]!
-                : entry.kind),
+              (entry.kind === "admitted"
+                ? run.request
+                  ? "Issue autorizado · En cola"
+                  : "Ejecución manual · En cola"
+                : Object.hasOwn(historyLabels, entry.kind)
+                  ? historyLabels[entry.kind]!
+                  : entry.kind),
             operation: technical.operations.get(index)?.operation,
             text: entry.text,
             history: entry,

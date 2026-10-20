@@ -22,6 +22,11 @@ test("consultar una fase conserva la selección durante el avance y mantiene vis
       name: "Contexto de la fase consultada",
     });
     await expect(
+      page
+        .getByRole("list", { name: "Cronología", exact: true })
+        .getByText("Issue autorizado · En cola", { exact: true }),
+    ).toBeVisible();
+    await expect(
       context.getByText("Verificación independiente", { exact: true }),
     ).toHaveCount(0);
     await navigation.getByRole("button", { name: /Preparación/ }).click();

@@ -5,7 +5,7 @@ import { timelineReading } from "../reading.ts";
 import { Button } from "./button.tsx";
 import { Output } from "./output.tsx";
 import { time } from "../format.ts";
-import { phases, currentPhase } from "../phases.tsx";
+import { phaseDetails, currentPhase } from "../phases.tsx";
 
 const presentation = {
   event: { label: "Evento", icon: "○" },
@@ -211,7 +211,7 @@ export function Timeline({ run }: { run: Run }) {
   return (
     <div className="unified-activity" ref={root}>
       <div className="activity-heading">
-        <h2>{phases[currentPhase(run)]}</h2>
+        <h2>{phaseDetails(currentPhase(run)).label}</h2>
         <span className="small muted">Actividad observada</span>
       </div>
       <div className="section-heading">

@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { IssueDetails, CodeDetails } from "./issue.tsx";
 import { VerificationDetails } from "./verification.tsx";
-import { PhaseNavigation, phases, currentPhase } from "./phases.tsx";
+import {
+  PhaseNavigation,
+  phaseDetails,
+  currentPhase,
+  type Phase,
+} from "./phases.tsx";
 import { ObservationsDetails } from "./observations.tsx";
 import { DetailDialog } from "./dialog.tsx";
 import { PhaseContext } from "./phase-context.tsx";
@@ -22,7 +27,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [consulted, setConsulted] = useState<{
     runId: string;
-    phase: number;
+    phase: Phase;
   } | null>(null);
   const [dialog, setDialog] = useState<
     "brief" | "code" | "context" | "verification" | "observation" | null
@@ -56,7 +61,7 @@ function App() {
       ? consulted.phase
       : run
         ? currentPhase(run)
-        : 0;
+        : "queue";
   const openDialog = (detail: NonNullable<typeof dialog>) => {
     document.dispatchEvent(new Event("cabina:inspect"));
     setDialog(detail);
@@ -157,7 +162,9 @@ function App() {
         </div>
         <section className="sidebar-queue" aria-label="Cola de peticiones">
           <h2 className="sidebar-heading">Cola de peticiones</h2>
-          {view?.queue.length ? (
+          {!view ? (
+            <p className="small">Cola todavía no observada.</p>
+          ) : view.queue.length ? (
             <ol className="queue-list">
               {view.queue.map((item) => (
                 <li key={item.id}>
@@ -336,6 +343,16 @@ function App() {
           ) : null}
           {run ? <PublicationAlerts run={run} /> : null}
           {view?.fault ? <p className="notice danger">{view.fault}</p> : null}
+          {run?.process?.exited === false ? (
+            <section className="notice warning" role="alert">
+              <h2>Detención de procesos sin confirmar</h2>
+              <p>
+                No se ha confirmado la finalización del grupo de procesos.
+                Consulta la respuesta observada en el registro técnico; no
+                acredita todos los efectos del proveedor.
+              </p>
+            </section>
+          ) : null}
           {run?.error ? (
             <section className="notice danger">
               <h2>Requiere intervención</h2>
@@ -454,7 +471,7 @@ function App() {
                     ? "Verificación y evidencias"
                     : dialog === "observation"
                       ? "Observación y procedencia"
-                      : `Contexto · ${phases[consultedPhase]}`
+                      : `Contexto · ${phaseDetails(consultedPhase).label}`
             }
             onClose={() => setDialog(null)}
           >
