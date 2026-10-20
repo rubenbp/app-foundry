@@ -1917,7 +1917,7 @@ body:has(.factory-dashboard) {
   padding: 6px 0;
   cursor: pointer;
   list-style: none;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.5;
   color: #76836a;
 }
