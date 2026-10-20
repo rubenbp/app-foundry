@@ -3,6 +3,130 @@ import { once } from "node:events";
 import { panelServer } from "../../src/infrastructure/http/panelServer.ts";
 import { publicationFixture } from "../support/publication.ts";
 
+test("la cronología muestra la espera de preview y el comentario completo en Markdown tras confirmar el envío", async ({
+  page,
+}) => {
+  const s = publicationFixture();
+  const summary = [
+    "## Resultado del Intento",
+    "Se conserva **el catálogo**.",
+    "- Navegación con teclado\n- Enlace a la ficha",
+    "[Guía de revisión](https://example.com/review)",
+    "```js\nconsole.log('catálogo listo');\n```",
+    "<script>window.commentExecuted = true</script>",
+    "[Enlace inseguro](javascript:alert(1))",
+    `${"Texto completo. ".repeat(350)}FINAL DEL COMENTARIO`,
+  ].join("\n\n");
+  const run = await s.candidate(
+    "Footer",
+    `feat: catálogo\n\n<factory-summary>\n${summary}\n</factory-summary>`,
+  );
+  const wait = s.workflow.view(run.id)!.publication!.previewWait!;
+  s.workflow.factory.now = () => wait.startedAt + 74_000;
+  const server = panelServer(s.workflow.factory);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    await page.goto(
+      `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    );
+    const timeline = page.locator(".dashboard-entries");
+    await expect(timeline).toContainText("Esperando preview · Intento 1");
+    await expect(
+      timeline.getByRole("button", { name: /Comentario enviado a GitHub/ }),
+    ).toHaveCount(0);
+    await s.workflow.poll();
+    await expect(timeline).toContainText("Preview listo · 74 s");
+    const toggle = timeline.getByRole("button", {
+      name: /Comentario enviado a GitHub/,
+    });
+    await expect(toggle).toHaveCount(1);
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const comment = timeline.locator(".dashboard-comment");
+    await expect(
+      comment.getByRole("heading", { name: "Resultado del Intento" }),
+    ).toBeVisible();
+    await expect(comment.locator("strong")).toHaveText("el catálogo");
+    await expect(comment.getByRole("listitem")).toHaveCount(2);
+    await expect(comment.locator("pre code")).toHaveText(
+      "console.log('catálogo listo');\n",
+    );
+    await expect(
+      comment.getByRole("link", { name: "Guía de revisión" }),
+    ).toHaveAttribute("href", "https://example.com/review");
+    await expect(
+      comment.getByRole("link", { name: /Ver comentario en GitHub/ }),
+    ).toHaveAttribute("href", s.facts.comments[0].url);
+    await expect(
+      comment.getByText("Enlace inseguro", { exact: true }),
+    ).not.toHaveAttribute("href", /javascript:/);
+    await expect(comment).toContainText("FINAL DEL COMENTARIO");
+    await expect(comment).not.toContainText("app-foundry:");
+    await expect(comment.locator("script")).toHaveCount(0);
+    await s.workflow.poll();
+    await expect(toggle).toHaveCount(1);
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await comment
+      .getByRole("heading", { name: "Resultado del Intento" })
+      .scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath("comment-preview-timeline.png"),
+      fullPage: true,
+    });
+    await page.reload();
+    await expect(
+      timeline.getByRole("button", { name: /Comentario enviado a GitHub/ }),
+    ).toHaveCount(1);
+    await expect(timeline).toContainText("Preview listo · 74 s");
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    s.close();
+  }
+});
+
+test("la cronología muestra duración y motivo cuando falla el deployment de preview", async ({
+  page,
+}) => {
+  const s = publicationFixture();
+  const run = await s.candidate();
+  const wait = s.workflow.view(run.id)!.publication!.previewWait!;
+  s.workflow.factory.now = () => wait.startedAt + 85_000;
+  s.facts.preview!.state = "failure";
+  await s.workflow.poll();
+  const server = panelServer(s.workflow.factory);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    await page.goto(
+      `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    );
+    const timeline = page.locator(".dashboard-entries");
+    const toggle = timeline.getByRole("button", {
+      name: /Error al comprobar preview · 85 s/,
+    });
+    await toggle.click();
+    await expect(timeline).toContainText(
+      "El deployment está en estado «failure»",
+    );
+    await s.workflow.poll();
+    await expect(toggle).toHaveCount(1);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    s.close();
+  }
+});
+
 test("el dashboard guía la revisión con la PR y preview y permite consultar la evidencia técnica local", async ({
   page,
 }) => {

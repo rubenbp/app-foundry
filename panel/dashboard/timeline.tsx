@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Markdown, { defaultUrlTransform } from "react-markdown";
 import type { History, PartView, Run } from "../../src/domain/run.ts";
 import { time } from "../format.ts";
 import {
@@ -21,6 +22,7 @@ export interface TimelineEntry {
   kind: "event" | "message" | "tool" | "evidence" | "error" | "technical";
   label: string;
   text?: string;
+  comment?: History["comment"];
   part?: PartView;
   technical?: TechnicalOperation[];
   version?: string;
@@ -34,6 +36,7 @@ const historyLabels: Record<string, string> = {
   "agent-stop": "Edición detenida para fijar el Commit candidato",
   verification: "Verificación independiente finalizada",
   "agent-intervention": "El agente necesita una respuesta",
+  "issue-comment": "Comentario enviado a GitHub",
 };
 const evidenceLabels: Record<string, string> = {
   clone: "Clon de trabajo preparado",
@@ -58,10 +61,34 @@ function historyEntry(entry: History, index: number): TimelineEntry {
     id: `history-${index}`,
     at: entry.at,
     kind,
-    label: historyLabels[entry.kind] ?? entry.text,
-    text: historyLabels[entry.kind] ? entry.text : undefined,
+    label:
+      entry.kind === "preview-error"
+        ? entry.text.split("\n")[0]
+        : (historyLabels[entry.kind] ?? entry.text),
+    text:
+      !entry.comment &&
+      (historyLabels[entry.kind] || entry.kind === "preview-error")
+        ? entry.text
+        : undefined,
+    comment: entry.comment,
   };
 }
+
+function CommentLink({
+  href,
+  children,
+}: {
+  href?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer">
+      {children}
+    </a>
+  );
+}
+
+const commentComponents = { a: CommentLink };
 
 export function timelineEntries(run: Run): TimelineEntry[] {
   const history = run.history
@@ -240,7 +267,7 @@ function EntryBody({
       </div>
     );
   }
-  if (part || entry.text) {
+  if (part || entry.text || entry.comment) {
     return (
       <div className={`dashboard-expandable ${open ? "is-open" : ""}`}>
         <button
@@ -266,11 +293,24 @@ function EntryBody({
           </span>
         </button>
         {open ? (
-          <pre id={`body-${entry.id}`} tabIndex={0}>
-            {failed
-              ? "Salida no disponible. La observación tiene una laguna."
-              : (content ?? "Consultando salida…")}
-          </pre>
+          entry.comment ? (
+            <div id={`body-${entry.id}`} className="dashboard-comment">
+              <p>
+                <CommentLink href={defaultUrlTransform(entry.comment.url)}>
+                  Ver comentario en GitHub ↗
+                </CommentLink>
+              </p>
+              <Markdown skipHtml components={commentComponents}>
+                {entry.comment.body}
+              </Markdown>
+            </div>
+          ) : (
+            <pre id={`body-${entry.id}`} tabIndex={0}>
+              {failed
+                ? "Salida no disponible. La observación tiene una laguna."
+                : (content ?? "Consultando salida…")}
+            </pre>
+          )
         ) : null}
       </div>
     );

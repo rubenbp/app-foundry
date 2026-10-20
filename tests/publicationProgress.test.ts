@@ -50,6 +50,13 @@ test("una publicación incierta aparece solo al confirmarla y no duplica el come
       s.workflow.view(run.id)!.history.filter((entry) => entry.comment).length,
       0,
     );
+    assert.equal(
+      s.workflow
+        .view(run.id)!
+        .history.filter((entry) => entry.kind === "preview-ready").length,
+      1,
+      "Preview readiness is independent of delivery of the issue notification",
+    );
     await s.workflow.poll();
     await s.workflow.poll();
     assert.equal(s.facts.comments.length, 1);

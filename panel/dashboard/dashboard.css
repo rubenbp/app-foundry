@@ -614,6 +614,42 @@ body:has(.factory-dashboard) {
   overflow: auto;
   font-size: 10px;
 }
+.dashboard-comment {
+  padding: 0 13px 13px;
+  color: #46543d;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.dashboard-comment :is(p, ul, ol, pre, blockquote) {
+  margin: 10px 0 0;
+}
+.dashboard-comment :is(h1, h2, h3, h4, h5, h6) {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.dashboard-comment :is(ul, ol) {
+  padding-left: 20px;
+}
+.dashboard-comment ul {
+  list-style: disc;
+}
+.dashboard-comment ol {
+  list-style: decimal;
+}
+.dashboard-comment a {
+  color: #42612d;
+  text-decoration: underline;
+}
+.dashboard-comment pre {
+  padding: 10px;
+  background: #e6ecdd;
+  white-space: pre;
+}
+.dashboard-comment img {
+  max-width: 100%;
+}
 .dashboard-message {
   padding: 13px 15px;
   border: 1px solid #e9ecdf;

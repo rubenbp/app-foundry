@@ -309,6 +309,7 @@ export class CandidatePublication {
       const final = await this.runtime.facts(run);
       const valid = readyToMerge(run, final);
       if (valid) {
+        this.runtime.finishPreviewWait(run, "ready");
         await this.report.notify(run, final);
       }
       await this.runtime.setStatus(
@@ -321,9 +322,6 @@ export class CandidatePublication {
           ? "awaiting_review"
           : "awaiting_preview";
       run.error = publication.blocked ?? null;
-      if (valid) {
-        this.runtime.finishPreviewWait(run, "ready");
-      }
       this.runtime.save(run);
     } catch (error) {
       let failure = error;
