@@ -56,6 +56,11 @@ function App() {
     return () => clearInterval(timer);
   }, []);
   const run = view?.run;
+  const stopUnconfirmed =
+    run?.process?.exited === false ||
+    (run?.status === "intervention" &&
+      run.process?.exited !== true &&
+      run.history.some((entry) => entry.kind === "stop"));
   const consultedPhase =
     run && consulted?.runId === run.id
       ? consulted.phase
@@ -343,7 +348,7 @@ function App() {
           ) : null}
           {run ? <PublicationAlerts run={run} /> : null}
           {view?.fault ? <p className="notice danger">{view.fault}</p> : null}
-          {run?.process?.exited === false ? (
+          {stopUnconfirmed ? (
             <section className="notice warning" role="alert">
               <h2>Detención de procesos sin confirmar</h2>
               <p>
