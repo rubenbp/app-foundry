@@ -1363,3 +1363,59 @@ main {
   border-left: 2px solid var(--color-border);
   padding-left: 12px;
 }
+
+/* The reading controls stay outside the entries' independent viewport. */
+.activity-scroll:has(.unified-activity) {
+  overflow: hidden;
+  padding: 0;
+}
+.unified-activity {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+.unified-activity > .activity-heading,
+.unified-activity > .section-heading,
+.unified-activity > .timeline-controls {
+  margin: 0;
+  padding: 10px 18px;
+  flex-shrink: 0;
+}
+.timeline-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scrollbar-gutter: stable;
+  padding: 0 18px;
+}
+.timeline-content {
+  display: flow-root;
+  min-width: 0;
+  padding-bottom: 18px;
+}
+.timeline-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border-top: 1px solid var(--color-border);
+  background: white;
+  font-size: 11px;
+}
+.timeline-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.timeline-footer .button {
+  font-size: 11px;
+  padding: 5px 8px;
+}
