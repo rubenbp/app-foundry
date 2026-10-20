@@ -159,6 +159,21 @@ test("el alcance E2E mantiene offline y omisiones visibles con el entorno plegad
     ).toBeVisible();
     await expect(section.getByText(/Canal: chrome/)).toBeVisible();
     await expect(section.getByText(/Ejecutable: No observado/)).toBeVisible();
+    await section.getByText("Entorno E2E observado", { exact: true }).click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "Consultar contexto" }).click();
+    const mobile = page.getByRole("dialog", {
+      name: "Contexto · Verificación",
+    });
+    await expect(mobile.getByText(/Modo offline: alcance local/)).toBeVisible();
+    await expect(mobile.getByText(/Hay pruebas omitidas/)).toBeVisible();
+    await expect(mobile.getByText(/Servidor propio:/)).not.toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
   } finally {
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -428,6 +443,7 @@ test("el reinicio conserva comprobaciones inciertas y no ejecutadas, ausencia E2
     expect(new Set(labels).size).toBe(labels.length);
     await page.keyboard.press("Escape");
     await expect(activator).toBeFocused();
+    await expect(activator).toBeInViewport();
   } finally {
     release();
     await verifying.catch(() => {});
