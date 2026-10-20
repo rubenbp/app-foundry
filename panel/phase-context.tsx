@@ -57,7 +57,7 @@ export function PhaseContext({
         )
       ) : null}
       {phase === 5 ? (
-        run.publication?.mergeSha ? (
+        run.publication ? (
           <IntegrationDetails run={run} />
         ) : (
           <p className="card">Sin integración observada todavía.</p>

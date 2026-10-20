@@ -6,6 +6,7 @@ import { PhaseNavigation, phases, currentPhase } from "./phases.tsx";
 import { ObservationsDetails } from "./observations.tsx";
 import { DetailDialog } from "./dialog.tsx";
 import { PhaseContext } from "./phase-context.tsx";
+import { PublicationSummary, PublicationAlerts } from "./publication.tsx";
 import { poll } from "./polling.ts";
 import type { FactoryView } from "../src/application/factoryView.ts";
 import { Timeline } from "./components/timeline.tsx";
@@ -290,6 +291,7 @@ function App() {
               </dd>
             </div>
           </dl>
+          {run ? <PublicationSummary run={run} /> : null}
         </section>
         <PhaseNavigation
           run={run}
@@ -332,12 +334,7 @@ function App() {
               Error de consulta de GitHub: {view.admission.error}
             </p>
           ) : null}
-          {run?.publication?.observationError ? (
-            <p className="notice danger">
-              La observación de publicación no está actualizada:{" "}
-              {run.publication.observationError}
-            </p>
-          ) : null}
+          {run ? <PublicationAlerts run={run} /> : null}
           {view?.fault ? <p className="notice danger">{view.fault}</p> : null}
           {run?.error ? (
             <section className="notice danger">
