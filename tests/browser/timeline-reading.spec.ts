@@ -272,6 +272,11 @@ test("abrir una salida pausa y conserva el ancla ante carga tardía, streaming y
     await expect(
       page.getByText("Leyendo el historial", { exact: true }),
     ).toBeVisible();
+    await viewport(page).hover();
+    await page.mouse.wheel(0, 1000);
+    await expect(
+      page.getByText("Siguiendo la actividad", { exact: true }),
+    ).toBeVisible();
   } finally {
     await fixture.close();
   }
