@@ -108,14 +108,24 @@ test("el dashboard sigue una Petición en cola durante la preparación de la bas
       }),
     ).toBeVisible();
     await expect(page.getByText("owner", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar diálogo" }).click();
     started = workflow.startNext();
     await expect(page.locator(".badge.preparing")).toHaveText(
       "Preparando base",
     );
-    await page.getByText("Código de la Ejecución", { exact: true }).click();
+    await page
+      .getByRole("button", { name: "Código de la Ejecución", exact: true })
+      .click();
+    await page
+      .getByText(
+        "Identificadores completos, configuración e instrucciones capturadas",
+        { exact: true },
+      )
+      .click();
     await expect(
       page.getByText("a".repeat(40), { exact: true }).first(),
     ).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar diálogo" }).click();
     release();
     await started;
     await expect(

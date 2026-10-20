@@ -37,7 +37,17 @@ export function currentPhase(run: Run): number {
   return 2;
 }
 
-export function PhaseNavigation({ run }: { run: Run | null | undefined }) {
+export function PhaseNavigation({
+  run,
+  consulted,
+  onSelect,
+  onCurrent,
+}: {
+  run: Run | null | undefined;
+  consulted: number;
+  onSelect: (phase: number) => void;
+  onCurrent: () => void;
+}) {
   const current = run ? currentPhase(run) : 0;
 
   return (
@@ -45,20 +55,35 @@ export function PhaseNavigation({ run }: { run: Run | null | undefined }) {
       <ol className="phases">
         {phases.map((phase, index) => (
           <li key={phase} aria-current={index === current ? "step" : undefined}>
-            <span aria-hidden="true">{index < current ? "✓" : index + 1}</span>
-            <span>
-              {phase}
-              <small>
-                {index === current
-                  ? "Actual"
-                  : index < current
-                    ? "Completada"
-                    : "Pendiente"}
-              </small>
-            </span>
+            <button
+              type="button"
+              aria-pressed={consulted === index}
+              disabled={!run}
+              onClick={() => onSelect(index)}
+            >
+              <span aria-hidden="true">
+                {index < current ? "✓" : index + 1}
+              </span>
+              <span>
+                {phase}
+                <small>
+                  {index === current
+                    ? "Actual"
+                    : index < current
+                      ? "Completada"
+                      : "Pendiente"}
+                  {consulted === index ? " · Consultada" : ""}
+                </small>
+              </span>
+            </button>
           </li>
         ))}
       </ol>
+      {run && consulted !== current ? (
+        <button className="return-phase" onClick={onCurrent}>
+          Volver a la fase actual
+        </button>
+      ) : null}
     </nav>
   );
 }

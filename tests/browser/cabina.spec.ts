@@ -74,8 +74,11 @@ test("Cabina mantiene la Ejecución, fases y regiones de lectura dentro del view
         page.getByRole("navigation", { name: "Fases de la Ejecución" }),
       ).toBeInViewport();
       await expect(
-        page.getByRole("heading", { name: "Implementación", exact: true }),
-      ).toBeVisible();
+        page
+          .getByRole("navigation", { name: "Fases de la Ejecución" })
+          .getByRole("listitem")
+          .filter({ hasText: "Implementación" }),
+      ).toHaveAttribute("aria-current", "step");
       await expect(
         page
           .getByText("Ejecución manual · Sin issue de GitHub", {
@@ -115,6 +118,13 @@ test("Cabina mantiene la Ejecución, fases y regiones de lectura dentro del view
       }
     }
     await page.setViewportSize({ width: 1440, height: 960 });
+    await page
+      .getByRole("link", { name: "Encargo y criterios", exact: true })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Encargo y criterios", exact: true }),
+    ).toContainText("Sin Issue autorizado retenido");
+    await page.getByRole("button", { name: "Cerrar diálogo" }).click();
     const activity = page.getByRole("region", {
       name: "Entradas de la cronología",
     });
@@ -137,19 +147,29 @@ test("Cabina mantiene la Ejecución, fases y regiones de lectura dentro del view
     await expect
       .poll(() => history.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await page.getByText("Observación y procedencia", { exact: true }).click();
+    await page
+      .getByRole("button", { name: "Observación y procedencia" })
+      .click();
+    const observation = page.getByRole("dialog", {
+      name: "Observación y procedencia",
+    });
     await page
       .getByText("Configuración, procesos y lagunas", { exact: true })
       .click();
+    await expect(observation).toContainText("PID 123");
+    await observation.hover();
+    await page.mouse.wheel(0, 600);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await page.keyboard.press("Escape");
     const context = page.getByRole("complementary", {
-      name: "Contexto de la Ejecución",
+      name: "Contexto de la fase consultada",
     });
-    await context.evaluate((element) => {
-      element.scrollTop = element.scrollHeight;
-    });
-    await expect
-      .poll(() => context.evaluate((element) => element.scrollTop))
-      .toBeGreaterThan(0);
+    await expect(context).toContainText(
+      "El agente trabaja en el encargo autorizado",
+    );
+    await expect(context).not.toContainText(
+      "Configuración, procesos y lagunas",
+    );
     await expect(
       page.getByRole("navigation", { name: "Fases de la Ejecución" }),
     ).toBeInViewport();
@@ -159,8 +179,10 @@ test("Cabina mantiene la Ejecución, fases y regiones de lectura dentro del view
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await page.setViewportSize({ width: 793, height: 987 });
     await page.getByRole("button", { name: "Consultar contexto" }).click();
-    await expect(context).toBeInViewport();
-    await page.getByRole("button", { name: "Cerrar contexto" }).click();
+    await expect(
+      page.getByRole("dialog", { name: "Contexto · Implementación" }),
+    ).toBeInViewport();
+    await page.getByRole("button", { name: "Cerrar diálogo" }).click();
     await expect(activity).toBeInViewport();
     await page.setViewportSize({ width: 1440, height: 960 });
     let release = () => {};
