@@ -5,7 +5,11 @@ import {
   publicationPlan,
   validPreview,
 } from "../domain/publication.ts";
-import { PublicationRuntime, ObservedMerge } from "./publication/runtime.ts";
+import {
+  PublicationRuntime,
+  ObservedMerge,
+  PublicationObservationError,
+} from "./publication/runtime.ts";
 import { assertCandidateEvidence } from "./publication/evidence.ts";
 import {
   isOwn,
@@ -73,6 +77,7 @@ export class CandidatePublication {
       this.runtime.factory.assertRunning(run.id);
       publication.observedAt = this.runtime.factory.now();
       publication.observationError = null;
+      delete publication.failureKind;
       run.error = null;
       if (facts.pull) {
         publication.pull = facts.pull;
@@ -168,11 +173,12 @@ export class CandidatePublication {
       }
       assertCandidateEvidence(this.runtime.factory, run);
       const context = this.runtime.context(run);
+      let transported = false;
       await this.runtime.effect(
         run,
         `push:${publication.head}`,
         async () => {
-          const head = (await this.runtime.facts(run)).remoteHead;
+          const head = facts.remoteHead;
           if (
             head &&
             head !== publication.head &&
@@ -183,6 +189,7 @@ export class CandidatePublication {
           return head === publication.head ? true : undefined;
         },
         async () => {
+          transported = true;
           await this.runtime.port.push(context);
           return true;
         },
@@ -191,8 +198,9 @@ export class CandidatePublication {
       publication.pull = await this.runtime.effect(
         run,
         "pull",
-        async () => (await this.runtime.facts(run)).pull ?? undefined,
+        async () => facts.pull ?? undefined,
         async () => {
+          transported = true;
           const pull = await this.runtime.port.openPull(
             this.runtime.context(run),
           );
@@ -203,12 +211,17 @@ export class CandidatePublication {
           return pull;
         },
       );
+      // Reuse the current observation for reconciled effects. Refresh after a remote
+      // mutation, and keep the final read before notification and merge status.
+      if (transported) {
+        facts = await this.runtime.facts(run);
+        publication.pull = facts.pull ?? publication.pull;
+      }
       this.runtime.save(run);
       await this.report.describe(run);
       if (!publication.report) {
         await this.runtime.setStatus(run, "pending");
       }
-      facts = await this.runtime.facts(run);
       if (facts.pull?.head !== publication.head || !facts.request.open) {
         throw new Error(
           "Candidate or request changed during observation; acceptance blocked",
@@ -249,7 +262,6 @@ export class CandidatePublication {
       }
       run.status = "awaiting_review";
       this.runtime.save(run);
-      facts = await this.runtime.facts(run);
       for (const comment of facts.comments.toSorted(
         (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id),
       )) {
@@ -289,7 +301,7 @@ export class CandidatePublication {
       const final = await this.runtime.facts(run);
       const valid = readyToMerge(run, final);
       if (valid) {
-        await this.report.notify(run);
+        await this.report.notify(run, final);
       }
       await this.runtime.setStatus(
         run,
@@ -320,6 +332,10 @@ export class CandidatePublication {
       publication.observationError = this.runtime.factory.clean(
         String(failure),
       ).text;
+      publication.failureKind =
+        failure instanceof PublicationObservationError
+          ? "observation"
+          : "publication";
       run.error = `Falló la observación o publicación. Detalle: ${publication.observationError}`;
       run.status = "intervention";
       this.runtime.factory.record(run, "publication-error", run.error);

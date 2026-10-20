@@ -55,6 +55,7 @@ export interface Publication {
   operations: Record<string, { state: "intent" | "confirmed"; at: number }>;
   observedAt: number | null;
   observationError: string | null;
+  failureKind?: "observation" | "publication";
   blocked?: string;
   mergeSha?: string;
   integrationReport?: Pick<ConversationComment, "id" | "url">;

@@ -19,7 +19,8 @@ test("una corrección no autorizada antes de integrar no puede invalidar una int
   }
 });
 
-for (const inspection of [1, 2, 3, 4, 5, 6, 7, 8]) {
+// Initial observation, final review check and favorable-status check remain independent.
+for (const inspection of [1, 2, 3]) {
   test(`una integración humana durante la observación ${inspection} de la publicación conserva la aceptación y completa el cierre del issue`, async () => {
     const s = publicationFixture();
     try {
@@ -64,7 +65,7 @@ test("una PR abierta obsoleta con una vista previa retirada no puede borrar la a
     const before = s.inspections;
     const writes = s.writes.length;
     s.onInspect((count) => {
-      if (count === before + 4) {
+      if (count === before + 1) {
         const stale = structuredClone(s.facts);
         s.merge();
         return { ...stale, preview: null };
@@ -121,10 +122,10 @@ test("una revocación registrada tras una integración concurrente conserva el i
     await s.workflow.poll();
     const before = s.inspections;
     s.onInspect((count) => {
-      if (count === before + 4) {
+      if (count === before + 1) {
         return { ...structuredClone(s.facts), preview: null };
       }
-      if (count === before + 5) {
+      if (count === before + 2) {
         const stale = structuredClone(s.facts);
         s.merge();
         return stale;

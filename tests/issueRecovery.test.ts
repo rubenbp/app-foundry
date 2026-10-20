@@ -189,6 +189,123 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
   }
 });
 
+test("Corregir autoriza sustituir un requisito inicial y comunica el resultado sin cambios una sola vez", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({
+    body: "Añade Suikoden con el año 1995.",
+    issueConversation: conversation.port,
+  });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const previousHead = s.facts.remoteHead;
+    const previousDescription = structuredClone(s.description);
+    conversation.add(
+      "Corregir: Muestra 1998 aunque el encargo inicial diga 1995.",
+    );
+    await s.workflow.poll();
+    assert.match(s.tasks.at(-1)!.text, /supersede conflicting requirements/);
+    assert.match(s.tasks.at(-1)!.text, /1998/);
+    s.finish(
+      `${catalogueDelivery}\n\n<factory-summary>El año ya es 1998 en la ficha. No he necesitado cambiar archivos.</factory-summary>`,
+    );
+    await s.workflow.poll();
+    const notices = () =>
+      s.facts.comments.filter((c) =>
+        c.body.includes("No he necesitado cambiar archivos"),
+      );
+    assert.equal(notices().length, 1);
+    assert.match(notices()[0].body, /No se han realizado cambios/);
+    assert.doesNotMatch(
+      notices()[0].body,
+      /El desarrollo está listo para validar/,
+    );
+    assert.equal(s.facts.remoteHead, previousHead);
+    assert.deepEqual(s.description, previousDescription);
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    await s.workflow.poll();
+    assert.equal(notices().length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("el resultado de una corrección con cambios espera a su preview e incluye el resumen del LLM", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    conversation.add("Corregir: Cambia 1995 por 1998.");
+    await s.workflow.poll();
+    s.commit("footer.txt", "1998", "Correct year");
+    s.finish(
+      `${catalogueDelivery}\n\n<factory-summary>He cambiado el año de 1995 a 1998.</factory-summary>`,
+    );
+    await s.workflow.poll();
+    const notices = () =>
+      s.facts.comments.filter((c) =>
+        c.body.includes("He cambiado el año de 1995 a 1998"),
+      );
+    assert.equal(notices().length, 0);
+    assert.doesNotMatch(s.description.body, /factory-summary/);
+    const head = s.git("rev-parse", "HEAD");
+    s.facts.preview = {
+      ...s.facts.preview!,
+      id: "corrected-preview",
+      head,
+      servedHead: head,
+      url: "https://correction.vercel.app",
+    };
+    await s.workflow.poll();
+    assert.equal(notices().length, 1);
+    assert.match(notices()[0].body, /revisa la preview/);
+    assert.match(notices()[0].body, /https:\/\/correction.vercel.app/);
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    await s.workflow.poll();
+    assert.equal(notices().length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+test("un fallo de lectura queda en el Dashboard sin comentarios y se recupera sin intervención", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const comments = conversation.comments.length;
+    const notices = s.facts.comments.length;
+    s.observationFails(true);
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(conversation.comments.length, comments);
+    assert.equal(s.facts.comments.length, notices);
+    assert.ok(
+      s.workflow
+        .view(run.id)!
+        .history.some(
+          (event) =>
+            event.kind === "publication-error" &&
+            event.text.includes("GitHub unavailable"),
+        ),
+    );
+    s.observationFails(false);
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.workflow.view(run.id)?.error, null);
+    assert.equal(conversation.comments.length, comments);
+    assert.ok(
+      s.workflow
+        .view(run.id)!
+        .history.some((event) => event.text.includes("GitHub unavailable")),
+    );
+  } finally {
+    s.close();
+  }
+});
+
 test("Cancelar desde un comentario sin permisos confirma parada y cierra como no implementado", async () => {
   const conversation = recoveryConversation();
   const s = verificationFixture({ issueConversation: conversation.port });

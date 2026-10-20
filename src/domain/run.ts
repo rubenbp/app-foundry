@@ -80,6 +80,10 @@ export interface Run {
   agentStatus: string | null;
   error: string | null;
   result: string | null;
+  /** LLM-authored outcome of the current Intento, separate from the cumulative PR description. */
+  attemptSummary?: string;
+  /** Commit candidate present before this Intento; equality means no new delivery. */
+  attemptBaseHead?: string;
   pending: Pending[];
   interventions?: AgentIntervention[];
   recovery?: {

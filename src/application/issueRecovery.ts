@@ -28,6 +28,10 @@ export class IssueRecovery {
     if (
       !run?.request ||
       run.status !== "intervention" ||
+      (run.phase === "publication" &&
+        run.publication?.failureKind === "observation" &&
+        !run.publication.recoveryRequired &&
+        !run.publication.blocked) ||
       run.recovery?.notice
     ) {
       return;

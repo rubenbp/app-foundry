@@ -518,6 +518,25 @@ test("perder la respuesta del aviso de preview no duplica comentarios ni repite 
   }
 });
 
+test("la revisión estable no repite inspecciones para efectos de publicación ya observados", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const before = s.inspections;
+    const writes = s.writes.length;
+    await s.workflow.poll();
+    assert.ok(
+      s.inspections - before <= 3,
+      `Inspecciones: ${s.inspections - before}`,
+    );
+    assert.equal(s.writes.length, writes);
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+  } finally {
+    s.close();
+  }
+});
+
 test("una nueva versión revisable publica otro aviso con su preview vigente", async () => {
   const s = publicationFixture();
   try {

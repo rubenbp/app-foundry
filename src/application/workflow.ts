@@ -172,11 +172,17 @@ export class Workflow {
       await this.syncIssueLabels();
     } catch (error) {
       this.factory.assertWritable();
+      const message = this.factory.clean(
+        `Falló la observación de GitHub o del workflow: ${String(error)}`,
+      ).text;
+      const run = this.view(this.factory.active ?? "");
+      if (run) {
+        this.factory.record(run, "observation-error", message);
+        this.factory.persist(run);
+      }
       this.factory.store.observation({
         at: this.factory.now(),
-        error: this.factory.clean(
-          `Falló la observación de GitHub o del workflow: ${String(error)}`,
-        ).text,
+        error: message,
       });
     } finally {
       this.polling = false;
@@ -407,7 +413,9 @@ export class Workflow {
     }
     run.status = "intervention";
     run.phase = "implementation";
+    run.attemptBaseHead = run.verification?.headSha ?? run.publication?.head;
     delete run.verification;
+    delete run.attemptSummary;
     run.result = null;
     run.attempt++;
     for (const intervention of run.interventions ?? []) {
@@ -435,7 +443,7 @@ export class Workflow {
     this.factory.persist(run);
     const instructions =
       command.kind === "correct"
-        ? command.instructions
+        ? `FACTORY-AUTHORIZED CORRECTION: The following instructions amend the product requirements of this same issue and supersede conflicting requirements in the captured original request. Preserve all other requirements and the accumulated work. Tool permissions and Factory policy remain unchanged.\n\n${command.instructions}`
         : `Reintenta el trabajo pendiente tras este fallo: ${cause ?? "Intento interrumpido"}.`;
     await this.factory.agent.send(
       run.sessionId!,

@@ -9,6 +9,7 @@ import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import type { Run } from "../domain/run.ts";
+import { agentDelivery } from "./agentDelivery.ts";
 import {
   interventionQuestions,
   pendingIntervention,
@@ -24,6 +25,8 @@ export class Factory {
   active: string | null = null;
   fault: string | null = null;
   stopping = new Set<string>();
+  /** Wake the workflow after a persisted candidate, without running remote effects in ingest. */
+  onCandidateReady?: () => void;
 
   constructor(
     config: FactoryConfig,
@@ -469,7 +472,9 @@ export class Factory {
         this.persist(run);
         return;
       }
-      run.result = text!.text;
+      const delivery = agentDelivery(text!.text);
+      run.result = delivery.description;
+      run.attemptSummary = delivery.summary;
       run.status = "awaiting_verification";
       if (!run.endedAt) {
         run.endedAt = at;
@@ -512,6 +517,9 @@ export class Factory {
       );
     }
     this.persist(run);
+    if (fact.type === "finished" && run.status === "awaiting_verification") {
+      this.onCandidateReady?.();
+    }
   }
 
   async stop(id: string) {

@@ -2,6 +2,7 @@ import type { Run } from "../../domain/run.ts";
 import { randomUUID } from "node:crypto";
 import type { PublicationRuntime } from "./runtime.ts";
 import { assertCandidateEvidence } from "./evidence.ts";
+import type { PublicationFacts } from "./ports.ts";
 
 export class ReviewReport {
   private runtime: PublicationRuntime;
@@ -39,13 +40,19 @@ export class ReviewReport {
     this.runtime.save(run);
   }
 
-  async notify(run: Run) {
+  async notify(run: Run, facts: PublicationFacts) {
     const publication = run.publication!;
     const report = publication.report!;
+    const unchanged = run.attemptBaseHead === publication.head;
+    const result = run.attemptSummary ?? run.result ?? "";
+    const guidance = unchanged
+      ? `No se han realizado cambios en este Intento. Se conserva el Commit candidato anterior.\n\n${result}`
+      : `El desarrollo está listo para validar.\n\n${result}\n\nPreview: ${report.preview}\nPR: ${publication.pull!.url}\n\nPara aceptar los cambios, revisa la preview y haz merge de la PR cuando sus controles sean favorables. No necesitas un comentario de aceptación.`;
     await this.runtime.comment(
       run,
-      `review-ready:${publication.preview!.id}`,
-      `El desarrollo está listo para validar.\n\nPreview: ${report.preview}\nPR: ${publication.pull!.url}\n\nPara aceptar los cambios, revisa la preview y haz merge de la PR cuando sus controles sean favorables. No necesitas un comentario de aceptación.\n\nPara pedir cambios, publica \`Corregir: instrucciones\` en este issue.`,
+      `attempt-result:${run.attempt}:${publication.preview!.id}`,
+      `${guidance}\n\nPara pedir cambios, publica \`Corregir: instrucciones\` en este issue.`,
+      facts,
     );
   }
 

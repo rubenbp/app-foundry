@@ -11,6 +11,7 @@ import { GitHubIssueConversation } from "../infrastructure/issueConversation.ts"
 import { GitWorkspace } from "../infrastructure/workspace.ts";
 import { GitHubPublication } from "../infrastructure/publication.ts";
 import { acquireLock } from "../infrastructure/lock.ts";
+import { workflowPolling } from "../infrastructure/workflowPolling.ts";
 
 import type { FactoryConfig } from "../application/configuration.ts";
 import { controlServer } from "../infrastructure/http/controlServer.ts";
@@ -62,26 +63,17 @@ export async function serveFactory(
   if (existsSync(socket)) {
     unlinkSync(socket);
   }
-  let pollTimer: ReturnType<typeof setTimeout> | undefined;
   let closing = false;
-  let polling: Promise<void> | undefined;
-  const tick = () => {
-    if (!workflow || closing) {
-      return;
-    }
-    polling = workflow
-      .poll()
-      .catch(() => {
-        console.error(
-          "Workflow persistence failed; inspect dashboard and owned processes.",
-        );
-      })
-      .finally(() => {
-        if (!closing) {
-          pollTimer = setTimeout(tick, 15_000);
-        }
-      });
-  };
+  const polling = workflow
+    ? workflowPolling(
+        () => workflow!.poll(),
+        () =>
+          console.error(
+            "Workflow persistence failed; inspect dashboard and owned processes.",
+          ),
+      )
+    : undefined;
+  factory.onCandidateReady = polling?.wake;
   const panel = panelServer(factory);
   const control = controlServer(factory, workflow);
   control.listen(socket);
@@ -93,18 +85,18 @@ export async function serveFactory(
     `Factory dashboard: http://127.0.0.1:${(panel.address() as { port: number }).port}`,
   );
   console.log(`Factory PID ${process.pid}; local control socket ${socket}`);
-  tick();
+  polling?.wake();
   const close = async () => {
     if (closing) {
       return;
     }
     closing = true;
     workflow?.halt();
-    clearTimeout(pollTimer);
+    polling?.halt();
     try {
       if (factory.active) {
         if (workflow && factory.view(factory.active)?.status === "waiting") {
-          await polling;
+          await polling?.pending;
           await workflow.shutdown();
         } else {
           await (workflow
@@ -112,7 +104,7 @@ export async function serveFactory(
             : factory.stop(factory.active));
         }
       }
-      await polling;
+      await polling?.pending;
     } catch {
       console.error(
         "Stop unconfirmed; inspect recorded OpenCode PID manually.",

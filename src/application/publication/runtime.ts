@@ -11,6 +11,13 @@ import { pullDescription } from "./description.ts";
 
 class StatusSkippedAfterMerge extends Error {}
 
+/** A failed read is diagnostic evidence, not a request to notify the issue. */
+export class PublicationObservationError extends Error {
+  constructor(cause: unknown) {
+    super(String(cause), { cause });
+  }
+}
+
 export class ObservedMerge extends Error {
   readonly facts: PublicationFacts;
 
@@ -97,7 +104,12 @@ export class PublicationRuntime {
   }
 
   async facts(run: Run, preview = true) {
-    const facts = await this.port.inspect(this.context(run), { preview });
+    let facts: PublicationFacts;
+    try {
+      facts = await this.port.inspect(this.context(run), { preview });
+    } catch (error) {
+      throw new PublicationObservationError(error);
+    }
     // Cada lectura previa a la integración puede coincidir con la integración humana. Cambia de estado antes de
     // considerar que la PR cerrada o la vista previa retirada invalidan el candidato.
     if (
@@ -160,7 +172,12 @@ export class PublicationRuntime {
     }
   }
 
-  async comment(run: Run, key: string, text: string) {
+  async comment(
+    run: Run,
+    key: string,
+    text: string,
+    observed?: PublicationFacts,
+  ) {
     const origin = `<!-- app-foundry:${run.id}:${key} -->`;
     const body = this.factory.clean(
       `${origin}\n${text}`,
@@ -173,7 +190,7 @@ export class PublicationRuntime {
       run,
       key,
       async () => {
-        const facts = await this.facts(run, false);
+        const facts = observed ?? (await this.facts(run, false));
         if (
           !facts.request.open ||
           facts.pull?.head !== run.publication!.head ||
