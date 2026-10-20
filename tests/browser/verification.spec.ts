@@ -69,7 +69,16 @@ test("el dashboard muestra la verificación independiente, el diff completo, las
     const section = page.getByRole("region", {
       name: "Verificación independiente",
     });
-    await expect(section).toContainText("Código de salida: 7");
+    await expect(section.getByText("Fallida", { exact: true })).toBeVisible();
+    await expect(
+      section.getByText("Código de salida: 7", { exact: true }),
+    ).not.toBeVisible();
+    await section
+      .getByText("Diagnóstico del comando y cierre", { exact: true })
+      .click();
+    await expect(
+      section.getByText("Código de salida: 7", { exact: true }),
+    ).toBeVisible();
     await expect(section).toContainText(s.baseSha);
     await expect(section).toContainText(s.git("rev-parse", "HEAD"));
     await expect(section).toContainText("Keep keyboard navigation.");
@@ -145,6 +154,14 @@ test("el dashboard muestra los cambios de configuración como información y con
       }),
     ).toBeVisible();
     await expect(section).toContainText("package.json");
+    await expect(
+      section.getByRole("link", {
+        name: "Revisar cambios en controles en el diff",
+      }),
+    ).toHaveAttribute(
+      "href",
+      `https://github.com/${s.project.repository}/compare/${s.baseSha}...${s.git("rev-parse", "HEAD")}`,
+    );
     await expect(section).toContainText("no bloquean las verificaciones");
     await expect(page.locator(".badge.awaiting_preview")).toBeVisible();
     await expect(page.locator(".badge.intervention")).toHaveCount(0);
