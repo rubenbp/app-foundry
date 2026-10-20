@@ -532,9 +532,10 @@ body:has(.factory-dashboard) {
   background: transparent;
 }
 .dashboard-event-text {
-  padding: 2px 0;
+  padding: 6px 0;
   color: #65705d;
   font-size: 11px;
+  line-height: 22px;
 }
 .dashboard-entry.error .dashboard-event-text {
   color: #94641f;
@@ -2103,12 +2104,19 @@ body:has(.factory-dashboard) {
 .cabin-dashboard .dashboard-task-meta > span.dashboard-project-meta {
   display: inline;
 }
-.dashboard-entry:has(> .dashboard-expandable:not(.is-open))
+.dashboard-entry:has(
+    > .dashboard-event-text,
+    > .dashboard-expandable:not(.is-open)
+  )
   > .dashboard-entry-icon {
   align-self: center;
   margin-top: 0;
 }
-.dashboard-entry:has(> .dashboard-expandable:not(.is-open)) > time {
+.dashboard-entry:has(
+    > .dashboard-event-text,
+    > .dashboard-expandable:not(.is-open)
+  )
+  > time {
   align-self: center;
   padding-top: 0;
 }
