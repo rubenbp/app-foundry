@@ -430,8 +430,7 @@ function App() {
           >
             {run ? (
               <>
-                {dialog !== "context" &&
-                !(dialog === "verification" && consultedPhase === 3) ? (
+                {dialog !== "context" ? (
                   <PhaseContext
                     run={run}
                     phase={consultedPhase}
