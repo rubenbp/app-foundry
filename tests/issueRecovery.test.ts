@@ -22,6 +22,11 @@ test("un fallo se avisa una vez y Reintentar vuelve a verificar sin otro Intento
       /La Factory necesita intervención/,
     );
     const notice = conversation.comments[0].body;
+    assert.equal(
+      s.workflow.view(run.id)!.history.find((entry) => entry.comment)?.comment
+        ?.body,
+      notice,
+    );
     assert.match(notice, /Corregir: instrucciones/);
     assert.match(notice, /Comando afectado: `node check.mjs`/);
     assert.match(notice, /Código de salida: 7/);
@@ -53,6 +58,13 @@ test("un fallo se avisa una vez y Reintentar vuelve a verificar sin otro Intento
     assert.equal(s.tasks.length, 1);
     assert.equal(s.workflow.view(run.id)?.attempt, 1);
     assert.ok(s.workflow.view(run.id)?.recovery?.consumed.includes(retry.id));
+    assert.equal(
+      s.workflow
+        .view(run.id)!
+        .history.filter((entry) => entry.comment)
+        .at(-1)?.comment?.body,
+      conversation.comments.at(-1)!.body,
+    );
     await s.workflow.poll();
     assert.equal(s.tasks.length, 1);
   } finally {
@@ -318,6 +330,11 @@ test("Cancelar desde un comentario sin permisos confirma parada y cierra como no
     assert.deepEqual(conversation.closures, [
       { repository: s.project.repository, issue: 1 },
     ]);
+    assert.equal(
+      s.workflow.view(run.id)!.history.find((entry) => entry.comment)?.comment
+        ?.body,
+      conversation.comments.at(-1)!.body,
+    );
     await s.workflow.poll();
     assert.equal(conversation.closures.length, 1);
   } finally {

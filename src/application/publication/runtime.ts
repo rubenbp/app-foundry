@@ -62,11 +62,61 @@ export class PublicationRuntime {
     };
   }
 
+  beginPreviewWait(run: Run) {
+    const publication = run.publication!;
+    const previous = publication.previewWait;
+    if (
+      previous?.attempt === run.attempt &&
+      previous.head === publication.head
+    ) {
+      return;
+    }
+    publication.previewWait = {
+      attempt: run.attempt,
+      head: publication.head,
+      startedAt: this.factory.now(),
+      state: "waiting",
+    };
+    this.factory.record(
+      run,
+      "preview-waiting",
+      `Esperando preview · Intento ${run.attempt} · commit ${publication.head.slice(0, 7)}`,
+    );
+    this.save(run);
+  }
+
+  finishPreviewWait(run: Run, state: "ready" | "failed", reason?: string) {
+    const wait = run.publication!.previewWait;
+    if (
+      !wait ||
+      wait.head !== run.publication!.head ||
+      wait.attempt !== run.attempt ||
+      wait.state === state ||
+      (state === "failed" && wait.state === "ready")
+    ) {
+      return;
+    }
+    wait.state = state;
+    const seconds = Math.max(
+      0,
+      Math.floor((this.factory.now() - wait.startedAt) / 1000),
+    );
+    const label =
+      state === "ready" ? "Preview listo" : "Error al comprobar preview";
+    this.factory.record(
+      run,
+      state === "ready" ? "preview-ready" : "preview-error",
+      `${label} · ${seconds} s · Intento ${wait.attempt} · commit ${wait.head.slice(0, 7)}${reason ? `\n${reason}` : ""}`,
+    );
+    this.save(run);
+  }
+
   async effect<T>(
     run: Run,
     key: string,
     observe: () => Promise<T | undefined>,
     perform: () => Promise<T>,
+    onConfirmed?: (result: T) => void,
   ): Promise<T> {
     this.factory.assertRunning(run.id);
     if (this.stopping) {
@@ -92,6 +142,8 @@ export class PublicationRuntime {
       this.factory.assertRunning(run.id);
     }
     if (run.publication!.operations[key]?.state !== "confirmed") {
+      // Persist the effect evidence together with its confirmation, including after reconciliation.
+      onConfirmed?.(result);
       run.publication!.operations[key] = {
         state: "confirmed",
         at: this.factory.now(),
@@ -108,6 +160,10 @@ export class PublicationRuntime {
     try {
       facts = await this.port.inspect(this.context(run), { preview });
     } catch (error) {
+      this.factory.assertRunning(run.id);
+      if (preview) {
+        this.finishPreviewWait(run, "failed", String(error));
+      }
       throw new PublicationObservationError(error);
     }
     // Cada lectura previa a la integración puede coincidir con la integración humana. Cambia de estado antes de
@@ -207,6 +263,7 @@ export class PublicationRuntime {
         );
       },
       () => this.port.commentIssue(this.context(run), body),
+      (comment) => this.factory.recordIssueComment(run, comment),
     );
     if (!run.publication!.ownComments.includes(result.id)) {
       run.publication!.ownComments.push(result.id);

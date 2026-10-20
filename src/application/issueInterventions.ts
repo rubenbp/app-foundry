@@ -52,7 +52,7 @@ export class IssueInterventions {
       current.interventions!.find(
         (item) => item.id === intervention.id,
       )!.comment = sanitizedRecord(comment, this.factory.clean);
-      this.factory.record(current, "intervention-published", comment.url);
+      this.factory.recordIssueComment(current, comment);
       this.factory.persist(current);
       return;
     }

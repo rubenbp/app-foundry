@@ -32,6 +32,13 @@ export interface Preview {
 }
 export interface Publication {
   head: string;
+  /** One wait per Intento and candidate. Recovery keeps the original start time. */
+  previewWait?: {
+    attempt: number;
+    head: string;
+    startedAt: number;
+    state: "waiting" | "ready" | "failed";
+  };
   previousHead?: string;
   pull?: PullCandidate;
   preview?: Preview;

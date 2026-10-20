@@ -79,6 +79,14 @@ test("varias rondas de dudas usan el mismo thread y terminan en código verifica
       conversation.comments.at(-1)!.body,
       /1\. ¿Qué título\?\n2\. ¿Mostramos los precios\?/,
     );
+    assert.deepEqual(
+      s.workflow.view(run.id)!.history.find((entry) => entry.comment)?.comment,
+      {
+        id: conversation.comments.at(-1)!.id,
+        url: conversation.comments.at(-1)!.url,
+        body: conversation.comments.at(-1)!.body,
+      },
+    );
     assert.equal(await s.workflow.startNext(), null);
     conversation.add("Build completed", false);
     const response = conversation.add(
@@ -257,6 +265,10 @@ test("perder la confirmación del comentario no duplica la pregunta en el issue"
     await s.workflow.poll();
     assert.ok(s.workflow.view(run.id)?.interventions?.[0].comment);
     assert.equal(conversation.posts, 1);
+    assert.equal(
+      s.workflow.view(run.id)!.history.filter((entry) => entry.comment).length,
+      1,
+    );
   } finally {
     s.close();
   }

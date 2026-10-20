@@ -47,7 +47,7 @@ export class IssueRecovery {
       notice,
       this.factory.clean,
     );
-    this.factory.record(current, "intervention-notified", notice.url);
+    this.factory.recordIssueComment(current, notice);
     this.factory.persist(current);
   }
 
@@ -120,11 +120,16 @@ export class IssueRecovery {
           message = `No se ha podido completar la recuperación. Detalle: ${failed.error}`;
         }
       }
-      await this.conversation.comment(
+      const response = await this.conversation.comment(
         run.request.repository,
         run.request.number,
         `${message}\n\n<!-- app-foundry:recovery-response:${run.id}:${comment.id} -->`,
       );
+      // Cancellation can release the active run before its acknowledgement is published.
+      this.factory.assertWritable();
+      const acknowledged = this.factory.view(run.id)!;
+      this.factory.recordIssueComment(acknowledged, response);
+      this.factory.persist(acknowledged);
       return;
     }
   }

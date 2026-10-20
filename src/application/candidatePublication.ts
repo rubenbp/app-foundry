@@ -70,9 +70,15 @@ export class CandidatePublication {
     }
     try {
       this.runtime.save(run);
+      const observingPreview = Boolean(
+        publication.previewWait?.head === publication.head &&
+        publication.previewWait.attempt === run.attempt,
+      );
       let facts = await this.runtime.facts(
         run,
-        !publication.recoveryRequired && !publication.mergeSha,
+        observingPreview &&
+          !publication.recoveryRequired &&
+          !publication.mergeSha,
       );
       this.runtime.factory.assertRunning(run.id);
       publication.observedAt = this.runtime.factory.now();
@@ -211,9 +217,10 @@ export class CandidatePublication {
           return pull;
         },
       );
+      this.runtime.beginPreviewWait(run);
       // Reuse the current observation for reconciled effects. Refresh after a remote
       // mutation, and keep the final read before notification and merge status.
-      if (transported) {
+      if (transported || !observingPreview) {
         facts = await this.runtime.facts(run);
         publication.pull = facts.pull ?? publication.pull;
       }
@@ -245,6 +252,7 @@ export class CandidatePublication {
         ) {
           run.status = "intervention";
           run.error = `El deployment está en estado «${facts.preview.state}»; la vista previa no es válida.`;
+          this.runtime.finishPreviewWait(run, "failed", run.error);
         }
         this.runtime.save(run);
         return;
@@ -313,6 +321,9 @@ export class CandidatePublication {
           ? "awaiting_review"
           : "awaiting_preview";
       run.error = publication.blocked ?? null;
+      if (valid) {
+        this.runtime.finishPreviewWait(run, "ready");
+      }
       this.runtime.save(run);
     } catch (error) {
       let failure = error;

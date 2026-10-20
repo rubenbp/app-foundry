@@ -117,6 +117,7 @@ export class IntegratedPublication {
         );
       },
       () => this.runtime.port.commentIssue(this.runtime.context(run), body),
+      (comment) => this.runtime.factory.recordIssueComment(run, comment),
     );
     publication.integrationReport = { id: report.id, url: report.url };
     if (!publication.ownComments.includes(report.id)) {

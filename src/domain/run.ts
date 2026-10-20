@@ -25,6 +25,8 @@ export interface History {
   at: number;
   kind: string;
   text: string;
+  /** Snapshot of a confirmed outbound comment; subsequent GitHub edits are not synchronized. */
+  comment?: Pick<IssueComment, "id" | "url" | "body">;
 }
 export interface PartView {
   id: string;

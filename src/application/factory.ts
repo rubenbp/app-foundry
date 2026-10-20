@@ -14,6 +14,7 @@ import {
   interventionQuestions,
   pendingIntervention,
 } from "../domain/intervention.ts";
+import type { IssueComment } from "../domain/intervention.ts";
 
 export class Factory {
   store: RunRepository;
@@ -158,6 +159,25 @@ export class Factory {
       at: this.now(),
       kind,
       text: this.clean(text, 4096).text,
+    });
+  }
+
+  /** Record a confirmed comment once, retaining its full sanitized body for the Dashboard. */
+  recordIssueComment(
+    run: Run,
+    comment: Pick<IssueComment, "id" | "url" | "body">,
+  ) {
+    if (run.history.some((entry) => entry.comment?.id === comment.id)) {
+      return;
+    }
+    run.history.push({
+      at: this.now(),
+      kind: "issue-comment",
+      text: "Comentario enviado a GitHub",
+      comment: sanitizedRecord(
+        { id: comment.id, url: comment.url, body: comment.body },
+        this.clean,
+      ),
     });
   }
 
