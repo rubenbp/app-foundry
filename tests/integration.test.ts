@@ -22,13 +22,16 @@ test("una corrección posterior al informe impide aceptar el merge", async () =>
   }
 });
 
-test("una corrección no autorizada antes de integrar no puede invalidar una integración aceptada por una persona", async () => {
+test("una corrección en la PR sin permiso de escritura no invalida una integración aceptada por una persona", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
     await s.workflow.poll();
     await s.workflow.poll();
-    s.comment("Corrige el catálogo.", { author: "outsider" });
+    s.comment("Corrige el catálogo.", {
+      author: "outsider",
+      source: "pull",
+    });
     s.merge();
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "completed");

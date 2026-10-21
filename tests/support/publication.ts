@@ -107,7 +107,7 @@ export function publicationFixture(
     },
     async status(context, state) {
       writes.push({ kind: state });
-      statusAt = clock += 1000;
+      statusAt = clock = Math.max(clock, Date.now());
       facts.status = { head: context.head, state, at: statusAt };
       if (uncertain === "status") {
         uncertain = null;
@@ -142,7 +142,7 @@ export function publicationFixture(
       body,
       author: "shared",
       human: true,
-      createdAt: (clock += 1000),
+      createdAt: (clock = Math.max(clock, Date.now())),
       updatedAt: clock,
       source: "issue" as const,
     };
@@ -251,7 +251,7 @@ export function publicationFixture(
           `Acepto la versión ${head} y su preview ${facts.preview!.url}.`,
         author: "shared",
         human: true,
-        createdAt: (clock += 1000),
+        createdAt: (clock = Math.max(clock + 1, Date.now())),
         updatedAt: clock,
         source: "issue" as const,
         ...change,

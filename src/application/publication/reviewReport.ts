@@ -51,7 +51,7 @@ export class ReviewReport {
     await this.runtime.comment(
       run,
       `attempt-result:${run.attempt}:${publication.preview!.id}`,
-      `${guidance}\n\nPara pedir cambios, publica \`Corregir: instrucciones\` en este issue.`,
+      `${guidance}\n\nPara hablar con el agente o pedir cambios, responde en este issue con tu mensaje, sin prefijos. Cada mensaje inicia otro Intento en la misma conversación y rama.\n\nPara detener la Ejecución, escribe únicamente \`Cancelar\`. \`Reintentar\` se reserva para recuperar una incidencia. Estos dos comandos admiten espacios al principio y al final y no distinguen mayúsculas de minúsculas. Cualquier otro mensaje se envía al agente.`,
       facts,
     );
   }

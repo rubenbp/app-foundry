@@ -1,12 +1,12 @@
 import type { Run } from "./run.ts";
+import type { IssueComment } from "./intervention.ts";
 
 export type RecoveryCommand =
   | { kind: "retry" }
   | { kind: "correct"; instructions: string }
   | { kind: "cancel" };
 
-// Solo las órdenes completas del contrato activan operaciones. El resto sigue siendo conversación.
-export function recoveryCommand(body: string): RecoveryCommand | null {
+function reservedCommand(body: string): RecoveryCommand | null {
   const text = body.trim();
   if (/^Reintentar$/i.test(text)) {
     return { kind: "retry" };
@@ -14,11 +14,46 @@ export function recoveryCommand(body: string): RecoveryCommand | null {
   if (/^Cancelar$/i.test(text)) {
     return { kind: "cancel" };
   }
+  return null;
+}
+
+// Fuera de revisión, las correcciones siguen requiriendo una orden explícita.
+export function recoveryCommand(body: string): RecoveryCommand | null {
+  const reserved = reservedCommand(body);
+  if (reserved) {
+    return reserved;
+  }
+  const text = body.trim();
   const correction = /^Corregir:\s*([\s\S]+)$/i.exec(text);
 
   return correction?.[1].trim()
     ? { kind: "correct", instructions: correction[1].trim() }
     : null;
+}
+
+/** Review messages preserve their full body, including any apparent command prefix. */
+export function issueRecoveryCommand(
+  run: Pick<Run, "status" | "publication">,
+  comment: Pick<IssueComment, "id" | "body" | "createdAt">,
+): RecoveryCommand | null {
+  if (run.status !== "awaiting_review") {
+    return recoveryCommand(comment.body);
+  }
+  const reserved = reservedCommand(comment.body);
+  if (reserved) {
+    return reserved;
+  }
+  // El informe confirmado usa el reloj de GitHub, igual que los comentarios.
+  if (
+    !run.publication?.report ||
+    comment.createdAt < run.publication.report.at ||
+    run.publication.consumed.some((entry) => entry.id === comment.id) ||
+    !comment.body.trim()
+  ) {
+    return null;
+  }
+
+  return { kind: "correct", instructions: comment.body };
 }
 
 export function recoveryActions(run: Run): RecoveryCommand["kind"][] {

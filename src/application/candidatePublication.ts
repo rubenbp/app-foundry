@@ -17,6 +17,8 @@ import {
   isOwn,
   isInterventionResponse,
   readyToMerge,
+  isReviewInstruction,
+  hasPendingReviewInstructions,
 } from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
 import { IntegratedPublication } from "./publication/integration.ts";
@@ -286,7 +288,6 @@ export class CandidatePublication {
       if (!publication.report) {
         this.report.record(run);
       }
-      run.status = "awaiting_review";
       this.runtime.save(run);
       for (const comment of facts.comments.toSorted(
         (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id),
@@ -306,6 +307,9 @@ export class CandidatePublication {
           reason = "Aclaración ya entregada a la conversación del agente";
         } else if (own) {
           reason = "Publicación propia o de bot";
+        } else if (isReviewInstruction(run, comment)) {
+          // IssueRecovery conserva la admisión y entrega; publicar no consume su mensaje.
+          continue;
         } else {
           const intent = interpretComment(comment.body);
           if (
@@ -341,7 +345,7 @@ export class CandidatePublication {
       );
       run.status = publication.blocked
         ? "intervention"
-        : valid
+        : valid || hasPendingReviewInstructions(run, final)
           ? "awaiting_review"
           : "awaiting_preview";
       run.error = publication.blocked ?? null;

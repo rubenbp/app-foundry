@@ -8,7 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 
 for (const inspection of [2, 3]) {
-  test(`un comentario informativo recibido en la consulta ${inspection} conserva la revisión del Commit candidato`, async () => {
+  test(`un comentario informativo de PR recibido en la consulta ${inspection} conserva la revisión del Commit candidato`, async () => {
     const s = publicationFixture();
     try {
       const run = await s.candidate();
@@ -18,7 +18,9 @@ for (const inspection of [2, 3]) {
       const writes = s.writes.length;
       s.onInspect((count) => {
         if (count === before + inspection) {
-          s.comment("Haz que la animación sea más impactante");
+          s.comment("Haz que la animación sea más impactante", {
+            source: "pull",
+          });
         }
       });
 
@@ -286,12 +288,13 @@ test("los comentarios de aceptación ya no aceptan ni exigen fórmulas técnicas
       "No acepto esta versión",
       "I accept version " + "a".repeat(40),
     ]) {
-      s.comment(body);
+      s.comment(body, { source: "pull" });
     }
     s.comment(undefined, { human: false });
     s.comment(undefined, {
       author: "outsider",
       updatedAt: Date.now() + 1_000_000,
+      source: "pull",
     });
     await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
@@ -426,6 +429,7 @@ test("un commit nuevo invalida la aceptación y requiere una verificación, una 
     await s.workflow.poll();
     s.comment(
       `Acepto la versión ${original} y su preview https://catalogue-unique.vercel.app.`,
+      { source: "pull" },
     );
     await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
@@ -460,7 +464,7 @@ test("una corrección autorizada revoca el control favorable de merge", async ()
     const run = await s.candidate();
     await s.workflow.poll();
     assert.equal(s.facts.status?.state, "success");
-    s.comment("Corrige el pie antes de integrar.");
+    s.comment("Corrige el pie antes de integrar.", { source: "pull" });
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "intervention");
     assert.notEqual(s.facts.status?.state, "success");

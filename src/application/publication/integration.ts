@@ -5,7 +5,11 @@ import {
 } from "../../domain/publication.ts";
 import type { PublicationFacts } from "./ports.ts";
 import type { PublicationRuntime } from "./runtime.ts";
-import { isOwn, isInterventionResponse } from "./reviewPolicy.ts";
+import {
+  isOwn,
+  isInterventionResponse,
+  isReviewInstruction,
+} from "./reviewPolicy.ts";
 import { assertCandidateEvidence } from "./evidence.ts";
 
 export class IntegratedPublication {
@@ -47,16 +51,19 @@ export class IntegratedPublication {
           !isOwn(run, comment) &&
           !isInterventionResponse(run, comment) &&
           comment.createdAt <= (pull.mergedAt ?? 0) &&
-          comment.createdAt > (report?.at ?? Number.MAX_SAFE_INTEGER) &&
-          interpretComment(comment.body).kind === "invalidate",
+          comment.createdAt >= (report?.at ?? Number.MAX_SAFE_INTEGER) &&
+          (isReviewInstruction(run, comment) ||
+            (comment.createdAt > (report?.at ?? Number.MAX_SAFE_INTEGER) &&
+              interpretComment(comment.body).kind === "invalidate")),
       );
       let conflicting = false;
       for (const comment of invalidations) {
         if (
-          await this.runtime.port.canWrite(
+          isReviewInstruction(run, comment) ||
+          (await this.runtime.port.canWrite(
             run.request!.repository,
             comment.author,
-          )
+          ))
         ) {
           conflicting = true;
         }

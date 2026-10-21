@@ -54,7 +54,7 @@ sequenceDiagram
 
 ## Aviso en el issue
 
-Cuando la preview está verificada y la evidencia técnica disponible, la Factory publica un comentario breve en el issue con la URL de preview, el enlace a la PR y estas instrucciones: revisar la preview y hacer merge de la PR para aceptar; publicar `Corregir: instrucciones` en el issue para pedir cambios. El aviso no muestra el SHA.
+Cuando la preview está verificada y la evidencia técnica disponible, la Factory publica un comentario breve en el issue con la URL de preview, el enlace a la PR y estas instrucciones: revisar la preview y hacer merge de la PR para aceptar; responder en el issue con un mensaje sin prefijos para hablar con el agente o pedir cambios. Explica que `Cancelar` detiene la Ejecución y que `Reintentar` recupera una incidencia, ambos como mensaje completo. El aviso no muestra el SHA.
 
 El issue recibe `factory:pending-review`. Antes de que la preview esté acreditada conserva `factory:in-progress`: esa espera es automática, no una revisión humana.
 
@@ -80,11 +80,11 @@ Para aceptar los cambios, **revisa la preview y haz merge de la PR en GitHub** c
 
 ## Árbol de decisión de los comentarios
 
-Las aclaraciones ya entregadas al agente no se reinterpretan como instrucciones de revisión. Los comentarios propios o de bots se excluyen. Los demás comentarios ordinarios, incluidas fórmulas anteriores de aceptación, son informativos: solo el merge acepta el resultado.
+Las aclaraciones ya entregadas al agente no se reinterpretan como instrucciones de revisión. Los comentarios propios o de bots se excluyen. Durante `factory:pending-review`, cualquier comentario humano nuevo con contenido en el **issue** llega íntegro al agente: peticiones, preguntas, agradecimientos y fórmulas de aceptación. Solo el merge acepta el resultado; escribir «Acepto» inicia otro Intento, igual que cualquier otro mensaje libre.
 
-Para pedir cambios, publica `Corregir: instrucciones` en el **issue**. Abre otro Intento en la misma conversación y rama y exige nuevas verificaciones, preview y revisión antes de otro merge. El agente reescribe el título y la descripción para el cambio acumulado desde la base, no solo para el último commit. `Cancelar` detiene el trabajo antes de integrar. Estas órdenes operativas no comprueban permisos del autor. `Reintentar` recupera una fase fallida según el aviso de intervención.
+Para pedir cambios durante la revisión, escribe directamente lo que necesitas en el issue. Se abre otro Intento en la misma conversación y rama y se exigen nuevas verificaciones, preview y revisión antes de otro merge. `Corregir: ...` también llega como texto al agente; la Factory no interpreta ese prefijo durante la revisión. El agente reescribe el título y la descripción para el cambio acumulado desde la base, no solo para el último commit. Estos mensajes no comprueban permisos del autor. Los comentarios enviados antes de entrar en revisión, durante el trabajo o durante la espera de preview no se ejecutan después como nuevas instrucciones.
 
-Las fórmulas anteriores de bloqueo, como «Corrige el pie», «Cancela» o «Revoco», siguen retirando el control favorable si proceden de una persona con escritura. No sustituyen las órdenes operativas completas. Cada ID se consume una vez. Editar un comentario procesado no lo convierte en una nueva orden.
+Solo `Cancelar` y `Reintentar` completos son comandos: se eliminan los espacios exteriores y no se distinguen mayúsculas. `Cancelar` detiene el trabajo antes de integrar; `Reintentar` recupera una fase fallida según el aviso de intervención. «Cancelar el botón rojo» y «Reintenta» llegan al agente como texto. Fuera de revisión, las correcciones siguen requiriendo `Corregir: instrucciones`. En los comentarios del **PR** se conserva la política anterior: las consultas son informativas y fórmulas como «Corrige el pie», «Cancela» o «Revoco» retiran el control favorable si proceden de una persona con escritura. Cada ID se consume una vez. Editar un comentario procesado no lo convierte en una nueva orden.
 
 ## Si algo cambia antes de integrar
 

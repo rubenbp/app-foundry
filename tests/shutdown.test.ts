@@ -168,7 +168,7 @@ test("apagar durante una observación de revisión espera su cierre sin revocar 
   }
 });
 
-for (const command of ["Corregir: ajustar el pie", "Cancelar"]) {
+for (const command of ["ajustar el pie", "Cancelar"]) {
   test(`al arrancar procesa ${command} recibido durante la espera con la Factory apagada`, async () => {
     const conversation = recoveryConversation();
     const s = publicationFixture({ issueConversation: conversation.port });

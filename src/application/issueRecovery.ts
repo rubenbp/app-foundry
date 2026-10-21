@@ -1,6 +1,6 @@
 import {
   recoveryActions,
-  recoveryCommand,
+  issueRecoveryCommand,
   recoveryNotice,
 } from "../domain/recovery.ts";
 import type { RecoveryCommand } from "../domain/recovery.ts";
@@ -82,6 +82,7 @@ export class IssueRecovery {
       if (
         !comment.human ||
         comment.body.includes("<!-- app-foundry:") ||
+        current.history.some((entry) => entry.comment?.id === comment.id) ||
         recovery.consumed.includes(comment.id) ||
         current.interventions?.some(
           (item) => item.response?.id === comment.id,
@@ -90,7 +91,7 @@ export class IssueRecovery {
       ) {
         continue;
       }
-      const command = recoveryCommand(comment.body);
+      const command = issueRecoveryCommand(current, comment);
       if (!command) {
         continue;
       }
@@ -169,7 +170,9 @@ export class IssueRecovery {
     }
     if (!recoveryActions(run).includes(command.kind)) {
       return command.kind === "retry"
-        ? "No hay una recuperación pendiente en el estado actual. Para pedir cambios, usa Corregir: instrucciones."
+        ? run.status === "awaiting_review"
+          ? "No hay una recuperación pendiente en el estado actual. Para hablar con el agente, responde en este issue con tu mensaje."
+          : "No hay una recuperación pendiente en el estado actual. Para pedir cambios, usa Corregir: instrucciones."
         : "La orden no corresponde al estado actual de la Ejecución.";
     }
     if (recovery.pending && command.kind !== "cancel") {

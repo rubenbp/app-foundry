@@ -6,10 +6,11 @@ import type {
   PublicationFacts,
   PublicationPort,
 } from "./ports.ts";
-import { readyToMerge } from "./reviewPolicy.ts";
+import { readyToMerge, hasPendingReviewInstructions } from "./reviewPolicy.ts";
 import { pullDescription } from "./description.ts";
 
 class StatusSkippedAfterMerge extends Error {}
+class ReviewInstructionReceived extends Error {}
 
 /** A failed read is diagnostic evidence, not a request to notify the issue. */
 export class PublicationObservationError extends Error {
@@ -193,6 +194,9 @@ export class PublicationRuntime {
             throw new StatusSkippedAfterMerge();
           }
           if (state === "success" && !readyToMerge(run, facts)) {
+            if (hasPendingReviewInstructions(run, facts)) {
+              throw new ReviewInstructionReceived();
+            }
             throw new Error(
               "Candidate changed before favorable merge status; readiness revoked",
             );
@@ -216,6 +220,10 @@ export class PublicationRuntime {
         this.save(run);
       }
     } catch (error) {
+      if (error instanceof ReviewInstructionReceived) {
+        await this.setStatus(run, "pending");
+        return;
+      }
       if (!(error instanceof StatusSkippedAfterMerge)) {
         throw error;
       }

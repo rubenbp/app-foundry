@@ -8,6 +8,184 @@ import {
 import { recoveryConversation } from "./support/recovery.ts";
 import { execute } from "../src/infrastructure/process.ts";
 
+for (const body of [
+  "Cambia el texto del pie.",
+  "Cancelar el botón rojo",
+  "Reintenta",
+  "Corregir: Cambia el texto del pie.",
+  "¿Qué has cambiado?",
+  "gracias",
+  "Acepto",
+]) {
+  test(`en revisión el mensaje «${body}» llega íntegro al mismo agente una sola vez`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      const comment = conversation.add(body);
+      s.facts.comments.push({
+        ...comment,
+        updatedAt: comment.createdAt,
+        source: "issue",
+      });
+      await s.workflow.poll();
+      await s.workflow.poll();
+      const current = s.workflow.view(run.id)!;
+      assert.equal(current.status, "running", current.error ?? "");
+      assert.equal(current.attempt, 2);
+      assert.equal(s.tasks.length, 2);
+      assert.ok(s.tasks[1].text.includes(`\n\n${body}\n\n`));
+      assert.equal(s.tasks[1].sessionId, run.sessionId);
+      assert.equal(s.sessions, 1);
+      assert.equal(s.facts.status?.state, "pending");
+      assert.deepEqual(conversation.closures, []);
+      assert.ok(current.recovery?.consumed.includes(comment.id));
+      assert.equal(
+        conversation.comments.some((item) =>
+          item.body.includes("La Factory necesita intervención"),
+        ),
+        false,
+      );
+    } finally {
+      s.close();
+    }
+  });
+}
+
+test("el aviso de revisión explica la conversación libre y los comandos completos", async () => {
+  const s = publicationFixture();
+  try {
+    await s.candidate();
+    await s.workflow.poll();
+    const notice = s.facts.comments[0].body;
+    assert.match(notice, /Para hablar con el agente.*responde.*este issue/i);
+    assert.match(notice, /`Cancelar`/);
+    assert.match(notice, /`Reintentar`/);
+    assert.doesNotMatch(notice, /Corregir: instrucciones/);
+  } finally {
+    s.close();
+  }
+});
+
+test("los mensajes enviados mientras se trabaja o se espera preview no se ejecutan al volver a revisión", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  const add = (body: string) => {
+    const comment = conversation.add(body);
+    s.facts.comments.push({
+      ...comment,
+      updatedAt: comment.createdAt,
+      source: "issue",
+    });
+    return comment;
+  };
+  try {
+    const run = await s.candidate();
+    const duringPreview = add("Haz el pie verde antes de revisar.");
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.tasks.length, 1);
+    // Incluso con la misma precisión temporal, un comentario anterior ya observado se excluye.
+    duringPreview.createdAt = s.workflow.view(run.id)!.publication!.report!.at;
+    await s.workflow.poll();
+    assert.equal(s.tasks.length, 1);
+    add("Haz el pie azul.");
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "running");
+    add("Este mensaje se publicó mientras trabajabas.");
+    // No hay ninguna consulta durante el trabajo que pueda marcar el mensaje como ignorado.
+    s.finish(catalogueDelivery);
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.tasks.length, 2);
+    assert.equal(s.workflow.view(run.id)?.attempt, 2);
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+  } finally {
+    s.close();
+  }
+});
+
+test("en revisión se excluyen bots, comentarios propios y aclaraciones ya entregadas", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const previous = conversation.add("Cancelar");
+    previous.createdAt = 0;
+    s.facts.comments.push({
+      ...previous,
+      updatedAt: previous.createdAt,
+      source: "issue",
+    });
+    const run = await s.candidate();
+    await s.workflow.poll();
+    conversation.add("Mensaje del bot", false);
+    conversation.add("Mensaje propio <!-- app-foundry:test -->");
+    conversation.comments.push({
+      ...s.facts.comments.at(-1)!,
+      body: "Aviso propio editado sin marcador",
+      human: true,
+    });
+    conversation.add(" \n\t ");
+    const response = conversation.add("Aclaración ya entregada");
+    const current = s.workflow.view(run.id)!;
+    current.interventions = [
+      {
+        id: "question",
+        questions: "¿Qué color quieres?",
+        requestedAt: response.createdAt - 1,
+        response,
+        deliveredAt: response.createdAt,
+      },
+    ];
+    s.workflow.factory.persist(current);
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.tasks.length, 1);
+    assert.equal(s.facts.status?.state, "success");
+  } finally {
+    s.close();
+  }
+});
+
+for (const beforeMerge of [true, false]) {
+  test(`un mensaje libre ${beforeMerge ? "anterior" : "posterior"} al merge ${beforeMerge ? "invalida" : "conserva"} la aceptación`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      const comment = conversation.add("Cambia el texto del pie.");
+      comment.createdAt = s.workflow.view(run.id)!.publication!.report!.at;
+      s.merge();
+      if (!beforeMerge) {
+        comment.createdAt = s.facts.pull!.mergedAt! + 1;
+      }
+      s.facts.comments.push({
+        ...comment,
+        updatedAt: comment.createdAt,
+        source: "issue",
+      });
+      await s.workflow.poll();
+      assert.equal(s.tasks.length, 1);
+      assert.equal(
+        s.workflow.view(run.id)?.status,
+        beforeMerge ? "intervention" : "completed",
+      );
+      assert.equal(
+        Boolean(s.workflow.view(run.id)?.publication?.acceptance),
+        !beforeMerge,
+      );
+    } finally {
+      s.close();
+    }
+  });
+}
+
 test("Corregir durante la espera de preview inicia otro Intento sin esperar al deployment", async () => {
   const conversation = recoveryConversation();
   const s = publicationFixture({ issueConversation: conversation.port });
@@ -29,8 +207,8 @@ test("Corregir durante la espera de preview inicia otro Intento sin esperar al d
   }
 });
 
-for (const inspection of [2, 3]) {
-  test(`Corregir recibido en la consulta ${inspection} de publicación revoca el control y se entrega una sola vez`, async () => {
+for (const inspection of [1, 2, 3]) {
+  test(`un mensaje libre recibido en la consulta ${inspection} revoca el control sin intervención y se entrega una sola vez`, async () => {
     const conversation = recoveryConversation();
     const s = publicationFixture({ issueConversation: conversation.port });
     try {
@@ -40,7 +218,9 @@ for (const inspection of [2, 3]) {
       const beforeComment = s.inspections;
       s.onInspect((count) => {
         if (count === beforeComment + 3) {
-          s.comment("Haz que la animación sea más impactante");
+          s.comment("Haz que la animación sea más impactante", {
+            source: "pull",
+          });
         }
       });
       await s.workflow.poll();
@@ -50,9 +230,8 @@ for (const inspection of [2, 3]) {
       let correction: ReturnType<typeof conversation.add> | undefined;
       s.onInspect((count) => {
         if (count === before + inspection) {
-          correction = conversation.add(
-            "Corregir: haz que la animación sea más impactante",
-          );
+          correction = conversation.add("Corrige el pie antes de integrar.");
+          correction.author = "maintainer";
           s.facts.comments.push({
             ...correction,
             updatedAt: correction.createdAt,
@@ -64,6 +243,9 @@ for (const inspection of [2, 3]) {
       await s.workflow.poll();
       assert.ok(correction);
       const correctionId = correction.id;
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+      assert.equal(s.workflow.view(run.id)?.error, null);
+      assert.equal(conversation.comments.length, 1);
       assert.notEqual(s.facts.status?.state, "success");
       assert.equal(
         s.writes.slice(writes).some((write) => write.kind === "success"),
@@ -76,7 +258,7 @@ for (const inspection of [2, 3]) {
       assert.equal(current.status, "running", current.error ?? "");
       assert.equal(current.attempt, 2);
       assert.equal(s.tasks.length, 2);
-      assert.match(s.tasks[1].text, /haz que la animación sea más impactante/);
+      assert.match(s.tasks[1].text, /Corrige el pie antes de integrar/);
       assert.ok(current.recovery?.consumed.includes(correctionId));
       assert.equal(current.recovery?.pending, undefined);
       const responses = conversation.comments.filter((comment) =>
@@ -143,7 +325,7 @@ test("Reintentar sin incidencia recibe una explicación una sola vez", async () 
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    const retry = conversation.add("Reintentar");
+    const retry = conversation.add("  rEiNtEnTaR \n");
     await s.workflow.poll();
     await s.workflow.poll();
     const responses = conversation.comments.filter((c) =>
@@ -719,7 +901,7 @@ test("Cancelar desde un comentario sin permisos confirma parada y cierra como no
   const s = verificationFixture({ issueConversation: conversation.port });
   try {
     const run = await s.start();
-    conversation.add("Cancelar");
+    conversation.add("  cAnCeLaR \n");
     await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "stopped");
     assert.equal(s.workflow.factory.active, null);

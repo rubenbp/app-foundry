@@ -152,7 +152,8 @@ test("los issues distinguen cola, trabajo, respuesta humana, revisión, cierre y
     assert.ok(notice.body.includes(s.facts.preview.url!));
     assert.ok(notice.body.includes(s.facts.pull!.url));
     assert.ok(!notice.body.includes(head));
-    assert.match(notice.body, /Corregir: instrucciones/);
+    assert.match(notice.body, /responde en este issue con tu mensaje/);
+    assert.match(notice.body, /`Cancelar`/);
     await s.workflow.poll();
     assert.equal(
       s.facts.comments.filter((comment) => comment.source === "issue").length,
