@@ -4,7 +4,198 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 import { OpenCode } from "@opencode/client";
 import { Observer } from "../src/infrastructure/opencode/observer.ts";
+import { OpenCode as AgentRuntime } from "../src/infrastructure/opencode/agent.ts";
 import type { Fact } from "../src/application/agent.ts";
+
+test("retomar una sesión y enviar otro encargo vincula sus resultados al nuevo mensaje del usuario", async (t) => {
+  t.mock.method(Observer.prototype, "watch", () => {});
+  let phase: "history" | "queued" | "finished" = "history";
+  let prompts = 0;
+  const assistant = (id: string, failed = false) => ({
+    id,
+    type: "assistant",
+    model: { providerID: "openai", id: "test" },
+    time: { created: 10, completed: 20 },
+    finish: "stop",
+    content: [{ type: "text", text: "Recovered result" }],
+    ...(failed ? { error: { name: "Error", message: "Old quota limit" } } : {}),
+  });
+  const server = createServer((req, res) => {
+    const path = req.url!.split("?")[0];
+    if (path === "/api/event") {
+      res.writeHead(200, { "Content-Type": "text/event-stream" });
+      res.write(
+        `data: ${JSON.stringify({ type: "session.status", data: { sessionID: "s1", status: { type: "idle" } } })}\n\n`,
+      );
+      return;
+    }
+    res.setHeader("Content-Type", "application/json");
+    if (path === "/api/session/s1") {
+      res.end(
+        JSON.stringify({
+          data: { id: "s1", model: { providerID: "openai", id: "test" } },
+        }),
+      );
+    } else if (path === "/api/session/s1/prompt") {
+      prompts++;
+      res.end(
+        JSON.stringify({
+          data: { id: "retry-user", type: "user", text: "Retry" },
+        }),
+      );
+    } else if (path === "/api/session/s1/message") {
+      res.end(
+        JSON.stringify({
+          data: [
+            assistant("old", true),
+            ...(phase === "history"
+              ? []
+              : [
+                  {
+                    id: "retry-user",
+                    type: "user",
+                    time: { created: 30 },
+                    text: "Retry",
+                  },
+                ]),
+            ...(phase === "finished" ? [assistant("new")] : []),
+          ],
+          cursor: {},
+        }),
+      );
+    } else {
+      res.end(
+        JSON.stringify(
+          path === "/api/session/active" ? { data: {} } : { data: [] },
+        ),
+      );
+    }
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const facts: Fact[] = [];
+  const agent = new AgentRuntime({
+    dataDir: "/unused",
+    projectDir: "/unused",
+    provider: "openai",
+    model: "test",
+    auth: "opencode",
+  });
+  agent.client = OpenCode.make({ baseUrl: `http://127.0.0.1:${address.port}` });
+  agent.emit = (fact) => facts.push(fact);
+  try {
+    await agent.resume("s1");
+    await agent.observer!.poll();
+    assert.equal(facts.filter((f) => f.type === "error").length, 0);
+    await agent.send("s1", "Continue after fixing quota");
+    // Even a read that has not yet observed the accepted prompt cannot revive the old failure.
+    await agent.observer!.poll();
+    phase = "queued";
+    await agent.observer!.poll();
+    phase = "finished";
+    await agent.observer!.poll();
+    assert.equal(prompts, 1);
+    assert.equal(facts.filter((f) => f.type === "error").length, 0);
+    assert.deepEqual(
+      facts.filter((f) => f.type === "finished").map((f) => f.messageId),
+      ["new"],
+    );
+  } finally {
+    agent.observer?.close();
+    server.closeAllConnections();
+    server.close();
+  }
+});
+
+test("un error histórico no bloquea el resultado ni el error del turno posterior, incluso entre páginas", async () => {
+  let phase: "queued" | "finished" | "failed" = "queued";
+  const server = createServer((req, res) => {
+    const url = new URL(req.url!, "http://localhost");
+    const assistant = (id: string, failed: boolean) => ({
+      id,
+      type: "assistant",
+      model: { providerID: "openai", id: "test" },
+      time: { created: 10, completed: 20 },
+      finish: "stop",
+      content: [{ type: "text", text: "New result" }],
+      ...(failed
+        ? {
+            error: {
+              name: "Error",
+              message:
+                id === "old" ? "Old quota limit" : "New provider failure",
+            },
+          }
+        : {}),
+    });
+    res.setHeader("Content-Type", "application/json");
+    if (url.pathname === "/api/session/s1/message") {
+      res.end(
+        JSON.stringify(
+          url.searchParams.has("cursor")
+            ? {
+                data: [
+                  {
+                    id: "retry",
+                    type: "user",
+                    time: { created: 30 },
+                    text: "Retry",
+                  },
+                  ...(phase === "queued"
+                    ? []
+                    : [assistant("new", phase === "failed")]),
+                ],
+                cursor: {},
+              }
+            : {
+                data: [assistant("old", true)],
+                cursor: { next: "retry-page" },
+              },
+        ),
+      );
+    } else {
+      res.end(
+        JSON.stringify(
+          url.pathname === "/api/session/active" ? { data: {} } : { data: [] },
+        ),
+      );
+    }
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const facts: Fact[] = [];
+  const observer = new Observer(
+    OpenCode.make({ baseUrl: `http://127.0.0.1:${address.port}` }),
+    "s1",
+    (fact) => facts.push(fact),
+  );
+  try {
+    await observer.poll();
+    assert.equal(facts.filter((f) => f.type === "error").length, 0);
+    assert.equal(facts.filter((f) => f.type === "finished").length, 0);
+    phase = "finished";
+    await observer.poll();
+    assert.equal(facts.filter((f) => f.type === "error").length, 0);
+    assert.ok(
+      facts.some((f) => f.type === "finished" && f.messageId === "new"),
+    );
+    phase = "failed";
+    await observer.poll();
+    assert.deepEqual(
+      facts.filter((f) => f.type === "error").map((f) => f.text),
+      ["Error: New provider failure"],
+    );
+    assert.ok(facts.some((f) => f.type === "part" && f.messageId === "old"));
+  } finally {
+    observer.close();
+    server.closeAllConnections();
+    server.close();
+  }
+});
 
 test("el observador del SDK conserva las transiciones recibidas y concilia los mensajes y las peticiones pendientes", async () => {
   const server = createServer((req, res) => {

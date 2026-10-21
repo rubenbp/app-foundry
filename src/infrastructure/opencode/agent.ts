@@ -481,8 +481,17 @@ export class OpenCode implements AgentPort {
     if (!this.client) {
       throw new Error("OpenCode not started");
     }
-    await this.client.session.prompt({ sessionID: sessionId, text: task });
-
+    this.observer!.followTurn(null);
+    const message = await this.client.session.prompt({
+      sessionID: sessionId,
+      text: task,
+    });
+    if (typeof message.id !== "string" || !message.id) {
+      throw new Error(
+        "Prompt delivery uncertain: user message identity unavailable",
+      );
+    }
+    this.observer!.followTurn(message.id);
     this.observer!.watch();
   }
 
@@ -527,6 +536,7 @@ export class OpenCode implements AgentPort {
       );
     }
     this.observer = new Observer(this.client, sessionId, this.emit);
+    this.observer.followTurn(null);
     await this.observer.start();
     this.observer.watch();
   }

@@ -16,6 +16,8 @@ export class Observer {
   polling = false;
   watching = false;
   pending = new Map<string, Pending>();
+  private userMessageId: string | null | undefined;
+  private turn = 0;
 
   constructor(
     client: OpenCodeClient,
@@ -111,10 +113,6 @@ export class Observer {
       },
     });
 
-    if (message.error) {
-      this.emit({ type: "error", text: errorText(message.error) });
-    }
-
     for (const [index, part] of message.content.entries()) {
       if (part.type === "text") {
         this.emit({
@@ -166,10 +164,13 @@ export class Observer {
       this.emit({ type: "status", status: event.data.status.type });
     } else if (event.type === "session.step.started") {
       this.emit({ type: "status", status: "busy" });
-    } else if (event.type === "session.step.failed") {
-      this.emit({ type: "error", text: errorText(event.data.error) });
-    } else if (event.type === "session.execution.failed") {
-      this.emit({ type: "error", text: errorText(event.data.error) });
+    } else if (
+      event.type === "session.step.failed" ||
+      event.type === "session.execution.failed"
+    ) {
+      if (this.userMessageId !== null) {
+        this.emit({ type: "error", text: errorText(event.data.error) });
+      }
     } else if (event.type === "permission.asked") {
       const p = event.data;
       this.pending.set(p.id, {
@@ -194,6 +195,8 @@ export class Observer {
       return;
     }
     this.polling = true;
+    const turn = this.turn;
+    const userMessageId = this.userMessageId;
     try {
       const signal = AbortSignal.any([
         this.abort.signal,
@@ -215,12 +218,19 @@ export class Observer {
       let page = messages;
       let last: SessionMessageInfo | undefined;
       let newerUserMessage = false;
+      let observedTurn = userMessageId === undefined;
       const cursors = new Set<string>();
       while (true) {
         signal.throwIfAborted();
         const rows = page.data ?? [];
         for (const row of rows) {
           this.message(row);
+          if (row.type === "user" && row.id === userMessageId) {
+            observedTurn = true;
+          }
+          if (!observedTurn) {
+            continue;
+          }
           if (row.type === "assistant") {
             last = row;
             newerUserMessage = false;
@@ -269,6 +279,14 @@ export class Observer {
         status: active[this.sessionId] ? "busy" : "idle",
       });
       this.emit({ type: "observed" });
+      // A resume or prompt submitted during this read invalidates its outcomes.
+      // Usage and artifacts remain evidence even when they belong to an older turn.
+      if (turn !== this.turn || !observedTurn || userMessageId === null) {
+        return;
+      }
+      if (!newerUserMessage && last?.type === "assistant" && last.error) {
+        this.emit({ type: "error", text: errorText(last.error) });
+      }
       if (
         !pending.length &&
         !newerUserMessage &&
@@ -297,6 +315,12 @@ export class Observer {
     } finally {
       this.polling = false;
     }
+  }
+
+  /** Follow outcomes after this exact user message; null observes history only. */
+  followTurn(userMessageId: string | null) {
+    this.userMessageId = userMessageId;
+    this.turn++;
   }
 
   watch() {
