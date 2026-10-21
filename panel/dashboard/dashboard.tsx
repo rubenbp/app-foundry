@@ -19,6 +19,102 @@ function startDate(value: number) {
   });
 }
 
+const usd = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "USD",
+  currencyDisplay: "code",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 6,
+});
+const summaryUsd = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "USD",
+  currencyDisplay: "code",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+function formatUsd(value: number) {
+  return value > 0 && value < 0.000001 ? "<0,000001 USD" : usd.format(value);
+}
+
+function formatSummaryUsd(value: number) {
+  return value > 0 && value < 0.01 ? "<0,01 USD" : summaryUsd.format(value);
+}
+
+function ConsumptionDetails({
+  consumption,
+}: {
+  consumption: NonNullable<FactoryView["consumption"]>;
+}) {
+  const { tokens, prices, costs, estimatedCost, coverage } = consumption;
+  const rows = [
+    {
+      label: "Entrada",
+      tokens: tokens?.input,
+      price: prices?.inputUsdPerMillion,
+      cost: costs?.input,
+    },
+    {
+      label: "Salida",
+      tokens: tokens?.output,
+      price: prices?.outputUsdPerMillion,
+      cost: costs?.output,
+    },
+    {
+      label: "Lectura de caché",
+      tokens: tokens?.cacheRead,
+      price: prices?.cacheReadUsdPerMillion,
+      cost: costs?.cacheRead,
+    },
+  ];
+
+  return (
+    <section className="dashboard-consumption" aria-label="Consumo de tokens">
+      <div className="dashboard-consumption-total">
+        <strong>
+          {estimatedCost === null
+            ? prices
+              ? "Coste no disponible: sin datos de tokens"
+              : "Coste no disponible: sin tarifas guardadas"
+            : `Coste estimado${coverage === "partial" ? " (parcial)" : ""}: ${formatUsd(estimatedCost)}`}
+        </strong>
+        {prices ? <span>Tarifas guardadas al iniciar</span> : null}
+      </div>
+      <table aria-label="Detalle de tokens usados">
+        <thead>
+          <tr>
+            <th scope="col">Tipo</th>
+            <th scope="col">Tokens</th>
+            <th scope="col">USD / millón</th>
+            <th scope="col">Coste (USD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <th scope="row">{row.label}</th>
+              <td>{row.tokens?.toLocaleString("es-ES") ?? "—"}</td>
+              <td>
+                {row.price?.toLocaleString("es-ES", {
+                  maximumFractionDigits: 6,
+                }) ?? "—"}
+              </td>
+              <td>{row.cost === undefined ? "—" : formatUsd(row.cost)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p>
+        Entrada incluye escritura de caché; salida incluye razonamiento.
+        {coverage === "partial"
+          ? " Consumo parcial: faltan datos o hay mensajes en curso."
+          : null}
+      </p>
+    </section>
+  );
+}
+
 const phases = [
   { name: "Cola", detail: "Issue autorizado", short: "Cola" },
   { name: "Preparación", detail: "Base y entorno", short: "Preparación" },
@@ -410,6 +506,7 @@ export function Dashboard({
     | "runs"
     | "context"
     | "request"
+    | "consumption"
     | "records"
     | null
   >(null);
@@ -541,10 +638,19 @@ export function Dashboard({
                 "Modelo sin observar"}
             </span>
             <i />{" "}
-            <span className="dashboard-tokens-meta">
-              {view.consumption?.observedTokens?.toLocaleString("es-ES") ??
-                "Sin observar"}{" "}
-              tokens observados
+            <button
+              className="dashboard-header-request dashboard-tokens-meta"
+              aria-haspopup="dialog"
+              onClick={() => setDialog("consumption")}
+            >
+              {view.consumption?.usedTokens?.toLocaleString("es-ES") ??
+                "Sin datos de"}{" "}
+              tokens usados
+            </button>
+            <span className="dashboard-cost-meta">
+              {view.consumption?.estimatedCost == null
+                ? "Coste no disponible"
+                : `Coste estimado${view.consumption.coverage === "partial" ? " (parcial)" : ""}: ${formatSummaryUsd(view.consumption.estimatedCost)}`}
             </span>
             <button
               className="dashboard-header-request"
@@ -769,17 +875,23 @@ export function Dashboard({
           title={
             dialog === "records"
               ? "Registro original de la ejecución"
-              : dialog === "request"
-                ? "Encargo y criterios"
-                : dialog === "runs"
-                  ? "Ejecuciones"
-                  : dialog === "context"
-                    ? "Contexto de la ejecución"
-                    : "Evidencia y detalles de la ejecución"
+              : dialog === "consumption"
+                ? "Tokens usados y coste estimado"
+                : dialog === "request"
+                  ? "Encargo y criterios"
+                  : dialog === "runs"
+                    ? "Ejecuciones"
+                    : dialog === "context"
+                      ? "Contexto de la ejecución"
+                      : "Evidencia y detalles de la ejecución"
           }
           onClose={() => setDialog(null)}
         >
-          {dialog === "request" ? (
+          {dialog === "consumption" ? (
+            view.consumption ? (
+              <ConsumptionDetails consumption={view.consumption} />
+            ) : null
+          ) : dialog === "request" ? (
             <section className="dashboard-request-detail">
               <h3>{run.request?.title ?? "Encargo de la Ejecución"}</h3>
               <pre tabIndex={0}>{run.request?.body ?? run.task}</pre>

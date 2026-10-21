@@ -8,6 +8,7 @@ import type { Publication } from "./publication.ts";
 import type { AgentIntervention, IssueComment } from "./intervention.ts";
 import type { IssueLabel } from "./issueLabels.ts";
 import type { RecoveryCommand } from "./recovery.ts";
+import type { TokenPrices } from "./tokenPricing.ts";
 export type RunStatus =
   | "queued"
   | "preparing"
@@ -63,6 +64,8 @@ export interface Run {
   request?: AuthorizedIssue;
   /** Runtime selection for manual runs; issue runs retain request.runtime. */
   runtime?: AgentConfiguration;
+  /** Prices captured once with the runtime selection when work first starts. */
+  tokenPrices?: TokenPrices;
   workspace?: Workspace;
   verification?: Verification;
   publication?: Publication;
@@ -109,40 +112,44 @@ export interface Run {
   history: History[];
   gaps: string[];
 }
-export function consumption(usage: Usage[]) {
+export function consumption(usage: Usage[], prices?: TokenPrices) {
   const withTokens = usage.filter((u) => u.tokens !== null);
-  const observed = withTokens.length
+  const tokens = withTokens.length
     ? withTokens.reduce(
-        (sum, u) =>
-          sum +
-          u.tokens!.input +
-          u.tokens!.output +
-          u.tokens!.reasoning +
-          u.tokens!.cacheRead +
-          u.tokens!.cacheWrite,
-        0,
+        (sum, u) => ({
+          input: sum.input + u.tokens!.input + u.tokens!.cacheWrite,
+          output: sum.output + u.tokens!.output + u.tokens!.reasoning,
+          cacheRead: sum.cacheRead + u.tokens!.cacheRead,
+        }),
+        { input: 0, output: 0, cacheRead: 0 },
       )
     : null;
-  const priced = usage.filter(
-    (u) => u.completed && u.sdkCost !== null && u.sdkCost > 0,
-  );
+  const costs =
+    tokens && prices
+      ? {
+          input: (tokens.input / 1_000_000) * prices.inputUsdPerMillion,
+          output: (tokens.output / 1_000_000) * prices.outputUsdPerMillion,
+          cacheRead:
+            (tokens.cacheRead / 1_000_000) * prices.cacheReadUsdPerMillion,
+        }
+      : null;
 
   return {
-    observedTokens: observed,
-    estimatedCost: priced.length
-      ? priced.reduce((sum, u) => sum + u.sdkCost!, 0)
-      : null,
+    usedTokens: tokens ? tokens.input + tokens.output + tokens.cacheRead : null,
+    tokens,
+    prices: prices ?? null,
+    costs,
+    estimatedCost: costs ? costs.input + costs.output + costs.cacheRead : null,
     apiEquivalent: null,
     accreditedSpend: null,
     source: "OpenCode HTTP SDK 2.0.32 / assistant message identity",
     currency: "USD",
     modality: "OpenCode provider connection; no invoice attribution",
-    coverage:
-      usage.length &&
-      withTokens.length === usage.length &&
-      usage.every((u) => u.completed)
-        ? "observed messages; provider completeness unverified"
-        : "partial / unavailable",
-    tariff: "OpenCode effective catalog; tariff version unavailable",
+    coverage: !tokens
+      ? "unavailable"
+      : withTokens.length === usage.length && usage.every((u) => u.completed)
+        ? "complete"
+        : "partial",
+    tariff: prices ? "Prices saved at execution start" : "Unavailable",
   };
 }

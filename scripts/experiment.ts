@@ -92,7 +92,7 @@ const summarize = (run: Run) => ({
     label: p.label,
     truncated: p.truncated,
   })),
-  usage: consumption(run.usage),
+  usage: consumption(run.usage, run.tokenPrices),
   transitions: run.history.filter((h) =>
     ["opencode-status", "stop", "error"].includes(h.kind),
   ),
@@ -145,7 +145,7 @@ try {
     apiObservedRun: api.run?.id === first.id,
   });
   console.log(
-    `Read experiment: ${result.status}; messages=${result.parts.length}; tokens=${consumption(result.usage).observedTokens}`,
+    `Read experiment: ${result.status}; messages=${result.parts.length}; tokens=${consumption(result.usage, result.tokenPrices).usedTokens}`,
   );
   await factory.stop(first.id);
   cases.push({

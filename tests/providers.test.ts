@@ -30,6 +30,15 @@ test("la configuración admite modelos sin lista manual y exige CLI solo para pr
   try {
     assert.equal(read().model, "my-coder:custom");
     assert.equal(read().reasoningEffort, undefined);
+    assert.equal(read().tokenPrices, undefined);
+    const tokenPrices = {
+      inputUsdPerMillion: 2,
+      outputUsdPerMillion: 8,
+      cacheReadUsdPerMillion: 0,
+    };
+    assert.deepEqual(read({ tokenPrices }).tokenPrices, tokenPrices);
+    assert.throws(() => read({ tokenPrices: {} }), /tokenPrices/);
+    assert.throws(() => read({ tokenPrices: null }), /tokenPrices/);
     assert.equal(read({ reasoningEffort: "high" }).reasoningEffort, "high");
     // Native compatibility is checked only by test:opencode.
     assert.equal(
@@ -211,6 +220,11 @@ test("la cola nunca iniciada adopta la selección global al empezar y el histori
       model: "a-new-model",
       reasoningEffort: "high",
       opencodeCli: "/new/opencode",
+      tokenPrices: {
+        inputUsdPerMillion: 1,
+        outputUsdPerMillion: 4,
+        cacheReadUsdPerMillion: 0.1,
+      },
     };
     workflow = createWorkflow(config, {
       createAgent: (selection) => {
@@ -234,6 +248,7 @@ test("la cola nunca iniciada adopta la selección global al empezar y el histori
     assert.equal(started.request?.runtime.provider, "google");
     assert.equal(started.request?.runtime.model, "a-new-model");
     assert.equal(started.request?.runtime.reasoningEffort, "high");
+    assert.deepEqual(started.tokenPrices, config.tokenPrices);
     assert.equal(selections.at(-1)?.provider, "google");
     assert.equal(selections.at(-1)?.model, "a-new-model");
     assert.equal(selections.at(-1)?.reasoningEffort, "high");

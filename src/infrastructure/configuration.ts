@@ -3,6 +3,7 @@ import { isAbsolute, relative, resolve, sep } from "node:path";
 import { validateProject } from "../domain/configuration.ts";
 import { dirname } from "node:path";
 import type { FactoryConfig } from "../application/configuration.ts";
+import { createTokenPrices } from "../domain/tokenPricing.ts";
 
 export function readConfig(path: string): FactoryConfig {
   const value: unknown = JSON.parse(readFileSync(path, "utf8"));
@@ -30,6 +31,10 @@ export function readConfig(path: string): FactoryConfig {
       "model must be an OpenCode model ID without whitespace or a variant suffix",
     );
   }
+  const tokenPrices =
+    config.tokenPrices === undefined
+      ? undefined
+      : createTokenPrices(config.tokenPrices);
   if (
     config.reasoningEffort !== undefined &&
     (typeof config.reasoningEffort !== "string" ||
@@ -110,6 +115,7 @@ export function readConfig(path: string): FactoryConfig {
     projectDir,
     provider: String(config.provider),
     model: String(config.model),
+    ...(tokenPrices ? { tokenPrices } : {}),
     ...(typeof config.reasoningEffort === "string"
       ? { reasoningEffort: config.reasoningEffort }
       : {}),

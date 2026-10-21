@@ -39,12 +39,33 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     projectDir: root + "/project",
     provider: "google",
     model: "gemini-2.5-flash",
+    tokenPrices: {
+      inputUsdPerMillion: 2,
+      outputUsdPerMillion: 8,
+      cacheReadUsdPerMillion: 0.5,
+    },
     auth: "opencode" as const,
   };
   let factory = createFactory(config, agent, {
     secrets: ["fictional-secret-123"],
   });
   const run = await factory.run("Inspeccionar el paquete del Managed project");
+  const usage = {
+    id: "m1",
+    provider: config.provider,
+    model: config.model,
+    tokens: {
+      input: 200_000,
+      output: 30_000,
+      reasoning: 40_000,
+      cacheRead: 4678,
+      cacheWrite: 50_000,
+    },
+    sdkCost: 99,
+    completed: false,
+  };
+  emit({ type: "usage", usage });
+  emit({ type: "usage", usage });
   emit({ type: "status", status: "busy" });
   emit({
     type: "part",
@@ -66,6 +87,50 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       }),
     ).toBeVisible();
     await expect(page.locator(".dashboard-status")).toHaveText("En curso");
+    const tokens = page.getByRole("button", { name: "324.678 tokens usados" });
+    const summaryCost = page.locator(".dashboard-cost-meta");
+    await expect(tokens).toBeVisible();
+    await expect(summaryCost).toHaveText("Coste estimado (parcial): 1,06 USD");
+    await expect(
+      page.getByRole("table", {
+        name: "Detalle de tokens usados",
+      }),
+    ).toHaveCount(0);
+    await tokens.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Tokens usados y coste estimado",
+      }),
+    ).toBeVisible();
+    const consumption = page.getByRole("region", { name: "Consumo de tokens" });
+    await expect(consumption).toContainText(
+      "Coste estimado (parcial): 1,062339",
+    );
+    const table = consumption.getByRole("table");
+    await expect(table.getByRole("row", { name: /^Entrada/ })).toContainText(
+      "250.000",
+    );
+    await expect(table.getByRole("row", { name: /^Salida/ })).toContainText(
+      "70.000",
+    );
+    await expect(
+      table.getByRole("row", { name: /^Lectura de caché/ }),
+    ).toContainText("4678");
+    emit({ type: "usage", usage: { ...usage, completed: true } });
+    await expect(consumption).toContainText("Coste estimado: 1,062339");
+    await expect(summaryCost).toHaveText("Coste estimado: 1,06 USD");
+    await page.screenshot({
+      path: test.info().outputPath("consumption-dialog-desktop.png"),
+    });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(tokens).toBeFocused();
+    await expect(consumption).toHaveCount(0);
+    await page.screenshot({
+      path: test.info().outputPath("consumption-desktop.png"),
+    });
     await page.getByRole("button", { name: /Registro técnico/ }).click();
     await expect(page.locator(".dashboard-entries")).toContainText("busy");
     await expect(page.locator(".dashboard-entries")).toContainText("idle");
@@ -120,23 +185,59 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     server.closeAllConnections();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     factory.close();
-    factory = createFactory(config, agent);
+    factory = createFactory(
+      {
+        ...config,
+        tokenPrices: {
+          inputUsdPerMillion: 99,
+          outputUsdPerMillion: 99,
+          cacheReadUsdPerMillion: 99,
+        },
+      },
+      agent,
+    );
     server = panelServer(factory);
     server.listen(port, "127.0.0.1");
     await once(server, "listening");
     await page.reload();
+    await expect(summaryCost).toHaveText("Coste estimado: 1,06 USD");
     await expect(page.locator(".dashboard-global-alert").first()).toContainText(
       "no se reenvió la tarea",
     );
     await page.getByRole("button", { name: /Registro técnico/ }).click();
     await expect(page.locator(".dashboard-entries")).toContainText("busy");
     await page.setViewportSize({ width: 390, height: 844 });
+    await expect(consumption).toHaveCount(0);
+    await page.screenshot({
+      path: test.info().outputPath("consumption-mobile.png"),
+    });
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
     expect(factory.view(run.id)!.status).toBe("intervention");
+    await tokens.click();
+    await expect(consumption).toBeVisible();
+    await expect(consumption).toContainText("Coste estimado: 1,062339");
+    await page.screenshot({
+      path: test.info().outputPath("consumption-dialog-mobile.png"),
+    });
+    expect(
+      await page
+        .getByRole("dialog")
+        .evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBe(true);
+    const legacy = factory.view(run.id)!;
+    delete legacy.tokenPrices;
+    factory.persist(legacy);
+    await expect(consumption).toContainText(
+      "Coste no disponible: sin tarifas guardadas",
+    );
+    await expect(summaryCost).toHaveText("Coste no disponible");
+    await page.getByRole("button", { name: "Cerrar detalle" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByText("324.678 tokens usados")).toBeVisible();
   } finally {
     server.closeAllConnections();
     server.close();

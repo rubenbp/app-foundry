@@ -298,6 +298,9 @@ export class Factory {
       } else {
         run.runtime = this.agentConfiguration();
       }
+      if (this.config.tokenPrices) {
+        run.tokenPrices = { ...this.config.tokenPrices };
+      }
     }
     this.active = run.id;
     run.status = prepare ? "preparing" : "starting";

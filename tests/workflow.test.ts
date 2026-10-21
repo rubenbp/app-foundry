@@ -193,7 +193,7 @@ test("los permisos siguen pendientes, la parada es explícita y reiniciar conser
   resumed.close();
 });
 
-test("el SDK reemplaza el uso de cada mensaje y el cero sin una base válida sigue sin estar disponible", async () => {
+test("el SDK reemplaza el uso de cada mensaje y su coste no sustituye a las tarifas guardadas", async () => {
   const s = setup();
   const run = await s.factory.run("Read a file");
   const usage = {
@@ -206,10 +206,10 @@ test("el SDK reemplaza el uso de cada mensaje y el cero sin una base válida sig
   };
   s.emit({ type: "usage", usage });
   s.emit({ type: "usage", usage });
-  assert.equal(consumption(s.factory.view(run.id)!.usage).observedTokens, 19);
+  assert.equal(consumption(s.factory.view(run.id)!.usage).usedTokens, 19);
   assert.equal(consumption(s.factory.view(run.id)!.usage).estimatedCost, null);
   s.emit({ type: "usage", usage: { ...usage, sdkCost: 0.002 } });
-  assert.equal(consumption(s.factory.view(run.id)!.usage).estimatedCost, 0.002);
+  assert.equal(consumption(s.factory.view(run.id)!.usage).estimatedCost, null);
   assert.equal(
     consumption(s.factory.view(run.id)!.usage).accreditedSpend,
     null,

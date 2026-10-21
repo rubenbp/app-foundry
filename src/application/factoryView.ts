@@ -43,6 +43,6 @@ export function factoryView(
       startedAt: r.startedAt,
     })),
     run,
-    consumption: run ? consumption(run.usage) : null,
+    consumption: run ? consumption(run.usage, run.tokenPrices) : null,
   };
 }
