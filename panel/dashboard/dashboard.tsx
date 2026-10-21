@@ -753,7 +753,6 @@ export function Dashboard({
           App Foundry
         </a>
         <div className="dashboard-executions-heading">
-          <span className="dashboard-eyebrow">FACTORY LOCAL</span>
           <h2>
             Ejecuciones <span>{view.runs.length}</span>
           </h2>
@@ -780,7 +779,7 @@ export function Dashboard({
             </section>
           ) : null}
           <section>
-            <h3>Historial</h3>
+            <h3>HISTORIAL</h3>
             <ul>
               {view.runs
                 .filter((item) => item.status !== "queued")

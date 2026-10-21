@@ -1700,7 +1700,7 @@ body:has(.factory-dashboard) {
     background: #46613d;
   }
   .dashboard-executions-heading {
-    padding: 29px 5px 0;
+    padding: 12px 5px 0;
   }
   .dashboard-executions-heading .dashboard-eyebrow {
     color: #9bad8b;
