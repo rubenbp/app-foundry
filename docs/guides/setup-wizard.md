@@ -52,7 +52,9 @@ existente ni comprueba el marcador de un deployment.
    producto. El entrypoint del asistente se alinea con el script que estás
    ejecutando, para que las preguntas y las comprobaciones sean la misma versión.
 3. **GitHub.** Guía el inicio de sesión cuando falta, pregunta repositorio y rama,
-   comprueba sus permisos y clona temporalmente la base para proponer valores.
+   comprueba sus permisos y crea las etiquetas del contrato que falten, con su
+   color y descripción. No modifica las que ya existen. Después clona
+   temporalmente la base para proponer valores.
 4. **Proyecto.** Comprueba la versión exacta de Node de `.node-version`, si está
    declarada, y la versión del gestor indicada en `packageManager`. Pregunta
    archivos de instrucciones, instalación y verificaciones.
@@ -195,5 +197,5 @@ node --experimental-strip-types --test tests/setupFactory.test.ts
 
 Las pruebas cubren configuración compatible, tarifas, entradas literales, rutas
 con espacios y comillas, lanzador desde otro directorio, symlinks, permisos,
-identidades GitHub/Vercel, comprobación remota sin Preview y puerto ocupado. No ejecutan el
+identidades GitHub/Vercel, etiquetas del contrato, comprobación remota sin Preview y puerto ocupado. No ejecutan el
 wizard interactivo, no cambian recursos remotos ni llaman a modelos reales.

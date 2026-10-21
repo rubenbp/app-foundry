@@ -16,6 +16,7 @@ import {
 import {
   checkBase,
   checkGithub,
+  ensureIssueLabels,
   checkModel,
   checkPort,
   checkProtection,
@@ -57,6 +58,10 @@ export async function main(args: string[]) {
       repository: values.REPOSITORY,
       baseBranch: values.BASE_BRANCH,
     });
+    return;
+  }
+  if (command === "labels") {
+    await ensureIssueLabels(values.REPOSITORY);
     return;
   }
   if (command === "project") {

@@ -344,6 +344,8 @@ run_wizard() {
   capture BASE_BRANCH "Rama base" "$value"
   git check-ref-format --branch "$BASE_BRANCH" >/dev/null
   setup github "$ENV_FILE"
+  say "Se crean las etiquetas de la Factory que falten, con su color y descripción. Las que ya existen se conservan."
+  setup labels "$ENV_FILE"
   INSPECTION=$(mktemp -d "$INSTALL_ROOT/.inspection.XXXXXX")
   git -c core.hooksPath=/dev/null -c 'credential.helper=!gh auth git-credential' \
     clone --depth 1 --single-branch --branch "$BASE_BRANCH" -- \

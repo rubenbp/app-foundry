@@ -14,13 +14,14 @@ import type { FactoryConfig } from "../../src/application/configuration.ts";
 import { sanitizer } from "../../src/application/sanitize.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
 import { verificationPlan } from "../../src/domain/verification.ts";
+import { issueLabels, type IssueLabel } from "../../src/domain/issueLabels.ts";
 import { mergeContext } from "../../src/domain/publication.ts";
 import { OpenCode } from "../../src/infrastructure/opencode/agent.ts";
 import {
   remoteCommand,
   type RemoteCommand,
 } from "../../src/infrastructure/remoteCommand.ts";
-import { record } from "../../src/infrastructure/remoteValues.ts";
+import { list, record, text } from "../../src/infrastructure/remoteValues.ts";
 import { GitWorkspace } from "../../src/infrastructure/workspace.ts";
 import { CandidateVerifier } from "../../src/infrastructure/verification.ts";
 import { execute, type ProcessPort } from "../../src/infrastructure/process.ts";
@@ -48,6 +49,80 @@ export async function checkGithub(
     "api",
     `repos/${project.repository}/branches/${encodeURIComponent(project.baseBranch)}`,
   ]);
+}
+
+async function definedIssueLabels(repository: string, command: RemoteCommand) {
+  return new Set(
+    list(
+      JSON.parse(
+        await command("gh", [
+          "api",
+          "--paginate",
+          "--slurp",
+          `repos/${repository}/labels?per_page=100`,
+        ]),
+      ),
+    )
+      .flatMap(list)
+      .map((label) => text(record(label).name)),
+  );
+}
+
+/** Create missing Factory labels. Existing names keep their color and description. */
+export async function ensureIssueLabels(
+  repository: string,
+  command: RemoteCommand = remoteCommand,
+) {
+  if (
+    !/^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*\/[a-zA-Z0-9_-][a-zA-Z0-9_.-]*$/.test(
+      repository,
+    )
+  ) {
+    throw new Error("Repositorio inválido.");
+  }
+  const defined = await definedIssueLabels(repository, command);
+  const created: IssueLabel[] = [];
+  const present: IssueLabel[] = [];
+  for (const name of Object.keys(issueLabels) as IssueLabel[]) {
+    if (defined.has(name)) {
+      present.push(name);
+      continue;
+    }
+    const definition = issueLabels[name];
+    try {
+      await command(
+        "gh",
+        [
+          "api",
+          `repos/${repository}/labels`,
+          "--method",
+          "POST",
+          "--input",
+          "-",
+        ],
+        {
+          name,
+          color: definition.color,
+          description: definition.description,
+        },
+      );
+    } catch (error) {
+      if (!(await definedIssueLabels(repository, command)).has(name)) {
+        throw error;
+      }
+      present.push(name);
+      continue;
+    }
+    created.push(name);
+  }
+  console.log(
+    created.length
+      ? `Etiquetas creadas: ${created.join(", ")}`
+      : "Las etiquetas de la Factory ya existen.",
+  );
+  if (present.length && created.length) {
+    console.log(`Ya existían: ${present.join(", ")}`);
+  }
 }
 
 export async function checkProtection(

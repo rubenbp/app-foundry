@@ -34,7 +34,9 @@ import {
   checkBase,
   checkToolchain,
   checkModel,
+  ensureIssueLabels,
 } from "../scripts/setup/checks.ts";
+import { issueLabels } from "../src/domain/issueLabels.ts";
 import { OpenCode } from "../src/infrastructure/opencode/agent.ts";
 import { execute, type ProcessPort } from "../src/infrastructure/process.ts";
 import { main } from "../scripts/setupFactory.ts";
@@ -579,6 +581,89 @@ test("GitHub debe permitir escritura e issues y Vercel debe corresponder al repo
       }),
     ),
   );
+});
+
+test("las etiquetas que faltan se crean con el color y la descripción del contrato", async () => {
+  const defined = new Set(["factory:ready", "bug"]);
+  const posts: unknown[] = [];
+  const command = async (
+    _executable: string,
+    args: string[],
+    input?: unknown,
+  ) => {
+    if (!args.includes("--method")) {
+      assert.ok(args.includes("--paginate") && args.includes("--slurp"));
+      return JSON.stringify([[...defined].map((name) => ({ name }))]);
+    }
+    assert.deepEqual(args.slice(1, 5), [
+      "repos/team/product/labels",
+      "--method",
+      "POST",
+      "--input",
+    ]);
+    posts.push(input);
+    defined.add((input as { name: string }).name);
+    return "{}";
+  };
+  await ensureIssueLabels("team/product", command);
+  assert.deepEqual(
+    posts,
+    Object.entries(issueLabels)
+      .filter(([name]) => name !== "factory:ready")
+      .map(([name, definition]) => ({ name, ...definition })),
+  );
+  assert.equal(defined.has("bug"), true);
+});
+
+test("una respuesta perdida al crear una etiqueta no falla si después ya existe", async () => {
+  const defined = new Set<string>();
+  let creates = 0;
+  await ensureIssueLabels("team/product", async (_executable, args, input) => {
+    if (!args.includes("--method")) {
+      return JSON.stringify([[...defined].map((name) => ({ name }))]);
+    }
+    creates += 1;
+    const name = (input as { name: string }).name;
+    defined.add(name);
+    if (creates === 1) {
+      throw new Error("Lost create response");
+    }
+    return "{}";
+  });
+  assert.equal(creates, Object.keys(issueLabels).length);
+  assert.deepEqual([...defined].sort(), Object.keys(issueLabels).sort());
+});
+
+test("un fallo al crear una etiqueta que sigue ausente detiene la preparación", async () => {
+  let creates = 0;
+  await assert.rejects(
+    ensureIssueLabels("team/product", async (_executable, args) => {
+      if (args.includes("--method")) {
+        creates += 1;
+        throw new Error("Write permission denied");
+      }
+      return "[[]]";
+    }),
+    /Write permission denied/,
+  );
+  assert.equal(creates, 1);
+  await assert.rejects(
+    ensureIssueLabels("../otro", async () => {
+      throw new Error("No debería consultar GitHub");
+    }),
+    /inválido/,
+  );
+});
+
+test("la etapa de GitHub crea las etiquetas después de comprobar el repositorio", () => {
+  const script = readFileSync(
+    new URL("../scripts/setup-factory.sh", import.meta.url),
+    "utf8",
+  );
+  const github = script.indexOf('  setup github "$ENV_FILE"\n');
+  const labels = script.indexOf('  setup labels "$ENV_FILE"\n');
+  const clone = script.indexOf("clone --depth 1", github);
+  assert.ok(github !== -1 && labels > github && clone > labels);
 });
 
 test("la comprobación remota no necesita Preview y conserva las validaciones de configuración", () => {
