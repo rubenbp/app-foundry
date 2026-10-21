@@ -102,10 +102,12 @@ export class OpenCode implements AgentPort {
         "Requires a supported provider/model and opencodeCli supporting credential export for remote providers",
       );
     }
-    const binary = new URL(
-      "../../../node_modules/@opencode/cli/bin/opencode.exe",
-      import.meta.url,
-    ).pathname;
+    const binary = fileURLToPath(
+      new URL(
+        "../../../node_modules/@opencode/cli/bin/opencode.exe",
+        import.meta.url,
+      ),
+    );
     const version = spawnSync(binary, ["--version"], {
       encoding: "utf8",
       timeout: 5000,
