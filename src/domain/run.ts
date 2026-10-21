@@ -112,6 +112,11 @@ export interface Run {
   history: History[];
   gaps: string[];
 }
+
+export function isFinished(run: Pick<Run, "status">): boolean {
+  return run.status === "completed" || run.status === "stopped";
+}
+
 export function consumption(usage: Usage[], prices?: TokenPrices) {
   const withTokens = usage.filter((u) => u.tokens !== null);
   const tokens = withTokens.length

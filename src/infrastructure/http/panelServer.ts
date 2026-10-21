@@ -3,8 +3,13 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve, extname, sep } from "node:path";
 import { factoryView } from "../../application/factoryView.ts";
 import type { Factory } from "../../application/factory.ts";
+import { RunDeletionRejected } from "../../application/runDeletion.ts";
 
-export function panelServer(factory: Factory, dist = resolve("dist")): Server {
+export function panelServer(
+  factory: Factory,
+  dist = resolve("dist"),
+  commands: Pick<Factory, "deleteRun"> = factory,
+): Server {
   return createServer((req, res) => {
     const address = res.socket?.localPort;
     const origin = `http://127.0.0.1:${address}`;
@@ -28,12 +33,42 @@ export function panelServer(factory: Factory, dist = resolve("dist")): Server {
       json(403, { error: "Se requiere acceso local del mismo origen" });
       return;
     }
-    if (req.method !== "GET") {
-      json(405, { error: "El Dashboard es de solo consulta" });
-      return;
-    }
     try {
       const url = new URL(req.url!, origin);
+      const deletion = url.pathname.match(/^\/api\/runs\/([^/]+)$/);
+      if (req.method === "DELETE" && deletion) {
+        if (req.headers.origin !== origin) {
+          json(403, { error: "Se requiere acceso local del mismo origen" });
+          return;
+        }
+        try {
+          commands.deleteRun(deletion[1]);
+          res.writeHead(204);
+          res.end();
+        } catch (error) {
+          json(
+            error instanceof RunDeletionRejected
+              ? error.reason === "missing"
+                ? 404
+                : 409
+              : 500,
+            {
+              error:
+                error instanceof RunDeletionRejected
+                  ? error.message
+                  : "No se pudo completar el borrado local. La ejecución se conserva; puedes reintentar.",
+            },
+          );
+        }
+        return;
+      }
+      if (req.method !== "GET") {
+        json(405, {
+          error:
+            "Solo se permite consultar o eliminar una ejecución finalizada",
+        });
+        return;
+      }
       if (url.pathname === "/api/view") {
         json(
           200,

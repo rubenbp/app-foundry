@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import type { Factory } from "../../application/factory.ts";
 import type { Workflow } from "../../application/workflow.ts";
 
-/** Adaptador de comandos mediante socket Unix; el Dashboard público sigue siendo de solo lectura. */
+/** Adaptador de inicio y parada mediante socket Unix. */
 export function controlServer(
   factory: Factory,
   workflow: Pick<Workflow, "stop"> | null,

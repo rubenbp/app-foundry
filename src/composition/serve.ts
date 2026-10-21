@@ -74,7 +74,7 @@ export async function serveFactory(
       )
     : undefined;
   factory.onCandidateReady = polling?.wake;
-  const panel = panelServer(factory);
+  const panel = panelServer(factory, undefined, workflow ?? factory);
   const control = controlServer(factory, workflow);
   control.listen(socket);
   await once(control, "listening");

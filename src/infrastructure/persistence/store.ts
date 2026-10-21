@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, writeFileSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
+import { artifactPath } from "./artifactPath.ts";
 import type { Run } from "../../domain/run.ts";
 
 import type { RunRepository } from "../../application/runRepository.ts";
@@ -88,15 +88,20 @@ export class Store implements RunRepository {
       });
   }
 
-  artifact(runId: string, partId: string) {
-    return join(
-      this.root,
-      "artifacts",
+  deleteRun(id: string) {
+    if (this.failed) {
+      throw new Error("Persistence unavailable: effects blocked");
+    }
+    try {
+      this.db.prepare("DELETE FROM runs WHERE id = ?").run(id);
+    } catch (error) {
+      this.failed = true;
+      throw error;
+    }
+  }
 
-      createHash("sha256")
-        .update(runId + ":" + partId)
-        .digest("hex") + ".txt",
-    );
+  artifact(runId: string, partId: string) {
+    return artifactPath(this.root, runId, partId);
   }
 
   write(runId: string, partId: string, text: string) {

@@ -9,6 +9,8 @@ import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import type { Run } from "../domain/run.ts";
+import { isFinished } from "../domain/run.ts";
+import { RunDeletionRejected, type RunFiles } from "./runDeletion.ts";
 import { agentDelivery } from "./agentDelivery.ts";
 import {
   interventionQuestions,
@@ -28,6 +30,7 @@ export class Factory {
   stopping = new Set<string>();
   /** Wake the workflow after a persisted candidate, without running remote effects in ingest. */
   onCandidateReady?: () => void;
+  private runFiles?: RunFiles;
 
   constructor(
     config: FactoryConfig,
@@ -37,6 +40,7 @@ export class Factory {
       secrets?: string[];
       now?: () => number;
       reservedRun?: string;
+      runFiles?: RunFiles;
     } = {},
   ) {
     this.config = Object.freeze({ ...config });
@@ -45,6 +49,7 @@ export class Factory {
     this.secrets = options.secrets ?? [];
     this.clean = sanitizer(this.secrets);
     this.store = store;
+    this.runFiles = options.runFiles;
     // Check every pending run before recovery writes or any external effect.
     for (const run of this.store.list()) {
       const selection = this.recordedSelection(run);
@@ -680,6 +685,38 @@ export class Factory {
 
   list() {
     return this.store.list();
+  }
+
+  deletableRun(id: string): Run {
+    this.assertWritable();
+    const run = this.view(id);
+    if (!run) {
+      throw new RunDeletionRejected("missing", "La ejecución ya no existe.");
+    }
+    if (!isFinished(run)) {
+      throw new RunDeletionRejected(
+        "unfinished",
+        "Solo se pueden eliminar ejecuciones completadas o detenidas.",
+      );
+    }
+    if (this.active === id) {
+      throw new RunDeletionRejected(
+        "busy",
+        "La ejecución todavía está ocupada. Vuelve a intentarlo.",
+      );
+    }
+    return run;
+  }
+
+  /** Synchronous cleanup keeps terminal-state validation and deletion in the same turn. */
+  deleteRun(id: string): void {
+    const run = this.deletableRun(id);
+    if (!this.runFiles) {
+      throw new Error("Local execution cleanup is not configured");
+    }
+    this.runFiles.remove(run);
+    this.store.deleteRun(id);
+    this.stopping.delete(id);
   }
 
   output(id: string, partId: string) {

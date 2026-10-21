@@ -23,6 +23,7 @@ import type { RecoveryCommand } from "../domain/recovery.ts";
 import { IssueRecovery } from "./issueRecovery.ts";
 import type { Run } from "../domain/run.ts";
 import { issueLabel } from "../domain/issueLabels.ts";
+import { RunDeletionRejected } from "./runDeletion.ts";
 
 export interface WorkflowOptions {
   createAgent: (config: FactoryConfig) => AgentPort;
@@ -56,6 +57,7 @@ export class Workflow {
   private recovery?: IssueRecovery;
   private conversationAttached = true;
   private labelsBusy?: Promise<void>;
+  private stopsInProgress = 0;
 
   get observation() {
     return this.factory.store.observation();
@@ -655,6 +657,15 @@ export class Workflow {
   }
 
   async stop(id: string) {
+    this.stopsInProgress++;
+    try {
+      return await this.stopRun(id);
+    } finally {
+      this.stopsInProgress--;
+    }
+  }
+
+  private async stopRun(id: string) {
     const run = this.view(id);
     if (
       run?.publication &&
@@ -687,6 +698,19 @@ export class Workflow {
     }
     await this.syncIssueLabels();
     return result;
+  }
+
+  deleteRun(id: string): void {
+    this.factory.deletableRun(id);
+    // A terminal run can still have an in-flight label or recovery acknowledgement.
+    if (this.polling || this.labelsBusy || this.stopsInProgress) {
+      throw new RunDeletionRejected(
+        "busy",
+        "La Factory está sincronizando cambios. Vuelve a intentar el borrado al terminar.",
+      );
+    }
+    this.ownership.releaseRun(id);
+    this.factory.deleteRun(id);
   }
 
   close() {
