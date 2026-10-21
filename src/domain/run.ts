@@ -117,12 +117,15 @@ export function isFinished(run: Pick<Run, "status">): boolean {
   return run.status === "completed" || run.status === "stopped";
 }
 
-/** Preserve a confirmed review wait across restarts without resuming uncertain work. */
+/** A failed observation does not invalidate a confirmed review wait; uncertain effects do. */
 export function canResumeReview(run: Run): boolean {
   const publication = run.publication;
 
   return Boolean(
-    run.status === "awaiting_review" &&
+    (run.status === "awaiting_review" ||
+      (run.status === "intervention" &&
+        run.phase === "publication" &&
+        publication?.failureKind === "observation")) &&
     publication?.report &&
     publication.report.head === publication.head &&
     publication.operations[`status:${publication.head}:success`]?.state ===

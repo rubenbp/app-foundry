@@ -91,6 +91,7 @@ export async function serveFactory(
       return;
     }
     closing = true;
+    console.log("La fábrica se está parando, espere por favor...");
     workflow?.halt();
     polling?.halt();
     try {

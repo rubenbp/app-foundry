@@ -75,6 +75,10 @@ export class Factory {
     }
     for (const run of this.store.list()) {
       if (canResumeReview(run)) {
+        if (run.status !== "awaiting_review") {
+          run.status = "awaiting_review";
+          this.store.save(run);
+        }
         this.active = run.id;
         continue;
       }

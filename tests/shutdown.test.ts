@@ -132,6 +132,118 @@ for (const shutdown of [true, false]) {
   });
 }
 
+for (const shutdown of [true, false]) {
+  test(`${shutdown ? "apagar y arrancar" : "reiniciar"} tras fallar una consulta de revisión sigue esperando sin pedir intervención`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      const before = s.workflow.view(run.id)!;
+      const nextInspection = s.inspections + 1;
+      s.onInspect((count) => {
+        if (count === nextInspection) {
+          throw new Error("GitHub unavailable");
+        }
+      });
+      await s.workflow.poll();
+      assert.equal(
+        s.workflow.view(run.id)?.publication?.failureKind,
+        "observation",
+      );
+      assert.equal(s.facts.status?.state, "error");
+      if (shutdown) {
+        await s.workflow.shutdown();
+      }
+      s.observationFails(true);
+      s.reopen();
+      await s.workflow.poll();
+      assert.equal(
+        conversation.comments.some((comment) =>
+          comment.body.includes("La Factory necesita intervención"),
+        ),
+        false,
+      );
+      assert.equal(
+        s.workflow.view(run.id)?.publication?.recoveryRequired,
+        undefined,
+      );
+      s.reopen();
+      s.observationFails(false);
+      await s.workflow.poll();
+      const current = s.workflow.view(run.id)!;
+      assert.equal(current.status, "awaiting_review", current.error ?? "");
+      assert.equal(current.error, null);
+      assert.equal(
+        current.publication?.report?.id,
+        before.publication?.report?.id,
+      );
+      assert.equal(
+        current.publication?.report?.head,
+        before.publication?.report?.head,
+      );
+      assert.equal(
+        current.publication?.report?.preview,
+        before.publication?.report?.preview,
+      );
+      assert.deepEqual(
+        current.publication?.preview,
+        before.publication?.preview,
+      );
+      assert.deepEqual(current.publication?.pull, before.publication?.pull);
+      assert.equal(current.attempt, before.attempt);
+      assert.equal(s.workflow.factory.active, run.id);
+      assert.equal(s.tasks.length, 1);
+      assert.equal(s.sessions, 1);
+      assert.deepEqual(s.resumed, []);
+      assert.equal(conversation.comments.length, 0);
+      s.merge();
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "completed");
+    } finally {
+      s.close();
+    }
+  });
+}
+
+test("reiniciar tras una revocación incierta conserva la intervención aunque el fallo inicial fuera una consulta", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    const nextInspection = s.inspections + 1;
+    s.onInspect((count) => {
+      if (count === nextInspection) {
+        throw new Error("GitHub unavailable");
+      }
+    });
+    s.uncertainEffect("status");
+    await s.workflow.poll();
+    const failed = s.workflow.view(run.id)!;
+    assert.equal(failed.publication?.failureKind, "observation");
+    assert.equal(
+      failed.publication?.operations[`status:${failed.publication.head}:error`]
+        ?.state,
+      "intent",
+    );
+    s.reopen();
+    await s.workflow.poll();
+    const current = s.workflow.view(run.id)!;
+    assert.equal(current.status, "intervention");
+    assert.equal(current.publication?.recoveryRequired, true);
+    assert.equal(
+      conversation.comments.filter((comment) =>
+        comment.body.includes("La Factory necesita intervención"),
+      ).length,
+      1,
+    );
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
 test("apagar durante una observación de revisión espera su cierre sin revocar el merge", async () => {
   const s = publicationFixture();
   const entered = Promise.withResolvers<void>();
@@ -322,12 +434,12 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
       );
       const exited = once(child, "exit");
       let stderr = "";
+      let output = "";
       child.stderr.on("data", (chunk) => {
         stderr += String(chunk);
       });
       try {
         const origin = await new Promise<string>((resolve, reject) => {
-          let output = "";
           child.stdout.on("data", (chunk) => {
             output += String(chunk);
             const match = output.match(
@@ -345,6 +457,11 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
         assert.equal((await fetch(`${origin}/api/view`)).status, 200);
         child.kill(signal);
         assert.equal((await exited)[0], 0, stderr);
+        assert.equal(
+          output.split("La fábrica se está parando, espere por favor...")
+            .length - 1,
+          1,
+        );
         const identity = createHash("sha256")
           .update(s.project.repository.toLowerCase())
           .digest("hex");
