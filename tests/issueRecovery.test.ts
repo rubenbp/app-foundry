@@ -8,6 +8,88 @@ import {
 import { recoveryConversation } from "./support/recovery.ts";
 import { execute } from "../src/infrastructure/process.ts";
 
+test("Corregir durante la espera de preview inicia otro Intento sin esperar al deployment", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    s.facts.preview = null;
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
+    conversation.add("Corregir: haz que la animación sea más impactante");
+
+    await s.workflow.poll();
+
+    assert.equal(s.workflow.view(run.id)?.status, "running");
+    assert.equal(s.workflow.view(run.id)?.attempt, 2);
+    assert.equal(s.tasks.length, 2);
+    assert.match(s.tasks[1].text, /haz que la animación sea más impactante/);
+    assert.notEqual(s.facts.status?.state, "success");
+  } finally {
+    s.close();
+  }
+});
+
+for (const inspection of [2, 3]) {
+  test(`Corregir recibido en la consulta ${inspection} de publicación revoca el control y se entrega una sola vez`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+      const beforeComment = s.inspections;
+      s.onInspect((count) => {
+        if (count === beforeComment + 3) {
+          s.comment("Haz que la animación sea más impactante");
+        }
+      });
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+      const before = s.inspections;
+      const writes = s.writes.length;
+      let correction: ReturnType<typeof conversation.add> | undefined;
+      s.onInspect((count) => {
+        if (count === before + inspection) {
+          correction = conversation.add(
+            "Corregir: haz que la animación sea más impactante",
+          );
+          s.facts.comments.push({
+            ...correction,
+            updatedAt: correction.createdAt,
+            source: "issue",
+          });
+        }
+      });
+
+      await s.workflow.poll();
+      assert.ok(correction);
+      const correctionId = correction.id;
+      assert.notEqual(s.facts.status?.state, "success");
+      assert.equal(
+        s.writes.slice(writes).some((write) => write.kind === "success"),
+        false,
+      );
+      await s.workflow.poll();
+      await s.workflow.poll();
+
+      const current = s.workflow.view(run.id)!;
+      assert.equal(current.status, "running", current.error ?? "");
+      assert.equal(current.attempt, 2);
+      assert.equal(s.tasks.length, 2);
+      assert.match(s.tasks[1].text, /haz que la animación sea más impactante/);
+      assert.ok(current.recovery?.consumed.includes(correctionId));
+      assert.equal(current.recovery?.pending, undefined);
+      const responses = conversation.comments.filter((comment) =>
+        comment.body.includes(`recovery-response:${run.id}:${correctionId}`),
+      );
+      assert.equal(responses.length, 1);
+      assert.match(responses[0].body, /Intento 2 iniciado/);
+    } finally {
+      s.close();
+    }
+  });
+}
+
 test("una corrección pendiente sobrevive a dos fallos y Reintentar entrega sus instrucciones una sola vez", async () => {
   const conversation = recoveryConversation();
   const s = publicationFixture({ issueConversation: conversation.port });

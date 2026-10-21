@@ -7,6 +7,48 @@ import {
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 
+for (const inspection of [2, 3]) {
+  test(`un comentario informativo recibido en la consulta ${inspection} conserva la revisión del Commit candidato`, async () => {
+    const s = publicationFixture();
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      const head = s.facts.pull!.head;
+      const before = s.inspections;
+      const writes = s.writes.length;
+      s.onInspect((count) => {
+        if (count === before + inspection) {
+          s.comment("Haz que la animación sea más impactante");
+        }
+      });
+
+      await s.workflow.poll();
+
+      const current = s.workflow.view(run.id)!;
+      assert.equal(current.status, "awaiting_review", current.error ?? "");
+      assert.equal(current.error, null);
+      assert.equal(current.attempt, 1);
+      assert.equal(s.tasks.length, 1);
+      assert.equal(s.facts.pull!.head, head);
+      assert.equal(s.facts.status?.state, "success");
+      assert.equal(
+        s.writes
+          .slice(writes)
+          .some((write) =>
+            ["pending", "failure", "error"].includes(write.kind),
+          ),
+        false,
+      );
+      assert.equal(
+        current.history.some((entry) => entry.kind === "publication-error"),
+        false,
+      );
+    } finally {
+      s.close();
+    }
+  });
+}
+
 test("la PR abre con una descripción funcional y la evidencia técnica extensa permanece saneada en el Dashboard", async () => {
   const s = publicationFixture();
   try {

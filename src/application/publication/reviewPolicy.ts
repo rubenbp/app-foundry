@@ -1,5 +1,5 @@
 import type { Run } from "../../domain/run.ts";
-import { validPreview } from "../../domain/publication.ts";
+import { interpretComment, validPreview } from "../../domain/publication.ts";
 import type { ConversationComment } from "../../domain/publication.ts";
 import type { PublicationFacts } from "./ports.ts";
 
@@ -35,15 +35,17 @@ export function readyToMerge(run: Run, facts: PublicationFacts) {
     return false;
   }
   const project = run.request!.configuration;
-  const newInstructions = facts.comments.some(
+  const unprocessedInvalidation = facts.comments.some(
     (comment) =>
       !isOwn(run, comment) &&
+      !isInterventionResponse(run, comment) &&
+      interpretComment(comment.body).kind === "invalidate" &&
       !publication.consumed.some((consumed) => consumed.id === comment.id),
   );
 
   return Boolean(
     report.head === publication.head &&
-    !newInstructions &&
+    !unprocessedInvalidation &&
     facts.request.open &&
     facts.pull?.open &&
     !facts.pull.merged &&
