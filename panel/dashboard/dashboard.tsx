@@ -344,9 +344,6 @@ function TaskContext({
           >
             Ver evidencia y criterios ↗
           </button>
-          <p className="dashboard-fine-print">
-            Los checks no acreditan la aceptación del resultado.
-          </p>
         </section>
       ) : null}
       {inspected >= 4 && (run.publication || inspected === 4) ? (
@@ -874,8 +871,7 @@ export function Dashboard({
         ) : null}
         {silent ? (
           <p className="dashboard-global-alert" role="status">
-            Sin actividad del agente durante 2 minutos. Aviso informativo; no
-            provoca reintentos.
+            Sin actividad del agente durante 2 minutos.
           </p>
         ) : null}
       </div>

@@ -247,11 +247,6 @@
       }
     ],
     "controls": [],
-    "limitations": [
-      "Control comparison is conservative and cannot detect every semantic weakening.",
-      "Local verification does not accredit preview, acceptance, merge or production.",
-      "Native Playwright traces, media and attachments are omitted and temporary test output is removed; only sanitized text and selected browser metadata are retained."
-    ],
     "error": null,
     "e2e": {
       "origin": "http://127.0.0.1:4173",

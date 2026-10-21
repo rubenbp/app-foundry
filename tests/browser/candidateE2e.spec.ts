@@ -104,7 +104,7 @@ for (const scenario of ["passed", "occupied", "cancelled"] as const) {
         expect(output).toContain("SERVED: Candidate catalogue");
         expect(output).toContain("BROWSER VERSION:");
         expect(output).toContain("GLOBAL SETUP OBSERVED");
-        expect(output).toContain("Native attachment removed");
+        expect(output).toContain('"omitted": true');
         expect(output).not.toContain(
           Buffer.from("password=native-pretend-secret").toString("base64"),
         );

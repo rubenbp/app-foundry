@@ -73,8 +73,6 @@ function describeOperation(entry: History, run: Run) {
       { label: "Commit candidato", value: values[0] },
       { label: "Estado del check en GitHub", value: values[1] },
     );
-    note =
-      "Es el check «Factory / ready-to-merge» de GitHub. Su estado no equivale a la aceptación humana del resultado.";
   } else if (action === "review-ready") {
     label = "Avisar de que el resultado está listo para revisión";
     const value = values[0];

@@ -275,7 +275,7 @@ test('footer slogan', () => assert.equal(readFileSync('footer.txt', 'utf8'), ${J
     );
     assert.match(
       s.workflow.output(result.id, "verification-controls")!,
-      /informational/i,
+      /Base [0-9a-f]+\nHead [0-9a-f]+/i,
     );
   } finally {
     s.close();

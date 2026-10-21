@@ -163,9 +163,6 @@ test("el dashboard muestra los cambios de configuración como información y con
       }),
     ).toBeVisible();
     await expect(section).toContainText("package.json");
-    await expect(section).toContainText(
-      "Información para la revisión del diff.",
-    );
     await expect(page.locator(".dashboard-status")).toHaveText(
       "Verificado · Preview pendiente",
     );

@@ -171,14 +171,8 @@ test("el dashboard guía la revisión con la PR y preview y permite consultar la
       "catalogue checked",
     );
     await verification
-      .getByText("Alcance, limitaciones y registro de evidencia", {
-        exact: true,
-      })
+      .getByText("Registro de evidencia", { exact: true })
       .click();
-    for (const limitation of s.workflow.view(run.id)!.verification!
-      .limitations) {
-      await expect(verification).toContainText(limitation);
-    }
     for (const criterion of s.workflow.view(run.id)!.verification!.criteria) {
       for (const missing of criterion.missing) {
         await expect(verification).toContainText(missing);

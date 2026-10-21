@@ -41,7 +41,6 @@ export interface Verification {
     executedTests: number;
     skippedTests: number;
   };
-  limitations: string[];
   error: string | null;
 }
 
@@ -86,11 +85,6 @@ export function verificationPlan(
       ],
     })),
     controls: [],
-    limitations: [
-      "Product test and configuration changes are informational; passing checks do not establish the semantic quality of the tests.",
-      "Local verification does not accredit preview, acceptance, merge or production.",
-      "Native Playwright traces, media and attachments are omitted and temporary test output is removed; only sanitized text and selected browser metadata are retained.",
-    ],
     error: null,
   };
 }

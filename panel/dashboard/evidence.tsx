@@ -368,7 +368,6 @@ export function VerificationDetails({ run }: { run: Run }) {
       {report.controls.length ? (
         <section className="dashboard-control-changes">
           <h3>Cambios en pruebas o configuración</h3>
-          <p>Información para la revisión del diff.</p>
           <ul>
             {report.controls.map((control) => {
               const separator = control.indexOf(": ");
@@ -394,16 +393,7 @@ export function VerificationDetails({ run }: { run: Run }) {
         </section>
       ) : null}
       <details className="dashboard-evidence-disclosure dashboard-evidence-audit">
-        <summary>Alcance, limitaciones y registro de evidencia</summary>
-        <p>
-          Las pruebas locales no acreditan la preview ni la aceptación humana
-          del resultado.
-        </p>
-        <ul>
-          {report.limitations.map((limitation) => (
-            <li key={limitation}>{limitation}</li>
-          ))}
-        </ul>
+        <summary>Registro de evidencia</summary>
         <h4>Identidad de la versión comprobada</h4>
         <dl className="dashboard-code-identifiers">
           <div>
