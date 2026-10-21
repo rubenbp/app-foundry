@@ -20,6 +20,7 @@ import {
 } from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
 import { IntegratedPublication } from "./publication/integration.ts";
+import { canResumeReview } from "../domain/run.ts";
 
 export class CandidatePublication {
   private runtime: PublicationRuntime;
@@ -449,6 +450,17 @@ export class CandidatePublication {
       : "awaiting_preview";
     run.error = null;
     this.runtime.save(run);
+  }
+
+  /** Closing the Factory preserves a review wait; stopping the Ejecución revokes it. */
+  async shutdown(id: string) {
+    const run = this.runtime.factory.view(id);
+    if (run && canResumeReview(run)) {
+      // Let the current observation settle without manufacturing a publication failure.
+      await this.busy;
+      return;
+    }
+    await this.stop(id);
   }
 
   async stop(id: string) {

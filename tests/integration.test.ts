@@ -109,24 +109,32 @@ test("una PR abierta obsoleta con una vista previa retirada no puede borrar la a
   }
 });
 
-test("tras observar una integración, la recuperación omite cambios de estado sin confirmar una revocación ni reanudar", async () => {
+test("al reiniciar una espera de revisión completa el merge ocurrido durante la parada sin revocar ni repetir el trabajo", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
     await s.workflow.poll();
     await s.workflow.poll();
     s.merge();
-    const before = s.workflow.view(run.id)!.publication!.operations;
     const writes = s.writes.length;
     s.reopen();
     await s.workflow.poll();
     const current = s.workflow.view(run.id)!;
-    assert.equal(current.status, "intervention");
-    assert.equal(current.publication?.acceptance, undefined);
+    assert.equal(current.status, "completed", current.error ?? "");
+    assert.equal(current.publication?.acceptance?.head, s.facts.pull!.head);
     assert.equal(s.facts.status?.state, "success");
-    assert.deepEqual(current.publication?.operations, before);
-    assert.equal(s.writes.length, writes);
-    assert.ok(current.history.some((entry) => entry.kind === "status-skipped"));
+    assert.deepEqual(
+      s.writes.slice(writes).map((write) => write.kind),
+      ["issue-comment", "close-issue"],
+    );
+    assert.equal(s.facts.request.open, false);
+    assert.equal(s.workflow.factory.active, null);
+    assert.equal(s.tasks.length, 1);
+    await s.workflow.poll();
+    assert.equal(
+      s.writes.filter((write) => write.kind === "close-issue").length,
+      1,
+    );
   } finally {
     s.close();
   }

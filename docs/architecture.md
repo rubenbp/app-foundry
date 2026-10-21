@@ -104,6 +104,8 @@ El runtime de OpenCode se conserva en un directorio privado por Ejecución dentr
 
 La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Factory conserva esa espera; `stop` sigue siendo una cancelación explícita. La aceptación del Commit candidato y el merge conservan sus controles de permisos.
 
+`domain/run.ts` define `canResumeReview`: una espera `awaiting_review` con informe del Commit candidato y control favorable confirmados, sin órdenes, operaciones o bloqueos pendientes, sobrevive al apagado y al reinicio. El cierre de la Factory deja terminar la observación en curso y conserva esa espera; `stop` sigue revocando el control. Al volver se reutiliza el polling de comentarios y merge. Las intervenciones ya persistidas mantienen su recuperación explícita.
+
 ## Recuperación explícita del MVP
 
 `domain/recovery.ts` reconoce únicamente las órdenes completas `Reintentar`, `Corregir: instrucciones` y `Cancelar`, y determina las acciones disponibles según el estado y la integración. `application/issueRecovery.ts` publica el aviso de intervención, consume comentarios humanos del issue sin comprobar permisos y delega la operación en el workflow. Los IDs consumidos quedan persistidos y se excluyen de la revisión posterior de la PR. No hay cola de notificaciones ni protocolo adicional para recuperar comunicaciones con GitHub.

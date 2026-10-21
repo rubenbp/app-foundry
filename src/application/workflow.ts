@@ -489,7 +489,7 @@ export class Workflow {
     }
     await this.interruptVerification(run.id);
     try {
-      await this.publication?.stop(run.id);
+      await this.publication?.shutdown(run.id);
     } catch (error) {
       this.factory.assertWritable();
       const current = this.view(run.id)!;
@@ -499,8 +499,10 @@ export class Workflow {
       this.factory.record(current, "shutdown-error", current.error);
       this.factory.persist(current);
     } finally {
-      // Closing the process must not complete the Ejecución or release its reservation.
-      await this.factory.suspendConversation(run.id);
+      // An in-flight observation may have completed the run; preserve every pending reservation.
+      if (this.factory.active === run.id) {
+        await this.factory.suspendConversation(run.id);
+      }
       this.conversationAttached = false;
     }
   }

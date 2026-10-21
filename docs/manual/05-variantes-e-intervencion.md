@@ -123,6 +123,7 @@ flowchart TD
     S -->|"En cola"| Q["Conservar cola<br/>Puede arrancar cuando quede libre"]
     S -->|"completed o stopped"| T["Conservar resultado terminal"]
     S -->|"Esperaba una respuesta humana"| W["Conservar espera y thread<br/>Continuar al recibir un comentario nuevo"]
+    S -->|"Esperaba revisión confirmada"| V["Conservar espera y control de merge<br/>Procesar comentarios o merge al volver, sin aviso de reinicio"]
     S -->|"Otros trabajos iniciados"| I["Marcar intervención<br/>Mantener puesto y no reenviar tarea"]
     I --> P{"¿Había publicación iniciada?"}
     P -->|"Sí"| O["Observar efectos remotos ya ocurridos<br/>Retirar control de merge activa y exigir recuperación"]
@@ -130,7 +131,11 @@ flowchart TD
     O --> H["Sin reanudar automáticamente<br/>Publicar aviso y esperar Reintentar"]
 ```
 
-Cerrar la Factory mediante Ctrl-C o SIGTERM conserva la Ejecución, el puesto, el trabajo y la conversación. Interrumpe la verificación en curso y comprueba su limpieza, intenta revocar el control de merge antes de cerrar y detiene el servidor del agente. Una espera humana conserva su solicitud; los demás trabajos iniciados quedan en intervención y requieren `Reintentar` tras arrancar. Una parada no confirmada conserva la incertidumbre y la reserva. El comando operativo `stop` sigue terminando la Ejecución. Si no se confirma la entrega de una respuesta al agente, se registra una incidencia y no se reenvía automáticamente.
+Cerrar la Factory mediante Ctrl-C o SIGTERM conserva la Ejecución, el puesto, el trabajo y la conversación. Una revisión confirmada (`awaiting_review`) conserva la PR, la preview, el Intento y el control favorable de merge. Al arrancar continúa esperando en silencio y procesa los comentarios o el merge ocurridos durante la parada con las reglas habituales. No publica un aviso de intervención ni exige `Reintentar` por ese reinicio.
+
+Una espera humana conserva su solicitud. Los demás trabajos iniciados quedan en intervención y requieren `Reintentar` tras arrancar: la Factory interrumpe la verificación en curso y comprueba su limpieza, intenta revocar el control de merge y detiene el servidor del agente. Una parada no confirmada conserva la incertidumbre y la reserva. El comando operativo `stop` sigue terminando la Ejecución y revocando el control de merge. Si no se confirma la entrega de una respuesta al agente, se registra una incidencia y no se reenvía automáticamente.
+
+Las ejecuciones que una versión anterior ya dejó en intervención mantienen su recuperación explícita mediante `Reintentar`; este cambio no migra el historial.
 
 La Factory registra intención antes de los efectos y confirmación después. Esta separación permite reconocer una PR creada aunque se haya perdido la respuesta. No garantiza una transacción única entre GitHub, Vercel y el almacenamiento local.
 

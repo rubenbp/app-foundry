@@ -84,30 +84,127 @@ test("una parada incierta al apagar conserva la intervención y la reserva", asy
   }
 });
 
-test("apagar durante revisión revoca el control y conserva la Ejecución para Reintentar", async () => {
-  const conversation = recoveryConversation();
-  const s = publicationFixture({ issueConversation: conversation.port });
+for (const shutdown of [true, false]) {
+  test(`${shutdown ? "apagar y arrancar" : "reiniciar"} durante revisión conserva la espera sin avisos ni trabajo nuevo`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      await s.workflow.poll();
+      assert.equal(s.facts.status?.state, "success");
+      const before = s.workflow.view(run.id)!;
+      const writes = s.writes.length;
+      const comments = conversation.comments.length;
+      if (shutdown) {
+        const inspections = s.inspections;
+        s.observationFails(true);
+        await s.workflow.shutdown();
+        assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+        assert.equal(s.facts.status?.state, "success");
+        assert.equal(s.inspections, inspections);
+        s.observationFails(false);
+      }
+      s.reopen();
+      await s.workflow.poll();
+      await s.workflow.poll();
+      const current = s.workflow.view(run.id)!;
+      assert.equal(current.status, "awaiting_review");
+      assert.equal(current.error, null);
+      assert.equal(current.publication?.recoveryRequired, undefined);
+      assert.deepEqual(current.publication?.report, before.publication?.report);
+      assert.deepEqual(
+        current.publication?.preview,
+        before.publication?.preview,
+      );
+      assert.deepEqual(current.publication?.pull, before.publication?.pull);
+      assert.equal(current.attempt, before.attempt);
+      assert.equal(s.workflow.factory.active, run.id);
+      assert.equal(s.facts.status?.state, "success");
+      assert.equal(s.writes.length, writes);
+      assert.equal(conversation.comments.length, comments);
+      assert.equal(s.tasks.length, 1);
+      assert.equal(s.sessions, 1);
+      assert.deepEqual(s.resumed, []);
+    } finally {
+      s.close();
+    }
+  });
+}
+
+test("apagar durante una observación de revisión espera su cierre sin revocar el merge", async () => {
+  const s = publicationFixture();
+  const entered = Promise.withResolvers<void>();
+  const release = Promise.withResolvers<void>();
+  let observation: Promise<void> | undefined;
+  let shutdown: Promise<void> | undefined;
   try {
     const run = await s.candidate();
     await s.workflow.poll();
-    await s.workflow.poll();
+    const writes = s.writes.length;
+    const nextInspection = s.inspections + 1;
+    s.onInspect(async (count) => {
+      if (count === nextInspection) {
+        entered.resolve();
+        await release.promise;
+      }
+    });
+    observation = s.workflow.poll();
+    await entered.promise;
+    shutdown = s.workflow.shutdown();
+    release.resolve();
+    await Promise.all([observation, shutdown]);
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.writes.length, writes);
     assert.equal(s.facts.status?.state, "success");
-    await s.workflow.shutdown();
-    assert.equal(s.workflow.view(run.id)?.status, "intervention");
-    assert.equal(s.facts.status?.state, "failure");
     s.reopen();
     await s.workflow.poll();
-    assert.equal(s.workflow.view(run.id)?.status, "intervention");
-    assert.notEqual(s.facts.status?.state, "success");
-    conversation.add("Reintentar");
-    await s.workflow.poll();
     assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
-    assert.equal(s.facts.status?.state, "success");
     assert.equal(s.tasks.length, 1);
   } finally {
+    release.resolve();
+    await Promise.all([observation, shutdown]);
     s.close();
   }
 });
+
+for (const command of ["Corregir: ajustar el pie", "Cancelar"]) {
+  test(`al arrancar procesa ${command} recibido durante la espera con la Factory apagada`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      await s.workflow.poll();
+      await s.workflow.shutdown();
+      const order = conversation.add(command);
+      s.reopen();
+      await s.workflow.poll();
+      const current = s.workflow.view(run.id)!;
+      assert.deepEqual(current.recovery?.consumed, [order.id]);
+      assert.equal(
+        conversation.comments.some((comment) =>
+          comment.body.includes("La Factory necesita intervención"),
+        ),
+        false,
+      );
+      if (command === "Cancelar") {
+        assert.equal(current.status, "stopped");
+        assert.equal(s.workflow.factory.active, null);
+        assert.equal(conversation.closures.length, 1);
+        assert.equal(s.tasks.length, 1);
+      } else {
+        assert.equal(current.status, "running", current.error ?? "");
+        assert.equal(current.attempt, 2);
+        assert.equal(s.tasks.length, 2);
+        assert.equal(s.tasks[1].sessionId, run.sessionId);
+        assert.match(s.tasks[1].text, /ajustar el pie/);
+        assert.equal(s.sessions, 1);
+      }
+    } finally {
+      s.close();
+    }
+  });
+}
 
 test("stop explícito permanece terminal después de apagar y arrancar", async () => {
   const conversation = recoveryConversation();
@@ -161,11 +258,10 @@ test("apagar interrumpe el comando de verificación antes de conservar la Ejecuc
   }
 });
 
-test("un fallo remoto al apagar no impide detener el agente ni conserva un éxito aparente", async () => {
+test("un fallo remoto al apagar una publicación pendiente conserva la intervención", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
-    await s.workflow.poll();
     s.observationFails(true);
     await s.workflow.shutdown();
     assert.equal(s.workflow.view(run.id)?.status, "intervention");

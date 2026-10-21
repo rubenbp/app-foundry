@@ -52,11 +52,15 @@ export function publicationFixture(
   let uncertain: string | null = null;
   let statusAt = clock;
   let inspections = 0;
-  let onInspect: ((inspection: number) => PublicationFacts | void) | undefined;
+  let onInspect:
+    | ((
+        inspection: number,
+      ) => PublicationFacts | void | Promise<PublicationFacts | void>)
+    | undefined;
   const port: PublicationPort = {
     async inspect() {
       inspections++;
-      const observed = onInspect?.(inspections);
+      const observed = await onInspect?.(inspections);
       if (observationError) {
         throw new Error("GitHub unavailable");
       }
@@ -180,7 +184,11 @@ export function publicationFixture(
     },
     facts,
     issue,
-    onInspect(callback: (inspection: number) => PublicationFacts | void) {
+    onInspect(
+      callback: (
+        inspection: number,
+      ) => PublicationFacts | void | Promise<PublicationFacts | void>,
+    ) {
       onInspect = callback;
     },
     merge() {

@@ -9,7 +9,7 @@ import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import type { Run } from "../domain/run.ts";
-import { isFinished } from "../domain/run.ts";
+import { canResumeReview, isFinished } from "../domain/run.ts";
 import { RunDeletionRejected, type RunFiles } from "./runDeletion.ts";
 import { agentDelivery } from "./agentDelivery.ts";
 import {
@@ -74,6 +74,10 @@ export class Factory {
       }
     }
     for (const run of this.store.list()) {
+      if (canResumeReview(run)) {
+        this.active = run.id;
+        continue;
+      }
       if (
         run.status === "waiting" &&
         run.request &&
@@ -663,11 +667,11 @@ export class Factory {
     if (current.process) {
       current.process.exited = stopped.exited;
     }
-    if (
-      !stopped.exited ||
-      current.status !== "waiting" ||
-      !pendingIntervention(current.interventions)
-    ) {
+    const preservesWait =
+      canResumeReview(current) ||
+      (current.status === "waiting" &&
+        pendingIntervention(current.interventions));
+    if (!stopped.exited || !preservesWait) {
       current.status = "intervention";
       current.error = !stopped.exited
         ? this.clean(stopped.detail).text

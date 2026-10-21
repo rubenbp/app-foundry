@@ -117,6 +117,25 @@ export function isFinished(run: Pick<Run, "status">): boolean {
   return run.status === "completed" || run.status === "stopped";
 }
 
+/** Preserve a confirmed review wait across restarts without resuming uncertain work. */
+export function canResumeReview(run: Run): boolean {
+  const publication = run.publication;
+
+  return Boolean(
+    run.status === "awaiting_review" &&
+    publication?.report &&
+    publication.report.head === publication.head &&
+    publication.operations[`status:${publication.head}:success`]?.state ===
+      "confirmed" &&
+    !publication.blocked &&
+    !publication.recoveryRequired &&
+    !run.recovery?.pending &&
+    Object.values(publication.operations).every(
+      (effect) => effect.state === "confirmed",
+    ),
+  );
+}
+
 export function consumption(usage: Usage[], prices?: TokenPrices) {
   const withTokens = usage.filter((u) => u.tokens !== null);
   const tokens = withTokens.length
