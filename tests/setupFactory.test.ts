@@ -29,7 +29,6 @@ import {
   checkGithub,
   checkProtection,
   checkVercel,
-  checkPreview,
   checkPort,
   requireStopped,
   checkBase,
@@ -178,6 +177,101 @@ test("la biblioteca Bash de macOS guarda respuestas literales y confirma con s e
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /Configuración completada/);
     assert.equal(readAnswers(file).PUBLIC_VALUE, value);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("una reconfiguración usa el entrypoint de este wizard y no el de la instalación anterior", () => {
+  const directory = root();
+  try {
+    const source = join(directory, "source");
+    const factory = join(directory, "factory");
+    mkdirSync(join(source, "scripts", "setup"), { recursive: true });
+    mkdirSync(join(factory, "scripts", "setup"), { recursive: true });
+    writeFileSync(join(source, "scripts", "setupFactory.ts"), "nuevo\n");
+    writeFileSync(join(source, "scripts", "testOpenCode.ts"), "nuevo-probe\n");
+    writeFileSync(
+      join(source, "scripts", "setup", "checks.ts"),
+      "nuevo-checks\n",
+    );
+    writeFileSync(join(factory, "scripts", "setupFactory.ts"), "viejo\n");
+    writeFileSync(join(factory, "scripts", "testOpenCode.ts"), "viejo-probe\n");
+    writeFileSync(
+      join(factory, "scripts", "setup", "checks.ts"),
+      "viejo-checks\n",
+    );
+    writeFileSync(join(factory, "scripts", "setup", "obsoleto.ts"), "borrar\n");
+    const script = readFileSync(
+      new URL("../scripts/setup-factory.sh", import.meta.url),
+      "utf8",
+    );
+    const start = script.indexOf("align_setup_entrypoint() {");
+    assert.notEqual(start, -1);
+    let depth = 0;
+    let end = -1;
+    for (
+      let index = script.indexOf("{", start);
+      index < script.length;
+      index++
+    ) {
+      const char = script[index];
+      if (char === "{") {
+        depth += 1;
+      } else if (char === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          end = index;
+          break;
+        }
+      }
+    }
+    assert.notEqual(end, -1);
+    const call = script.indexOf("\n  align_setup_entrypoint\n");
+    const stopped = script.indexOf("\n  setup stopped ");
+    assert.ok(call !== -1 && call < stopped);
+    const run = (sourceRoot: string, factoryDir: string) =>
+      spawnSync(
+        "/bin/bash",
+        [
+          "-c",
+          "set -euo pipefail\n" +
+            script.slice(start, end + 1) +
+            "\nalign_setup_entrypoint\n",
+        ],
+        {
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            SOURCE_ROOT: sourceRoot,
+            FACTORY_DIR: factoryDir,
+          },
+        },
+      );
+    const same = run(factory, factory);
+    assert.equal(same.status, 0, same.stderr);
+    assert.equal(
+      readFileSync(join(factory, "scripts", "setupFactory.ts"), "utf8"),
+      "viejo\n",
+    );
+    const updated = run(source, factory);
+    assert.equal(updated.status, 0, updated.stderr);
+    assert.equal(
+      readFileSync(join(factory, "scripts", "setupFactory.ts"), "utf8"),
+      "nuevo\n",
+    );
+    assert.equal(
+      readFileSync(join(factory, "scripts", "testOpenCode.ts"), "utf8"),
+      "nuevo-probe\n",
+    );
+    assert.equal(
+      readFileSync(join(factory, "scripts", "setup", "checks.ts"), "utf8"),
+      "nuevo-checks\n",
+    );
+    assert.equal(
+      existsSync(join(factory, "scripts", "setup", "obsoleto.ts")),
+      false,
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -487,47 +581,86 @@ test("GitHub debe permitir escritura e issues y Vercel debe corresponder al repo
   );
 });
 
-test("la preview exige identidad correcta, acceso y marcador del mismo commit", async () => {
+test("la comprobación remota no necesita Preview y conserva las validaciones de configuración", () => {
   const directory = root();
   try {
-    const sha = "a".repeat(40);
-    const project = setupProject(answers);
-    for (const status of ["200", "403"]) {
-      const check = checkPreview(
-        project,
-        "vercel",
-        directory,
-        "https://product-immutable.vercel.app",
-        async (_exe, args) =>
-          args[0] === "api"
-            ? JSON.stringify({
-                url: "product-immutable.vercel.app",
-                target: null,
-                readyState: "READY",
-                projectId: "prj_example",
-                meta: {
-                  githubCommitOrg: "team",
-                  githubCommitRepo: "product",
-                  githubCommitSha: sha,
-                },
-              })
-            : `${JSON.stringify({ sha, dirty: false })}\n${status}`,
-      );
-      if (status === "200") {
-        await check;
-      } else {
-        await assert.rejects(check, /preview/);
-      }
-    }
-    await assert.rejects(
-      checkPreview(
-        project,
-        "vercel",
-        directory,
-        "https://untrusted.example.com",
-        async () => assert.fail("No network call"),
-      ),
+    const cli = join(directory, "gh");
+    const log = join(directory, "calls.jsonl");
+    writeFileSync(
+      cli,
+      `#!${process.execPath}
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.CLI_LOG, JSON.stringify(args) + "\\n");
+const responses = {
+  "repos/team/product": {
+    full_name: "team/product", permissions: { push: true },
+    has_issues: true, archived: false,
+  },
+  "repos/team/product/branches/main": {},
+  "repos/team/product/branches/main/protection": {
+    required_pull_request_reviews: {}, enforce_admins: { enabled: true },
+    required_status_checks: {
+      strict: true, contexts: ["Vercel", "Factory / ready-to-merge"],
+    },
+  },
+  "/v9/projects/prj_example?teamId=team_example": {
+    id: "prj_example", accountId: "team_example", name: "product",
+    autoExposeSystemEnvs: true, rootDirectory: null,
+    link: { type: "github", org: "team", repo: "product", productionBranch: "main" },
+  },
+};
+if (args[0] !== "api" || !Object.hasOwn(responses, args[1])) {
+  throw new Error("Unexpected external operation: " + JSON.stringify(args));
+}
+console.log(JSON.stringify(responses[args[1]]));
+`,
+      { mode: 0o700 },
     );
+    const path = join(directory, ".setup.env");
+    for (const legacy of [false, true]) {
+      writeFileSync(log, "");
+      writeFileSync(
+        path,
+        dotenv({
+          ...answers,
+          VERCEL_CLI: cli,
+          ...(legacy ? { PREVIEW_URL: "legacy-value-no-longer-used" } : {}),
+        }),
+      );
+      const result = spawnSync(
+        process.execPath,
+        [
+          "--experimental-strip-types",
+          fileURLToPath(new URL("../scripts/setupFactory.ts", import.meta.url)),
+          "remote",
+          path,
+        ],
+        {
+          encoding: "utf8",
+          timeout: 15_000,
+          env: {
+            ...process.env,
+            PATH: directory + ":" + process.env.PATH,
+            CLI_LOG: log,
+          },
+        },
+      );
+      assert.equal(result.status, 0, result.stderr);
+      const calls = readFileSync(log, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      assert.deepEqual(
+        calls.map((args) => args[1]),
+        [
+          "repos/team/product",
+          "repos/team/product/branches/main",
+          "/v9/projects/prj_example?teamId=team_example",
+          "repos/team/product/branches/main/protection",
+        ],
+      );
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

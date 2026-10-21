@@ -38,8 +38,9 @@ texto: escribe la ruta absoluta. El wizard admite el Bash 3.2 incluido en macOS.
 
 Este recorrido admite proyectos situados en la raíz de su repositorio. Un monorepo
 o una aplicación que necesite otro contrato de ejecución requiere preparación
-específica. Una base fallida, una preview ausente o un marcador inválido impiden
-completar el wizard. Consulta el error, prepara el proyecto y vuelve a ejecutarlo.
+específica. Una base fallida impide completar el wizard. Consulta el error,
+prepara el proyecto y vuelve a ejecutarlo. La instalación no requiere una preview
+existente ni comprueba el marcador de un deployment.
 
 ## Ocho etapas
 
@@ -47,7 +48,9 @@ completar el wizard. Consulta el error, prepara el proyecto y vuelve a ejecutarl
    respuestas públicas en `.setup.env`. Ese archivo nunca se ejecuta como shell.
 2. **Requisitos.** Comprueba macOS y herramientas. Clona la versión confirmada del
    checkout de origen, instala con `npm ci`, prepara OpenCode local, comprueba tipos
-   y compila el Dashboard. Una instalación existente se conserva sin actualizarla.
+   y compila el Dashboard. Una instalación existente conserva su código de
+   producto. El entrypoint del asistente se alinea con el script que estás
+   ejecutando, para que las preguntas y las comprobaciones sean la misma versión.
 3. **GitHub.** Guía el inicio de sesión cuando falta, pregunta repositorio y rama,
    comprueba sus permisos y clona temporalmente la base para proponer valores.
 4. **Proyecto.** Comprueba la versión exacta de Node de `.node-version`, si está
@@ -61,11 +64,11 @@ completar el wizard. Consulta el error, prepara el proyecto y vuelve a ejecutarl
    sistema. La importación de un proyecto nuevo puede publicar producción. Guía
    la creación inicial de una protección clásica de rama y, tras confirmación,
    añade PR obligatoria, rama actualizada y checks Vercel y Factory, conservando
-   las reglas existentes. Pide la URL inmutable de una Preview READY.
+   las reglas existentes. No solicita una URL de Preview ni prepara deployments.
 6. **Modelo.** Selecciona proveedor, CLI de autenticación, modelo y esfuerzo real
    del catálogo. Pide las tres tarifas USD por millón de tokens. Consulta el
    catálogo y valida soporte de herramientas sin enviar prompts.
-7. **Comprobación.** Verifica acceso a la preview y marcador del commit. Tras
+7. **Comprobación.** Revalida GitHub, Vercel y la protección de la rama. Tras
    confirmación, instala y verifica la base en un clon temporal con el entorno y
    adaptadores de la Factory. Incluye el servidor E2E exclusivo y evidencia de
    Playwright cuando están configurados. Una prueba opcional de generación solicita
@@ -99,7 +102,13 @@ con la de salida. No se establece un límite de gasto ni se acredita una factura
 Las tarifas se guardan en `tokenPrices` de `factory.local.json` y cada Ejecución
 conserva la copia tomada al comenzar.
 
-## Preparar una preview compatible
+## Previews durante las Ejecuciones
+
+El wizard guarda la ruta del marcador en `publication.versionPath` de
+`managed-project.json`. No pide ni guarda una URL de Preview nueva. Un valor
+`PREVIEW_URL` conservado en `.setup.env` por una versión anterior se ignora.
+La Factory obtiene y verifica la preview de cada Commit candidato durante su
+Ejecución. Completar la instalación no acredita ese recorrido de publicación.
 
 Vercel debe estar conectado al repositorio correcto. En el Dashboard, revisa
 **Settings → Git**, la rama de producción y **Build and Deployment**. Habilita
@@ -121,10 +130,10 @@ metadatos Git del deployment. No basta un JSON fijo ni una URL de producción.
 Mantén Deployment Protection: se comprueba el acceso mediante `vercel curl` con
 la sesión existente, sin guardar credenciales del navegador.
 
-Si todavía no existe una preview, prepara una rama y una PR del producto y espera
-un deployment Preview READY. El wizard no modifica ni integra código del Managed
-project para preparar ese contrato. Documenta en sus instrucciones la identidad
-de autor Git autorizada por Vercel; el entorno de la Factory usa por defecto
+El wizard no crea ramas ni PRs, ni modifica o integra código del Managed project
+para preparar ese contrato. Antes de usar la Factory, documenta en las
+instrucciones del producto la identidad de autor Git autorizada por Vercel;
+el entorno de la Factory usa por defecto
 `App Foundry <factory@localhost>`, que puede necesitar un `--author` explícito al
 crear commits. Véase la [prueba local](../manual/07-prueba-local-github-vercel.md).
 
@@ -186,5 +195,5 @@ node --experimental-strip-types --test tests/setupFactory.test.ts
 
 Las pruebas cubren configuración compatible, tarifas, entradas literales, rutas
 con espacios y comillas, lanzador desde otro directorio, symlinks, permisos,
-identidades GitHub/Vercel, preview protegida y puerto ocupado. No ejecutan el
+identidades GitHub/Vercel, comprobación remota sin Preview y puerto ocupado. No ejecutan el
 wizard interactivo, no cambian recursos remotos ni llaman a modelos reales.

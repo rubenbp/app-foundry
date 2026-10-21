@@ -12,7 +12,6 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import type { FactoryConfig } from "../../src/application/configuration.ts";
 import { sanitizer } from "../../src/application/sanitize.ts";
-import type { PublicationContext } from "../../src/application/publication/ports.ts";
 import type { ManagedProject } from "../../src/domain/request.ts";
 import { verificationPlan } from "../../src/domain/verification.ts";
 import { mergeContext } from "../../src/domain/publication.ts";
@@ -21,14 +20,10 @@ import {
   remoteCommand,
   type RemoteCommand,
 } from "../../src/infrastructure/remoteCommand.ts";
-import {
-  record,
-  previewOrigin,
-} from "../../src/infrastructure/remoteValues.ts";
+import { record } from "../../src/infrastructure/remoteValues.ts";
 import { GitWorkspace } from "../../src/infrastructure/workspace.ts";
 import { CandidateVerifier } from "../../src/infrastructure/verification.ts";
 import { execute, type ProcessPort } from "../../src/infrastructure/process.ts";
-import { VercelPreviewAccess } from "../../src/infrastructure/vercelPreview.ts";
 import { containedFile } from "./configuration.ts";
 
 export async function checkGithub(
@@ -116,40 +111,6 @@ export async function checkVercel(
   if (identity.autoExposeSystemEnvs !== true) {
     throw new Error(
       "Habilita System Environment Variables en Settings → Build and Deployment de Vercel.",
-    );
-  }
-}
-
-export async function checkPreview(
-  project: ManagedProject,
-  executable: string,
-  directory: string,
-  url: string,
-  command: RemoteCommand = remoteCommand,
-) {
-  const origin = previewOrigin(url);
-  const access = new VercelPreviewAccess(directory, command, executable);
-  // These read-only adapter operations consume only the trusted project.
-  const context: PublicationContext = {
-    repository: project.repository,
-    project,
-    issue: 0,
-    runId: "setup",
-    head: "",
-    workspace: { directory, branch: "", baseSha: "", instructions: [] },
-    description: { title: "", body: "" },
-  };
-  const identity = await access.inspect(origin, context);
-  if (
-    identity.projectId !== project.publication.projectId ||
-    identity.repository !== project.repository
-  ) {
-    throw new Error("La preview pertenece a otro proyecto o repositorio.");
-  }
-  const marker = await access.servedHead(origin, context);
-  if (marker.access !== "verified" || marker.head !== identity.head) {
-    throw new Error(
-      "No se pudo verificar el acceso a la preview o su marcador de commit.",
     );
   }
 }

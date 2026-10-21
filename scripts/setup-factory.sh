@@ -223,7 +223,20 @@ require_tool() {
 }
 
 setup() {
+  # Loads the entrypoint inside the installation, where dependencies exist.
+  # align_setup_entrypoint must have copied this checkout's scripts there.
   "$NODE_CLI" --experimental-strip-types "$FACTORY_DIR/scripts/setupFactory.ts" "$@"
+}
+
+# This shell is already the wizard contract. An existing Factory keeps its
+# product code, so a repeat would otherwise run an older entrypoint whose
+# prompts and checks no longer match. Copy only this checkout's wizard scripts.
+align_setup_entrypoint() {
+  [[ "$SOURCE_ROOT" == "$FACTORY_DIR" ]] && return 0
+  cp -f "$SOURCE_ROOT/scripts/setupFactory.ts" "$FACTORY_DIR/scripts/setupFactory.ts"
+  cp -f "$SOURCE_ROOT/scripts/testOpenCode.ts" "$FACTORY_DIR/scripts/testOpenCode.ts"
+  rm -rf -- "$FACTORY_DIR/scripts/setup"
+  cp -R "$SOURCE_ROOT/scripts/setup" "$FACTORY_DIR/scripts/"
 }
 
 suggest() {
@@ -241,7 +254,7 @@ run_wizard() {
   local key value actual expected
   local REPOSITORY BASE_BRANCH INSTRUCTIONS INSTALL_COMMAND CHECK_COMMANDS
   local E2E_ENABLED E2E_COMMAND E2E_CONFIG E2E_SERVER E2E_ORIGIN BUILD_DIRECTORY
-  local VERCEL_SCOPE VERCEL_PROJECT VERCEL_PROJECT_ID VERCEL_TEAM_ID VERSION_PATH PREVIEW_URL
+  local VERCEL_SCOPE VERCEL_PROJECT VERCEL_PROJECT_ID VERCEL_TEAM_ID VERSION_PATH
   local PROVIDER MODEL REASONING_EFFORT OPENCODE_CLI INPUT_PRICE OUTPUT_PRICE CACHE_PRICE PORT
   if [[ "${1:-}" == "--help" ]]; then
     printf 'Uso: bash scripts/setup-factory.sh [DIRECTORIO_ABSOLUTO]\nSolo macOS. No arranca la Factory ni autoriza issues.\n'
@@ -314,6 +327,7 @@ run_wizard() {
   [[ ! -e "$INSTALL_ROOT/data/factory.lock" ]] || fail "Existe factory.lock. Detén la Factory e inspecciona el lock antes de reinstalar dependencias."
   HUSKY=0 npm ci
   node node_modules/@opencode/cli/postinstall.mjs
+  align_setup_entrypoint
   setup stopped "$ENV_FILE"
   npm run typecheck
   npm run build
@@ -360,7 +374,7 @@ run_wizard() {
   fi
   pause "Revisa los comandos anteriores. Enter continúa."
 
-  stage "Vercel, previews y protección de GitHub"
+  stage "Vercel y protección de GitHub"
   if ! "$VERCEL_CLI" whoami >/dev/null 2>&1; then
     open_url "https://vercel.com/login"
     "$VERCEL_CLI" login
@@ -389,12 +403,7 @@ run_wizard() {
   pause "Enter cuando exista la regla."
   confirm "¿Añadir PR obligatoria y checks Vercel y Factory, con rama actualizada y administradores incluidos?" || exit 1
   setup protect "$ENV_FILE"
-  open_url "https://vercel.com/dashboard"
-  step "En Deployments, abre una Preview READY creada por la integración Git y copia su URL inmutable."
-  step "Si falta, crea una rama y una PR de preparación en GitHub. El build debe servir el marcador del commit."
-  step "La autoría de los commits debe estar autorizada por Vercel; documenta la identidad requerida en las instrucciones del proyecto."
-  say "La guía docs/guides/setup-wizard.md explica el contrato del marcador y la preparación pendiente."
-  capture PREVIEW_URL "URL HTTPS inmutable de Preview (*.vercel.app)"
+  say "La configuración remota está comprobada. Las previews se verificarán durante las Ejecuciones de la Factory."
 
   stage "Proveedor, modelo, esfuerzo y tarifas"
   capture PROVIDER "Proveedor: openai, google, anthropic u ollama" "openai"

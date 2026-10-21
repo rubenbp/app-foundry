@@ -12,6 +12,8 @@ Para una instalación guiada en macOS, ejecuta `bash scripts/setup-factory.sh`.
 El [wizard de puesta en marcha](docs/guides/setup-wizard.md) permite elegir una
 carpeta del disco, conectar GitHub y Vercel, configurar proveedor, modelo, esfuerzo
 y tarifas, verificar el proyecto y generar `start-factory.sh`.
+La instalación no solicita una URL de Preview; la Factory comprueba las previews
+durante las Ejecuciones.
 
 Requiere macOS, Node **24.21.0** y npm **11.19.0**. Admite OpenAI con OAuth, Gemini y Anthropic con API key, y Ollama local experimental. Configura el acceso y elige el modelo siguiendo la [guía de proveedores y modelos](docs/guides/llm-providers.md). No pongas credenciales en archivos del proyecto ni en la tarea. `@opencode/cli` y el SDK HTTP `@opencode/client` están fijados en **2.0.32** mediante `package-lock.json`. La Factory ejecuta el binario local y comprueba su versión y PID mediante `/api/info`. Para proveedores remotos, `opencodeCli` identifica la CLI que exporta en memoria la credencial activa existente; no cambia la cuenta global. Ollama no necesita esa ruta ni credenciales.
 

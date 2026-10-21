@@ -18,7 +18,6 @@ import {
   checkGithub,
   checkModel,
   checkPort,
-  checkPreview,
   checkProtection,
   checkVercel,
   requireStopped,
@@ -78,7 +77,6 @@ export async function main(args: string[]) {
     await checkGithub(project);
     await checkVercel(project, values.VERCEL_CLI, root);
     await checkProtection(project);
-    await checkPreview(project, values.VERCEL_CLI, pending, values.PREVIEW_URL);
   } else if (command === "config") {
     writeSetupFile(
       join(pending, "factory.local.json"),
