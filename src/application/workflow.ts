@@ -19,7 +19,6 @@ import { CandidatePublication } from "./candidatePublication.ts";
 import type { PublicationPort } from "./publication/ports.ts";
 import type { IssueConversation } from "./issueConversation.ts";
 import { IssueInterventions } from "./issueInterventions.ts";
-import { pendingIntervention } from "../domain/intervention.ts";
 import type { RecoveryCommand } from "../domain/recovery.ts";
 import { IssueRecovery } from "./issueRecovery.ts";
 import type { Run } from "../domain/run.ts";
@@ -486,14 +485,40 @@ export class Workflow {
     if (!run) {
       return;
     }
-    if (run.status === "waiting" && pendingIntervention(run.interventions)) {
-      if (this.conversationAttached) {
-        await this.factory.suspendConversation(run.id);
-        this.conversationAttached = false;
-      }
-      return;
+    await this.interruptVerification(run.id);
+    try {
+      await this.publication?.stop(run.id);
+    } catch (error) {
+      this.factory.assertWritable();
+      const current = this.view(run.id)!;
+      current.error = this.factory.clean(
+        `No se confirmó la revocación al apagar: ${String(error)}`,
+      ).text;
+      this.factory.record(current, "shutdown-error", current.error);
+      this.factory.persist(current);
+    } finally {
+      // Closing the process must not complete the Ejecución or release its reservation.
+      await this.factory.suspendConversation(run.id);
+      this.conversationAttached = false;
     }
-    await this.stop(run.id);
+  }
+
+  private async interruptVerification(id: string) {
+    if (this.verifying && this.factory.active === id) {
+      const run = this.view(id)!;
+      this.factory.record(
+        run,
+        "intent",
+        "Interrupt verification and stop its owned command group",
+      );
+      this.factory.persist(run);
+      this.verificationAbort?.abort(
+        new Error(
+          "Verification interrupted; command completion is not approved",
+        ),
+      );
+      await this.verificationDone;
+    }
   }
 
   async verifyCandidate() {
@@ -652,19 +677,7 @@ export class Workflow {
     ) {
       return integrated;
     }
-    if (this.verifying && this.factory.active === id) {
-      const run = this.view(id)!;
-      this.factory.record(
-        run,
-        "intent",
-        "Cancel verification and stop its owned command group",
-      );
-      this.factory.persist(run);
-      this.verificationAbort?.abort(
-        new Error("Verification cancelled; command completion is not approved"),
-      );
-      await this.verificationDone;
-    }
+    await this.interruptVerification(id);
     if (this.view(id)?.verification?.effectsUncertain) {
       return this.view(id)!;
     }

@@ -280,6 +280,11 @@ export class Factory {
     ) => Promise<{ workspace: Workspace; task: string; agent: AgentPort }>,
   ) {
     this.assertWritable();
+    if (this.stopping.has(id)) {
+      throw new Error(
+        "Ejecución interrupted while starting; no further task will be sent",
+      );
+    }
     if (this.active) {
       throw new Error("One Ejecución already occupies the Factory");
     }
@@ -629,18 +634,39 @@ export class Factory {
     this.record(
       run,
       "intent",
-      "Stop owned OpenCode server and preserve the waiting conversation",
+      "Stop owned OpenCode server and preserve the Ejecución and conversation",
     );
     this.persist(run);
-    const stopped = await this.agent.stop(run.sessionId);
+    this.stopping.add(id);
+    let stopped;
+    try {
+      stopped =
+        (run.request && !run.process) || run.process?.exited
+          ? { exited: true, detail: "Owned agent was already confirmed absent" }
+          : await this.agent.stop(run.sessionId);
+    } catch (error) {
+      stopped = {
+        exited: false,
+        detail: `No se pudo confirmar la detención: ${String(error)}`,
+      };
+    }
+    this.assertWritable();
     const current = this.view(id)!;
     if (current.process) {
       current.process.exited = stopped.exited;
     }
-    if (!stopped.exited) {
+    if (
+      !stopped.exited ||
+      current.status !== "waiting" ||
+      !pendingIntervention(current.interventions)
+    ) {
       current.status = "intervention";
-      current.error = stopped.detail;
+      current.error = !stopped.exited
+        ? this.clean(stopped.detail).text
+        : (current.error ??
+          "La Factory se apagó. La Ejecución sigue pendiente; usa Reintentar para continuar.");
     }
+    current.endedAt = null;
     this.record(current, "conversation-suspended", stopped.detail);
     this.persist(current);
   }

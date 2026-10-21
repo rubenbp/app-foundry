@@ -94,15 +94,10 @@ export async function serveFactory(
     workflow?.halt();
     polling?.halt();
     try {
-      if (factory.active) {
-        if (workflow && factory.view(factory.active)?.status === "waiting") {
-          await polling?.pending;
-          await workflow.shutdown();
-        } else {
-          await (workflow
-            ? workflow.stop(factory.active)
-            : factory.stop(factory.active));
-        }
+      if (workflow) {
+        await workflow.shutdown();
+      } else if (factory.active) {
+        await factory.stop(factory.active);
       }
       await polling?.pending;
     } catch {
