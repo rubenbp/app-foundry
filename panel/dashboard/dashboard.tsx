@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { FactoryView } from "../../src/application/factoryView.ts";
 import type { Run } from "../../src/domain/run.ts";
+import { isFinished } from "../../src/domain/run.ts";
+import { DeleteRun } from "./deleteRun.tsx";
 import { validPreview } from "../../src/domain/publication.ts";
 import { PublicationDetails } from "./publication.tsx";
 import { IntegrationDetails } from "../integration.tsx";
@@ -488,18 +490,27 @@ interface LayoutProps {
 export function Dashboard({
   view,
   onSelect,
+  onDeleted,
   failing,
   lastLocal,
   now,
 }: {
   view: FactoryView | null;
   onSelect: (id: string) => void;
+  onDeleted: (id: string) => void;
   failing: boolean;
   lastLocal: number | null;
   now: number;
 }) {
   const [inspected, setInspected] = useState<number | null>(null);
   const [showTechnical, setShowTechnical] = useState(false);
+  const listHeading = useRef<HTMLHeadingElement>(null);
+  const selectedRunId = view?.run?.id;
+  useEffect(() => {
+    if (!selectedRunId) {
+      listHeading.current?.focus();
+    }
+  }, [selectedRunId]);
   const [dialog, setDialog] = useState<
     | "details"
     | "verification"
@@ -514,9 +525,9 @@ export function Dashboard({
     return (
       <div className="dashboard-loading">
         <h1>App Foundry</h1>
-        <h2>
+        <h2 ref={listHeading} tabIndex={-1}>
           {view?.runs.length
-            ? "Cargando ejecución"
+            ? "Ejecuciones"
             : view
               ? "Todo empieza con una petición"
               : "Conectando con la Factory local…"}
@@ -524,7 +535,9 @@ export function Dashboard({
         <p role="status">
           {failing
             ? "No se pudo consultar la Factory local."
-            : "Autoriza un issue del Managed project con factory:ready."}
+            : view?.runs.length
+              ? "Selecciona una ejecución para consultar su detalle."
+              : "Autoriza un issue del Managed project con factory:ready."}
         </p>
         {view?.fault ? <p role="alert">{view.fault}</p> : null}
         {view?.admission.error ? (
@@ -658,6 +671,9 @@ export function Dashboard({
             >
               Encargo y criterios ↗
             </button>
+            {isFinished(run) ? (
+              <DeleteRun key={run.id} run={run} onDeleted={onDeleted} />
+            ) : null}
           </div>
         </div>
         <div className="dashboard-task-status">

@@ -262,6 +262,54 @@ test("el workflow bloquea el borrado durante una etiqueta en vuelo y no toca Git
     assert.equal(readdirSync(join(s.config.dataDir, "artifacts")).length, 0);
     s.reopen();
     assert.equal(s.workflow.view(run.id), null);
+    pause = false;
+    await s.workflow.observe([terminal.request!]);
+    const readmitted = s.workflow
+      .list()
+      .find((item) => item.request?.number === terminal.request!.number);
+    assert.ok(readmitted);
+    assert.notEqual(readmitted.id, run.id);
+    assert.equal(readmitted.status, "queued");
+  } finally {
+    s.close();
+    rmSync(s.root, { recursive: true, force: true });
+  }
+});
+
+test("eliminar una Ejecución integrada no modifica el issue, la PR ni los deployments", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "completed");
+    const remote = structuredClone(s.facts);
+    const writes = s.writes.length;
+    const server = panelServer(s.workflow.factory, undefined, s.workflow);
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+    try {
+      assert.equal(
+        (
+          await fetch(`${origin}/api/runs/${run.id}`, {
+            method: "DELETE",
+            headers: { Origin: origin },
+          })
+        ).status,
+        204,
+      );
+      assert.equal(s.workflow.view(run.id), null);
+      assert.equal(s.writes.length, writes);
+      assert.deepEqual(s.facts, remote);
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+    s.reopen();
+    assert.equal(s.workflow.view(run.id), null);
+    assert.equal(s.workflow.factory.active, null);
   } finally {
     s.close();
     rmSync(s.root, { recursive: true, force: true });

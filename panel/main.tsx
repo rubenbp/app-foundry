@@ -17,7 +17,7 @@ function App() {
     () =>
       poll<FactoryView>(
         () =>
-          `/api/view${selected ? `?run=${encodeURIComponent(selected)}` : ""}`,
+          `/api/view${selected !== null ? `?run=${encodeURIComponent(selected)}` : ""}`,
         (data) => {
           setView(data);
           setLastLocal(Date.now());
@@ -35,8 +35,22 @@ function App() {
 
   return (
     <Dashboard
+      key={selected ?? "automatic"}
       view={view}
       onSelect={setSelected}
+      onDeleted={(id) => {
+        setSelected("");
+        setView((current) =>
+          current
+            ? {
+                ...current,
+                runs: current.runs.filter((run) => run.id !== id),
+                run: null,
+                consumption: null,
+              }
+            : current,
+        );
+      }}
       failing={failing}
       lastLocal={lastLocal}
       now={now}

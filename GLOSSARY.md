@@ -9,7 +9,7 @@ Sistema que coordina el desarrollo de un Managed project mediante workflows dete
 _Avoid_: aplicación gestionada, boilerplate
 
 **Dashboard**:
-Interfaz local de solo lectura que presenta el estado y las evidencias de las Ejecuciones de la Factory. Las decisiones humanas se toman en GitHub.
+Interfaz local que presenta el estado y las evidencias de las Ejecuciones de la Factory y permite eliminar sus datos locales una vez finalizadas. Las decisiones sobre el desarrollo y la aceptación del resultado se toman en GitHub.
 _Avoid_: panel local de consulta, panel
 
 **Managed project**:

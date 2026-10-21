@@ -1001,6 +1001,49 @@ body:has(.factory-dashboard) {
 .dashboard-warning-text {
   color: #a27c3e !important;
 }
+.dashboard-delete-trigger {
+  border: 0;
+  background: transparent;
+  color: #913d32;
+  margin-left: auto;
+  padding: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.dashboard-dialog.dashboard-delete-dialog {
+  width: min(540px, calc(100vw - 32px));
+  text-align: left;
+}
+.dashboard-delete-dialog p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.dashboard-delete-dialog [role="alert"] {
+  color: #913d32;
+}
+.dashboard-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+.dashboard-delete-actions button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid #d8e0ce;
+  border-radius: 5px;
+  background: #fff;
+  color: #26322f;
+}
+.dashboard-delete-actions .dashboard-delete-confirm {
+  background: #913d32;
+  border-color: #913d32;
+  color: #fff;
+}
+.dashboard-delete-actions button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
 .dashboard-dialog {
   --dashboard-line: #e4e7df;
   --dashboard-green: #536743;
