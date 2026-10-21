@@ -90,7 +90,7 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     const tokens = page.getByRole("button", { name: "324.678 tokens usados" });
     const summaryCost = page.locator(".dashboard-cost-meta");
     await expect(tokens).toBeVisible();
-    await expect(summaryCost).toHaveText("Coste estimado (parcial): 1,06 USD");
+    await expect(summaryCost).toHaveText("Coste estimado: 1,06 USD");
     await expect(
       page.getByRole("table", {
         name: "Detalle de tokens usados",
@@ -105,9 +105,7 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
       }),
     ).toBeVisible();
     const consumption = page.getByRole("region", { name: "Consumo de tokens" });
-    await expect(consumption).toContainText(
-      "Coste estimado (parcial): 1,062339",
-    );
+    await expect(consumption).toContainText("Coste estimado: 1,062339");
     const table = consumption.getByRole("table");
     await expect(table.getByRole("row", { name: /^Entrada/ })).toContainText(
       "250.000",

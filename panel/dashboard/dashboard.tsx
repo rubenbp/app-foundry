@@ -79,7 +79,7 @@ function ConsumptionDetails({
             ? prices
               ? "Coste no disponible: sin datos de tokens"
               : "Coste no disponible: sin tarifas guardadas"
-            : `Coste estimado${coverage === "partial" ? " (parcial)" : ""}: ${formatUsd(estimatedCost)}`}
+            : `Coste estimado: ${formatUsd(estimatedCost)}`}
         </strong>
         {prices ? <span>Tarifas guardadas al iniciar</span> : null}
       </div>
@@ -660,7 +660,7 @@ export function Dashboard({
             <span className="dashboard-cost-meta">
               {view.consumption?.estimatedCost == null
                 ? "Coste no disponible"
-                : `Coste estimado${view.consumption.coverage === "partial" ? " (parcial)" : ""}: ${formatSummaryUsd(view.consumption.estimatedCost)}`}
+                : `Coste estimado: ${formatSummaryUsd(view.consumption.estimatedCost)}`}
             </span>
             <button
               className="dashboard-header-request"
