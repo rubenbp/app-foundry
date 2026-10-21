@@ -73,6 +73,12 @@ export interface Publication {
 
 export const mergeContext = "Factory / ready-to-merge";
 
+export const externalMergeIncident =
+  "Incidencia: merge externo sin verificaciones, informe o autorización humana vigentes.";
+
+export const localStopRevocation =
+  "Detención local solicitada; control de merge revocado.";
+
 export function publicationPlan(head: string): Publication {
   return {
     head,

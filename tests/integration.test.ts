@@ -4,6 +4,24 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { publicationFixture } from "./support/publication.ts";
 
+test("una corrección posterior al informe impide aceptar el merge", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(s.facts.status?.state, "success");
+    s.comment("Corrige el pie antes de integrar.", { author: "maintainer" });
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+    assert.equal(s.facts.request.open, true);
+  } finally {
+    s.close();
+  }
+});
+
 test("una corrección no autorizada antes de integrar no puede invalidar una integración aceptada por una persona", async () => {
   const s = publicationFixture();
   try {

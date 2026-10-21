@@ -1,7 +1,9 @@
 import type { Factory } from "./factory.ts";
 import type { PublicationPort } from "./publication/ports.ts";
 import {
+  externalMergeIncident,
   interpretComment,
+  localStopRevocation,
   publicationPlan,
   validPreview,
 } from "../domain/publication.ts";
@@ -434,6 +436,12 @@ export class CandidatePublication {
       run = this.runtime.factory.view(id)!;
     } else {
       delete run.publication.recoveryRequired;
+      if (
+        run.publication.blocked === externalMergeIncident ||
+        run.publication.blocked === localStopRevocation
+      ) {
+        delete run.publication.blocked;
+      }
       this.runtime.save(run);
     }
     run.status = run.publication!.mergeSha
@@ -451,8 +459,21 @@ export class CandidatePublication {
       if (!run?.publication) {
         return;
       }
-      run.publication.blocked =
-        "Detención local solicitada; control de merge revocado.";
+      if (!(run.publication.mergeSha || run.publication.pull?.merged)) {
+        const facts = await this.runtime.port.inspect(
+          this.runtime.context(run),
+          { preview: false },
+        );
+        this.runtime.factory.assertRunning(run.id);
+        if (facts.pull?.merged) {
+          run.publication.pull = facts.pull;
+          this.runtime.save(run);
+        }
+      }
+      if (run.publication.mergeSha || run.publication.pull?.merged) {
+        return;
+      }
+      run.publication.blocked = localStopRevocation;
       run.status = "intervention";
       run.error = run.publication.blocked;
       this.runtime.save(run);

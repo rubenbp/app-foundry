@@ -1,5 +1,8 @@
 import type { Run } from "../../domain/run.ts";
-import { interpretComment } from "../../domain/publication.ts";
+import {
+  externalMergeIncident,
+  interpretComment,
+} from "../../domain/publication.ts";
 import type { PublicationFacts } from "./ports.ts";
 import type { PublicationRuntime } from "./runtime.ts";
 import { isOwn, isInterventionResponse } from "./reviewPolicy.ts";
@@ -44,6 +47,7 @@ export class IntegratedPublication {
           !isOwn(run, comment) &&
           !isInterventionResponse(run, comment) &&
           comment.createdAt <= (pull.mergedAt ?? 0) &&
+          comment.createdAt > (report?.at ?? Number.MAX_SAFE_INTEGER) &&
           interpretComment(comment.body).kind === "invalidate",
       );
       let conflicting = false;
@@ -76,8 +80,7 @@ export class IntegratedPublication {
           pull.mergedBy,
         ))
       ) {
-        publication.blocked =
-          "Incidencia: merge externo sin verificaciones, informe o autorización humana vigentes.";
+        publication.blocked = externalMergeIncident;
         this.runtime.save(run);
         throw new Error(publication.blocked);
       }

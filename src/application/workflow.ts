@@ -632,6 +632,12 @@ export class Workflow {
   async stop(id: string) {
     const run = this.view(id);
     if (
+      run?.publication &&
+      (run.publication.mergeSha || run.publication.pull?.merged)
+    ) {
+      return run;
+    }
+    if (
       run?.status === "waiting" &&
       !this.conversationAttached &&
       !run.process?.exited
@@ -639,6 +645,13 @@ export class Workflow {
       await this.restoreConversation();
     }
     await this.publication?.stop(id);
+    const integrated = this.view(id);
+    if (
+      integrated?.publication?.mergeSha ||
+      integrated?.publication?.pull?.merged
+    ) {
+      return integrated;
+    }
     if (this.verifying && this.factory.active === id) {
       const run = this.view(id)!;
       this.factory.record(

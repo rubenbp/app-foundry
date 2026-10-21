@@ -360,6 +360,161 @@ test("Corregir reutiliza thread, rama y PR, y exige otra verificación y aceptac
   }
 });
 
+test("una corrección ya aplicada no impide la aceptación del intento posterior", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    const correctedDelivery = catalogueDelivery.replace(
+      "mostrar el catálogo",
+      "mostrar el catálogo y el nuevo pie",
+    );
+    s.writer(false);
+    const correction = conversation.add("Corregir: Cambia el texto del pie.");
+    correction.author = "maintainer";
+    s.facts.comments.push({
+      ...correction,
+      updatedAt: correction.createdAt,
+      source: "issue",
+    });
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "running");
+    s.commit("footer.txt", "New footer", "Correct footer");
+    s.finish(correctedDelivery);
+    await s.workflow.poll();
+    const head = s.git("rev-parse", "HEAD");
+    s.facts.preview = {
+      ...s.facts.preview!,
+      head,
+      servedHead: head,
+      id: "preview-2",
+      url: "https://catalogue-correction.vercel.app",
+    };
+    await s.workflow.poll();
+    s.writer(true);
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(s.facts.status?.state, "success");
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "completed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance?.head, head);
+  } finally {
+    s.close();
+  }
+});
+
+test("Reintentar vuelve a juzgar un merge rechazado cuando la corrección es anterior al informe", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    await s.workflow.poll();
+    const comment = s.comment("Corrige el pie antes de integrar.", {
+      author: "maintainer",
+    });
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+    comment.createdAt = s.workflow.view(run.id)!.publication!.report!.at - 1;
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "completed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("parar con la PR ya integrada no graba una revocación del merge", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    await s.workflow.poll();
+    assert.equal(s.facts.status?.state, "success");
+    s.merge();
+    await s.workflow.shutdown();
+    const current = s.workflow.view(run.id)!;
+    assert.equal(current.publication?.blocked, undefined);
+    assert.notEqual(current.status, "stopped");
+    assert.equal(s.facts.status?.state, "success");
+    assert.equal(
+      s.writes.some((write) => write.kind === "failure"),
+      false,
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("Reintentar cierra el issue aunque una parada anterior hubiera revocado el merge", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    await s.workflow.poll();
+    s.merge();
+    const current = s.workflow.view(run.id)!;
+    current.status = "intervention";
+    current.publication!.blocked =
+      "Detención local solicitada; control de merge revocado.";
+    current.publication!.pull = { ...s.facts.pull! };
+    s.workflow.factory.persist(current);
+    await s.workflow.poll();
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "completed",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+  } finally {
+    s.close();
+  }
+});
+
+test("Reintentar no acepta un merge que sigue sin control favorable", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    await s.workflow.poll();
+    s.facts.status = {
+      head: s.facts.pull!.head,
+      state: "pending",
+      at: Date.now(),
+    };
+    s.merge();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    conversation.add("Reintentar");
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.status,
+      "intervention",
+      s.workflow.view(run.id)?.error ?? "",
+    );
+    assert.equal(s.workflow.view(run.id)?.publication?.acceptance, undefined);
+    assert.equal(s.facts.request.open, true);
+  } finally {
+    s.close();
+  }
+});
+
 test("Corregir autoriza sustituir un requisito inicial y comunica el resultado sin cambios una sola vez", async () => {
   const conversation = recoveryConversation();
   const s = publicationFixture({
