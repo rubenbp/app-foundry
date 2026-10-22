@@ -4,7 +4,7 @@ import type { Run } from "../../src/domain/run.ts";
 import { isFinished } from "../../src/domain/run.ts";
 import { DeleteRun } from "./deleteRun.tsx";
 import { validPreview } from "../../src/domain/publication.ts";
-import { PublicationDetails } from "./publication.tsx";
+import { PublicationDetails, PreviewSearch } from "./publication.tsx";
 import { IntegrationDetails } from "../integration.tsx";
 import { Output } from "../components/output.tsx";
 import { labels, time, age } from "../format.ts";
@@ -226,6 +226,7 @@ function TaskContext({
   onDetails,
   onVerificationDetails,
   onReturn,
+  previewSearch,
 }: {
   run: Run;
   inspected: number;
@@ -233,6 +234,7 @@ function TaskContext({
   onDetails: () => void;
   onVerificationDetails: () => void;
   onReturn: () => void;
+  previewSearch: ReactNode;
 }) {
   const report = run.verification;
   const checks = report?.checks ?? [];
@@ -369,6 +371,7 @@ function TaskContext({
                 : "Pendiente de merge humano"}
             </Fact>
           </dl>
+          {previewSearch}
           {inspected === 4 ? (
             <section
               className="dashboard-review-criteria"
@@ -629,6 +632,13 @@ export function Dashboard({
       onReturn={() => setInspected(null)}
       onDetails={() => setDialog("details")}
       onVerificationDetails={() => setDialog("verification")}
+      previewSearch={
+        <PreviewSearch
+          run={run}
+          schedule={view.observationSchedule}
+          connected={!disconnected && !failing}
+        />
+      }
     />
   );
 
@@ -1015,7 +1025,11 @@ export function Dashboard({
                 />
               ) : null}
               <VerificationDetails run={run} />
-              <PublicationDetails run={run} />
+              <PublicationDetails
+                run={run}
+                schedule={view.observationSchedule}
+                connected={!disconnected && !failing}
+              />
               <IntegrationDetails run={run} />
               {run.pending.length ? (
                 <section className="card" aria-labelledby="pending-title">

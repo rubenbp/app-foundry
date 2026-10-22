@@ -71,6 +71,11 @@ export async function serveFactory(
           console.error(
             "Workflow persistence failed; inspect dashboard and owned processes.",
           ),
+        {
+          onSchedule: (schedule) => {
+            factory.observationSchedule = schedule;
+          },
+        },
       )
     : undefined;
   factory.onCandidateReady = polling?.wake;

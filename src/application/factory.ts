@@ -21,6 +21,7 @@ import {
   pendingIntervention,
 } from "../domain/intervention.ts";
 import type { IssueComment } from "../domain/intervention.ts";
+import type { ObservationSchedule } from "./observationSchedule.ts";
 
 export class Factory {
   store: RunRepository;
@@ -31,6 +32,7 @@ export class Factory {
   secrets: string[];
   active: string | null = null;
   fault: string | null = null;
+  observationSchedule: ObservationSchedule = { state: "stopped" };
   stopping = new Set<string>();
   /** Wake the workflow after a persisted candidate, without running remote effects in ingest. */
   onCandidateReady?: () => void;

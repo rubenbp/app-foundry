@@ -347,6 +347,7 @@ export class CandidatePublication {
       const final = await this.runtime.facts(run);
       const valid = readyToMerge(run, final);
       if (valid) {
+        delete publication.observationOnly;
         this.runtime.finishPreviewWait(run, "ready");
         await this.report.notify(run, final);
       }
@@ -465,10 +466,17 @@ export class CandidatePublication {
       ? "closing_issue"
       : "awaiting_preview";
     const wait = run.publication!.previewWait;
-    if (wait?.state === "failed" && wait.head === run.publication!.head &&
-      wait.attempt === run.attempt) {
+    if (
+      wait?.state === "failed" &&
+      wait.head === run.publication!.head &&
+      wait.attempt === run.attempt
+    ) {
       wait.state = "waiting";
-      this.runtime.factory.record(run, "preview-resumed", "Búsqueda de preview reanudada tras Reintentar; se conserva el inicio de la espera.");
+      this.runtime.factory.record(
+        run,
+        "preview-resumed",
+        "Búsqueda de preview reanudada tras Reintentar; se conserva el inicio de la espera.",
+      );
     }
     run.error = null;
     this.runtime.save(run);

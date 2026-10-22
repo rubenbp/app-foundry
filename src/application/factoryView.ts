@@ -2,10 +2,12 @@ import type { Factory } from "./factory.ts";
 import type { Observation } from "./runRepository.ts";
 import { queuedRuns } from "../domain/queue.ts";
 import { consumption, type Run } from "../domain/run.ts";
+import type { ObservationSchedule } from "./observationSchedule.ts";
 
 /** Proyección de solo lectura compartida por el adaptador HTTP local y el Dashboard. */
 export interface FactoryView {
   serverNow: number;
+  observationSchedule?: ObservationSchedule;
   admission: Observation;
   source: string | null;
   queue: { id: string; title: string }[];
@@ -29,6 +31,7 @@ export function factoryView(
 
   return {
     serverNow,
+    observationSchedule: factory.observationSchedule,
     fault: factory.fault,
     admission: factory.store.observation(),
     source: factory.config.managedProject

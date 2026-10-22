@@ -651,3 +651,32 @@ for (const missing of ["branch", "pull"] as const) {
     }
   });
 }
+
+test("tras recuperar y acreditar el preview, un nuevo Commit candidato vuelve a verificación", async () => {
+  const s = publicationFixture();
+  try {
+    const run = await s.candidate();
+    s.reopen();
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.observationOnly,
+      undefined,
+    );
+    s.commit("footer.txt", "New candidate", "Update candidate");
+    const head = s.git("rev-parse", "HEAD");
+    s.facts.remoteHead = head;
+    s.facts.pull!.head = head;
+    s.facts.preview = null;
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_verification");
+    assert.equal(s.workflow.view(run.id)?.publication?.head, head);
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.recoveryRequired,
+      undefined,
+    );
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});

@@ -279,3 +279,127 @@ test("el dashboard distingue el Commit candidato aceptado, la integración y el 
     s.close();
   }
 });
+
+test("la búsqueda muestra actividad, errores, pausa y próximo intento real, y conserva el inicio al reintentar", async ({
+  page,
+}) => {
+  const { workflowPolling } =
+    await import("../../src/infrastructure/workflowPolling.ts");
+  const { recoveryConversation } = await import("../support/recovery.ts");
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  const run = await s.candidate();
+  const ready = structuredClone(s.facts.preview);
+  s.facts.preview = null;
+  const startedAt = s.workflow.view(run.id)!.publication!.previewWait!
+    .startedAt;
+  let now = startedAt + 10_000;
+  s.workflow.factory.now = () => now;
+  const makePolling = () =>
+    workflowPolling(
+      () => s.workflow.poll(),
+      () => {
+        throw new Error("Unexpected polling error");
+      },
+      {
+        now: () => now,
+        onSchedule: (schedule) => {
+          s.workflow.factory.observationSchedule = schedule;
+        },
+      },
+    );
+  let polling = makePolling();
+  polling.wake();
+  await polling.pending;
+  const server = panelServer(s.workflow.factory);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    await page.goto(
+      `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+    );
+    const search = page
+      .getByRole("region", { name: "Búsqueda de preview" })
+      .first();
+    await expect(search).toContainText("Búsqueda activa");
+    const next = search.locator('time[data-observation="next"]');
+    await expect(next).toHaveAttribute(
+      "datetime",
+      new Date(now + 15_000).toISOString(),
+    );
+    await expect(
+      search.locator('time[data-observation="last"]'),
+    ).toHaveAttribute("datetime", new Date(now).toISOString());
+    s.observationFails(true);
+    now += 1000;
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Búsqueda con error");
+    await expect(search).toContainText("Reintento automático programado");
+    await expect(next).toHaveAttribute(
+      "datetime",
+      new Date(now + 15_000).toISOString(),
+    );
+    s.observationFails(false);
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Búsqueda activa");
+    s.facts.preview = { ...ready!, state: "failure" };
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Búsqueda con error");
+    s.facts.preview = null;
+    conversation.add("Reintentar");
+    now += 1000;
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Búsqueda activa");
+    expect(s.workflow.view(run.id)?.publication?.previewWait?.startedAt).toBe(
+      startedAt,
+    );
+    expect(s.workflow.view(run.id)?.publication?.previewWait?.state).toBe(
+      "waiting",
+    );
+    polling.halt();
+    await expect(search).toContainText("Búsqueda pausada");
+    await expect(next).toHaveCount(0);
+    polling = makePolling();
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Búsqueda activa");
+    const current = s.workflow.view(run.id)!;
+    current.publication!.recoveryRequired = true;
+    s.workflow.factory.persist(current);
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Búsqueda pausada");
+    await expect(search).toContainText("Reintentar");
+    await expect(next).toHaveCount(0);
+    conversation.add("Reintentar");
+    s.facts.preview = ready;
+    now += 1000;
+    polling.wake();
+    await polling.pending;
+    await expect(search).toContainText("Preview comprobada");
+    await expect(next).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "Contexto ↗" }).click();
+    await expect(search).toContainText("Preview comprobada");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: test.info().outputPath("preview-search-mobile.png"),
+      fullPage: true,
+    });
+    await page.route("**/api/view*", (route) => route.abort());
+    await expect(search).toContainText("Búsqueda sin confirmar");
+  } finally {
+    polling.halt();
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    s.close();
+  }
+});

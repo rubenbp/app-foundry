@@ -86,3 +86,36 @@ test("un fallo del ciclo permite la siguiente observación periódica sin solapa
   assert.equal(calls, 2);
   polling.halt();
 });
+
+test("publica el próximo intento real, actualiza los despertares inmediatos y elimina el temporizador al parar", async (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout"] });
+  const schedules: import("../src/application/observationSchedule.ts").ObservationSchedule[] =
+    [];
+  let now = 1000;
+  const release = Promise.withResolvers<void>();
+  const polling = workflowPolling(
+    async () => {
+      await release.promise;
+    },
+    () => assert.fail(),
+    {
+      now: () => now,
+      onSchedule: (schedule) => schedules.push(schedule),
+    },
+  );
+  polling.wake();
+  assert.deepEqual(schedules.at(-1), { state: "running", startedAt: 1000 });
+  now = 2000;
+  release.resolve();
+  await polling.pending;
+  assert.deepEqual(schedules.at(-1), { state: "scheduled", nextAt: 17000 });
+  polling.wake();
+  polling.wake();
+  now = 3000;
+  await polling.pending;
+  assert.deepEqual(schedules.at(-1), { state: "scheduled", nextAt: 3000 });
+  polling.halt();
+  assert.deepEqual(schedules.at(-1), { state: "stopped" });
+  context.mock.timers.tick(60_000);
+  assert.deepEqual(schedules.at(-1), { state: "stopped" });
+});

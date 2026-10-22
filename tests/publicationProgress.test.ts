@@ -188,3 +188,43 @@ for (const failure of ["deployment", "observation"] as const) {
     }
   });
 }
+
+test("Reintentar devuelve la búsqueda a waiting, conserva el inicio y registra las consultas fallidas y correctas", async () => {
+  const { recoveryConversation } = await import("./support/recovery.ts");
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    const startedAt = s.workflow.view(run.id)!.publication!.previewWait!
+      .startedAt;
+    const ready = structuredClone(s.facts.preview);
+    s.facts.preview!.state = "failure";
+    s.workflow.factory.now = () => startedAt + 10_000;
+    await s.workflow.poll();
+    const failed = s.workflow.view(run.id)!.publication!.previewWait!;
+    assert.equal(failed.state, "failed");
+    assert.equal(failed.lastCheckedAt, startedAt + 10_000);
+    s.facts.preview = null;
+    conversation.add("Reintentar");
+    s.workflow.factory.now = () => startedAt + 20_000;
+    await s.workflow.poll();
+    const waiting = s.workflow.view(run.id)!.publication!.previewWait!;
+    assert.equal(waiting.state, "waiting");
+    assert.equal(waiting.startedAt, startedAt);
+    assert.equal(waiting.lastCheckedAt, startedAt + 20_000);
+    s.reopen();
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.previewWait?.lastCheckedAt,
+      startedAt + 20_000,
+    );
+    s.facts.preview = ready;
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.previewWait?.state,
+      "ready",
+    );
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});

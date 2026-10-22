@@ -99,10 +99,11 @@ export class VercelPreviewAccess implements PreviewAccess {
           QUEUED: "pending",
           BLOCKED: "error",
         };
-        const state = states[text(deployment.readyState)];
-        if (!state) {
+        const raw = text(deployment.readyState);
+        if (!Object.hasOwn(states, raw)) {
           throw new Error("Unknown Vercel deployment state");
         }
+        const state = states[raw];
         const preview: Preview = {
           id: text(deployment.uid),
           head: context.head,
@@ -166,6 +167,7 @@ export class VercelPreviewAccess implements PreviewAccess {
     if (
       previewOrigin(`https://${text(deployment.url)}`) !== origin ||
       (deployment.target !== null && deployment.target !== "preview") ||
+      deployment.customEnvironment ||
       deployment.readyState !== "READY"
     ) {
       throw new Error("Vercel deployment URL or environment mismatch");

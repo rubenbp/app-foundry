@@ -1,5 +1,6 @@
 import type { Run } from "../../src/domain/run.ts";
 import { validPreview } from "../../src/domain/publication.ts";
+import type { ObservationSchedule } from "../../src/application/observationSchedule.ts";
 
 const previewStates = {
   pending: "Preparando preview",
@@ -15,10 +16,136 @@ function dateTime(value: number) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
   });
 }
 
-export function PublicationDetails({ run }: { run: Run }) {
+export function PreviewSearch({
+  run,
+  schedule,
+  connected,
+}: {
+  run: Run;
+  schedule?: ObservationSchedule;
+  connected: boolean;
+}) {
+  const publication = run.publication;
+  const wait = publication?.previewWait;
+  if (
+    !publication ||
+    !wait ||
+    wait.head !== publication.head ||
+    wait.attempt !== run.attempt
+  ) {
+    return null;
+  }
+  const ready =
+    wait.state === "ready" &&
+    ["awaiting_review", "closing_issue", "completed"].includes(run.status);
+  const requiresRecovery = Boolean(
+    publication.recoveryRequired ||
+    publication.blocked ||
+    run.recovery?.pending,
+  );
+  const paused =
+    requiresRecovery ||
+    schedule?.state === "stopped" ||
+    !schedule ||
+    run.status === "stopped" ||
+    run.phase !== "publication";
+  const failed = Boolean(
+    publication.observationError || wait.state === "failed",
+  );
+  const confirmed = connected && Boolean(schedule);
+  const label = !confirmed
+    ? "Búsqueda sin confirmar"
+    : ready
+      ? "Preview comprobada"
+      : paused
+        ? "Búsqueda pausada"
+        : failed
+          ? "Búsqueda con error"
+          : "Búsqueda activa";
+  const nextAt =
+    confirmed && !ready && !paused && schedule?.state === "scheduled"
+      ? schedule.nextAt
+      : null;
+
+  return (
+    <section
+      className="dashboard-preview-search"
+      aria-label="Búsqueda de preview"
+    >
+      <p role="status">{label}</p>
+      <p className="dashboard-publication-description">
+        {!confirmed
+          ? connected
+            ? "La Factory no ha confirmado la programación de consultas."
+            : "Sin conexión con la Factory; la actividad no se puede confirmar."
+          : ready
+            ? "Versión vigente y acceso comprobados."
+            : requiresRecovery
+              ? "La búsqueda requiere intervención. Usa Reintentar en GitHub después de resolver la causa."
+              : paused
+                ? "La observación automática está detenida."
+                : failed
+                  ? "La última comprobación falló. La Factory sigue buscando el preview."
+                  : "La Factory consulta Vercel para el Commit candidato vigente."}
+      </p>
+      <dl className="dashboard-facts">
+        <div>
+          <dt>Última consulta</dt>
+          <dd>
+            {wait.lastCheckedAt ? (
+              <time
+                data-observation="last"
+                dateTime={new Date(wait.lastCheckedAt).toISOString()}
+              >
+                {dateTime(wait.lastCheckedAt)}
+              </time>
+            ) : (
+              "Sin consultar"
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Próximo intento</dt>
+          <dd>
+            {nextAt !== null ? (
+              <>
+                <time
+                  data-observation="next"
+                  dateTime={new Date(nextAt).toISOString()}
+                >
+                  {dateTime(nextAt)}
+                </time>
+                {failed
+                  ? " · Reintento automático programado"
+                  : " · Programado"}
+              </>
+            ) : !confirmed ? (
+              "Sin confirmar"
+            ) : ready || paused ? (
+              "Sin intento programado"
+            ) : (
+              "Ciclo de observación en curso"
+            )}
+          </dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+export function PublicationDetails({
+  run,
+  schedule,
+  connected,
+}: {
+  run: Run;
+  schedule?: ObservationSchedule;
+  connected: boolean;
+}) {
   const publication = run.publication;
   if (!publication) {
     return null;
@@ -115,6 +242,7 @@ export function PublicationDetails({ run }: { run: Run }) {
                     ? "Acceso pendiente de comprobar."
                     : "La preview aún no acredita la versión vigente."}
           </p>
+          <PreviewSearch run={run} schedule={schedule} connected={connected} />
           {preview?.url ? (
             <a
               className="dashboard-publication-action primary"

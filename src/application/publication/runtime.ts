@@ -173,6 +173,13 @@ export class PublicationRuntime {
     }
     if (wait) {
       wait.lastCheckedAt = this.factory.now();
+      if (
+        wait.state === "failed" &&
+        facts.preview?.state !== "failure" &&
+        facts.preview?.state !== "error"
+      ) {
+        wait.state = "waiting";
+      }
       this.save(run);
     }
     // Cada lectura previa a la integración puede coincidir con la integración humana. Cambia de estado antes de

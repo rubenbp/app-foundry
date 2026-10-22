@@ -81,7 +81,7 @@ test("el dashboard muestra la verificación independiente, el diff completo, las
       section.locator(".verification-check-technical").first(),
     ).toContainText("7");
     await section
-      .getByText("Alcance, limitaciones y registro de evidencia", {
+      .getByText("Registro de evidencia", {
         exact: true,
       })
       .click();
