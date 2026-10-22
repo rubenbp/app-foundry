@@ -254,7 +254,9 @@ function TaskContext({
     run.publication?.acceptance?.head === run.publication?.head &&
     Boolean(run.publication?.acceptance);
   const phase = phases[inspected];
-  const pending = run.pending.length > 0 || run.status === "intervention";
+  const pending =
+    run.stopReason !== "discarded" &&
+    (run.pending.length > 0 || run.status === "intervention");
 
   return (
     <>
@@ -264,19 +266,21 @@ function TaskContext({
         </span>
         <h2>{phase.name}</h2>
         <p>
-          {inspected === 0
-            ? "La Factory espera un puesto disponible."
-            : inspected === 1
-              ? "Preparación del entorno y comprobación de la base."
-              : inspected === 2
-                ? "El agente trabaja sobre el encargo autorizado."
-                : inspected === 3
-                  ? "Se comprueba el Commit candidato fuera del agente."
-                  : inspected === 4
-                    ? "La aceptación del resultado requiere un merge humano."
-                    : run.status === "completed"
-                      ? "Resultado aceptado, integrado e issue cerrado."
-                      : "Integración del resultado aceptado y cierre del issue."}
+          {run.stopReason === "discarded"
+            ? "Ejecución descartada. Ya no ocupa el puesto y sus evidencias se conservan."
+            : inspected === 0
+              ? "La Factory espera un puesto disponible."
+              : inspected === 1
+                ? "Preparación del entorno y comprobación de la base."
+                : inspected === 2
+                  ? "El agente trabaja sobre el encargo autorizado."
+                  : inspected === 3
+                    ? "Se comprueba el Commit candidato fuera del agente."
+                    : inspected === 4
+                      ? "La aceptación del resultado requiere un merge humano."
+                      : run.status === "completed"
+                        ? "Resultado aceptado, integrado e issue cerrado."
+                        : "Integración del resultado aceptado y cierre del issue."}
         </p>
         {inspected !== current ? (
           <button className="dashboard-text-button" onClick={onReturn}>
@@ -584,24 +588,28 @@ export function Dashboard({
   );
   const duration = `${Math.floor(durationSeconds / 60)} min ${durationSeconds % 60} s`;
   const completed = run.status === "completed";
+  const discarded = run.status === "stopped" && run.stopReason === "discarded";
   const blocked = Boolean(
-    run.error ||
-    run.pending.length ||
-    run.verification?.error ||
-    run.verification?.effectsUncertain ||
-    run.publication?.blocked ||
-    run.publication?.observationError,
+    !discarded &&
+    (run.error ||
+      run.pending.length ||
+      run.verification?.error ||
+      run.verification?.effectsUncertain ||
+      run.publication?.blocked ||
+      run.publication?.observationError),
   );
   const connectionText = disconnected
     ? "Sin conexión · última vista conservada"
     : failing
       ? "Error al actualizar · última vista conservada"
       : "Factory conectada";
-  const status = completed
-    ? "Completada"
-    : blocked
-      ? "Requiere atención"
-      : labels[run.status];
+  const status = discarded
+    ? "Descartada"
+    : completed
+      ? "Completada"
+      : blocked
+        ? "Requiere atención"
+        : labels[run.status];
 
   function selectRun(id: string) {
     onSelect(id);
@@ -678,12 +686,16 @@ export function Dashboard({
             <i />
             {status}
           </span>
-          <small>
-            {completed
-              ? "Resultado integrado"
-              : blocked
-                ? "El puesto sigue reservado"
-                : phases[current].detail}
+          <small
+            className={discarded ? "dashboard-discarded-notice" : undefined}
+          >
+            {discarded
+              ? "Puesto liberado"
+              : completed
+                ? "Resultado integrado"
+                : blocked
+                  ? "El puesto sigue reservado"
+                  : phases[current].detail}
           </small>
         </div>
       </div>

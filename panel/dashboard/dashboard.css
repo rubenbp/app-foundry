@@ -1527,6 +1527,9 @@ body:has(.factory-dashboard) {
 .cabin-dashboard .dashboard-task-status small {
   display: none;
 }
+.cabin-dashboard .dashboard-task-status .dashboard-discarded-notice {
+  display: block;
+}
 .cabin-dashboard .dashboard-status {
   padding: 4px 8px;
   font-size: 10px;
@@ -2389,6 +2392,10 @@ body:has(.factory-dashboard) {
   margin-top: 3px;
   color: #99a28d;
   font-size: 10px;
+}
+.dashboard-run-id {
+  overflow-wrap: anywhere;
+  user-select: all;
 }
 .dashboard-code-identifiers {
   margin: 12px 0;

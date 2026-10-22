@@ -18,6 +18,12 @@ export function RunDetails({ run }: { run: Run }) {
       <h2 id="dashboard-code-title">Código de la Ejecución</h2>
       <dl className="dashboard-code-links">
         <div>
+          <dt>ID de la ejecución</dt>
+          <dd>
+            <code className="dashboard-run-id">{run.id}</code>
+          </dd>
+        </div>
+        <div>
           <dt>Repositorio</dt>
           <dd>
             {repository ? (
@@ -168,12 +174,15 @@ export function VerificationDetails({ run }: { run: Run }) {
   const checkLabel = (id: string) =>
     report.checks.find((check) => check.partId === id)?.command ?? id;
   const e2e = report.e2e;
-  const status = {
-    running: "En curso",
-    passed: "Comprobaciones superadas",
-    failed: "Comprobaciones fallidas",
-    intervention: "Requiere intervención",
-  }[report.status];
+  const status =
+    run.stopReason === "discarded" && report.status === "running"
+      ? "Interrumpida por descarte"
+      : {
+          running: "En curso",
+          passed: "Comprobaciones superadas",
+          failed: "Comprobaciones fallidas",
+          intervention: "Requiere intervención",
+        }[report.status];
 
   return (
     <section
@@ -215,7 +224,7 @@ export function VerificationDetails({ run }: { run: Run }) {
           {report.error}
         </p>
       ) : null}
-      {report.effectsUncertain ? (
+      {report.effectsUncertain && run.stopReason !== "discarded" ? (
         <p className="dashboard-evidence-alert" role="alert">
           Hay procesos o efectos sin aclarar. La Ejecución conserva su puesto;
           revisa el diagnóstico antes de recuperarla.

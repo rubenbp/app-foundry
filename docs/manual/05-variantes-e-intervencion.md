@@ -45,7 +45,7 @@ La Factory acusa recibo antes de ejecutar una orden y publica su resultado. Si l
 
 Sin una orden pendiente, `Reintentar` necesita el aviso de intervención vigente. Una orden incompatible o un reintento sin incidencia recibe una explicación. Una orden recibida durante otra recuperación no programa un nuevo Intento; si vuelve a fallar, publica otra orden después del resultado. No se reejecuta un comentario ya consumido. Durante una espera de dudas, una respuesta libre sigue siendo aclaración; `Cancelar` permite cancelar esa espera.
 
-Después del merge solo se permite `Reintentar` para terminar el resumen y el cierre pendientes. No revierte lo integrado ni encarga cambios nuevos. Las incidencias de un merge fuera del contrato siguen requiriendo inspección; reintentar no convierte una integración inválida en aceptada.
+Desde el issue, después del merge solo se permite `Reintentar` para terminar el resumen y el cierre pendientes. No revierte lo integrado ni encarga cambios nuevos. Las incidencias de un merge fuera del contrato siguen requiriendo inspección; reintentar no convierte una integración inválida en aceptada.
 
 Si hay que arreglar credenciales o procesos locales, lo hace el operador antes de reintentar. Una respuesta pendiente de publicar se concilia en la siguiente consulta sin volver a ejecutar la orden aplicada. El MVP conserva una única orden y una única respuesta pendientes por Ejecución.
 
@@ -113,6 +113,29 @@ Solo libera el puesto si confirma la parada necesaria. Si hay procesos o efectos
 
 Una parada confirmada no borra commits, elimina PR, revierte un merge ni retira producción. La orden completa `Cancelar` en el issue ejecuta la parada y cierra como no implementado antes del merge. La CLI `stop` sigue siendo una parada operativa: por sí sola no cierra el issue. Durante la revisión del Issue, `Cancela` llega al agente como texto; usa únicamente `Cancelar` para cancelar la Ejecución.
 
+## Descartar una Ejecución bloqueante durante las pruebas del MVP
+
+Si una Ejecución problemática impide continuar las pruebas, puedes descartarla administrativamente mediante un comando local. Sirve en cualquier fase pendiente, incluso después del merge cuando se atascan el resumen o el cierre. Conserva el historial y libera el único puesto sin intentar completar ni reanudar ese trabajo.
+
+1. En el Dashboard, abre **Configuración, procesos y evidencia**. En la modal **Evidencia y detalles de la ejecución**, el primer apartado **Código de la Ejecución** muestra la fila **ID de la ejecución**. Selecciona y copia el ID completo.
+2. Para la Factory y espera a que termine su proceso. El comando adquiere los mismos locks de la carpeta de datos y del Managed project; rechaza una instancia activa o una reserva que pertenece a otra Ejecución o carpeta de datos.
+3. Ejecuta desde el repositorio de la Factory:
+
+   ```sh
+   npm start -- discard --config factory.local.json --id ID_DE_EJECUCION
+   ```
+
+4. Si señala un PID o grupo todavía activo, inspecciónalo y detenlo manualmente antes de repetir. El comando comprueba los PID y grupos registrados del agente, su conexión local y los comandos de verificación mediante señal 0. No intenta matarlos ni exige o comprueba un reinicio del ordenador.
+5. Arranca la Factory con la configuración habitual. El Dashboard muestra **Descartada · Puesto liberado** y permite consultar las evidencias o eliminar sus datos locales con el borrado existente.
+
+La comprobación se limita a los procesos registrados. Los comandos de preparación no guardan PID: si una parada brusca dejó alguno huérfano, debes detenerlo manualmente. Un PID reutilizado por otro proceso también impide el descarte; inspecciona su identidad antes de actuar. Una conexión local ilegible o inválida, o un permiso que impida comprobar un proceso, se rechaza sin liberar el puesto.
+
+El comando funciona offline, sin arrancar agentes ni recuperar la selección anterior de proveedor/modelo. Guarda `stopped` con razón de descarte y una entrada de historial antes de liberar la reserva. Conserva clon, conversación, artefactos, errores, verificaciones y hechos de integración. Si falla la persistencia, no libera la reserva. Si falla la liberación después de guardar, se puede repetir el comando; el arranque también reconoce el registro terminal y libera su reserva.
+
+El descarte no consulta ni cambia GitHub o Vercel. Conserva el issue, sus etiquetas, la rama, la PR, la preview y los controles de merge, aunque alguno siguiera favorable. No revierte un merge ni completa el resumen o el cierre pendientes. Al arrancar, la Factory omite la sincronización de etiquetas y las respuestas pendientes de esa Ejecución descartada.
+
+Para probar otro issue, basta con arrancar de nuevo la Factory. Para repetir el mismo, retira primero `factory:ready` si todavía estuviera presente, elimina la Ejecución descartada desde el Dashboard y vuelve a añadir la etiqueta cuando quieras admitirlo. Si borras su historial mientras sigue abierto con `factory:ready`, la Factory puede admitirlo automáticamente.
+
 ## Reinicio y pérdida de evidencia
 
 Antes de recuperar el historial, la Factory compara la selección global con cada Ejecución iniciada pendiente. Si cambia proveedor, modelo o `reasoningEffort`, muestra un error por consola y no arranca. Añadir o retirar un esfuerzo explícito también cambia la selección; la ausencia del campo en registros antiguos representa el predeterminado de OpenCode. Incluye esperas humanas, revisión, intervención y reintentos en cola. Arranca con la selección anterior para terminar o cancelar el trabajo y después cambia la configuración. La cola nunca iniciada adopta la selección nueva al comenzar; `completed` y `stopped` no bloquean. Consulta la [guía de proveedores](../guides/llm-providers.md).
@@ -153,7 +176,7 @@ Si falla la persistencia, bloquea nuevos efectos propios. La persona debe inspec
 | `awaiting_review`                     | Descripción, evidencia técnica y preview disponibles; falta revisión y merge humano. |
 | `closing_issue`                       | Merge autorizado observado; falta confirmar resumen y cierre.                        |
 | `intervention`                        | Fallo, garantía ausente o efectos inciertos; revisar la causa concreta.              |
-| `stopped` / `completed`               | Parada confirmada / recorrido completo acreditado.                                   |
+| `stopped` / `completed`               | Parada confirmada o descarte administrativo local / recorrido completo acreditado.   |
 
 La Factory consulta GitHub al arrancar y programa la siguiente consulta 15 segundos después de terminar. El dashboard consulta cada 2 segundos después de completar la lectura anterior. Ninguno solapa sus propias consultas.
 

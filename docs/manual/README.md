@@ -6,9 +6,11 @@ La **Factory** organiza el trabajo. El **Managed project** es el producto que de
 
 Si el agente necesita información, la Factory publica sus dudas en el issue. Cualquier persona puede responder con un comentario nuevo para que continúe en el mismo thread. Esta aclaración no sustituye la aceptación posterior del Commit candidato, que se expresa mediante el merge humano de la PR verificada.
 
-Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disponibles: `Reintentar`, `Corregir: instrucciones` y `Cancelar`. Basta un comentario humano, sin comprobar permisos. La corrección conserva conversación, rama y PR; vuelve a pasar por verificación y aceptación. Cancelar cierra como no implementado tras confirmar la parada. Después del merge solo cabe reintentar el resumen y el cierre pendientes.
+Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disponibles: `Reintentar`, `Corregir: instrucciones` y `Cancelar`. Basta un comentario humano, sin comprobar permisos. La corrección conserva conversación, rama y PR; vuelve a pasar por verificación y aceptación. Cancelar cierra como no implementado tras confirmar la parada. Desde GitHub, después del merge solo cabe reintentar el resumen y el cierre pendientes.
 
 ## Índice y orden de lectura
+
+Para desbloquear pruebas del MVP, existe un [descarte administrativo offline](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp). Requiere la Factory parada y ausencia de los procesos registrados. Libera el puesto conservando el historial y los recursos remotos; no exige reiniciar el ordenador ni reanuda el trabajo descartado.
 
 | Capítulo                                                                   | Qué permite entender                                                   |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------- |

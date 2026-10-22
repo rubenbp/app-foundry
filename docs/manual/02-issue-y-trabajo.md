@@ -20,6 +20,8 @@ Al admitir el encargo, se sustituye `factory:ready` por `factory:queued`. Cuando
 
 Las actualizaciones conservan intención y confirmación. Si falla GitHub, el Dashboard muestra el error de observación y la etiqueta puede conservar el último estado confirmado. La siguiente consulta concilia la actualización pendiente antes de escribir; no vuelve a encargar el desarrollo. No hay una cola adicional de avisos. Los cambios asíncronos del agente se reflejan en la siguiente consulta del workflow.
 
+El [descarte administrativo local](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp) libera una Ejecución problemática durante las pruebas sin modificar GitHub. Su etiqueta conserva el último estado remoto y ya no se sincroniza, aunque el Dashboard muestre la Ejecución como descartada.
+
 ## Antes del primer issue
 
 La persona que opera la Factory prepara una configuración de confianza: repositorio del Managed project, rama base, instrucciones, instalación, verificaciones, identidad del proyecto Vercel para las previews. La configuración permanece fuera del clon que modifica el agente.

@@ -218,6 +218,14 @@ Usa el ID del dashboard para una parada operativa local. Para cancelar desde Git
 
 Para probar otro cambio crea otro issue con un resultado diferente, una vez completado o detenido el anterior. El mismo issue no se consume dos veces dentro de ese historial.
 
+Si una Ejecución bloquea las pruebas y la parada normal no permite liberarla, copia su ID completo en **Configuración, procesos y evidencia → Evidencia y detalles de la ejecución → Código de la Ejecución → ID de la ejecución**. Para la Factory y ejecuta:
+
+```sh
+npm start -- discard --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local.json --id ID_DE_EJECUCION
+```
+
+El comando rechaza una Factory activa o PID/grupos registrados que sigan vivos; no los mata ni comprueba un reinicio. Tras el éxito, arranca de nuevo para probar otro issue. Conserva el historial y los recursos remotos, sin reanudar los efectos pendientes de la Ejecución descartada. Para repetir el mismo issue, consulta el [procedimiento de descarte y borrado del historial](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp).
+
 ## Si no avanza
 
 | Lo que ves                      | Qué revisar                                                                                                                                                                                                                                                                                          |
