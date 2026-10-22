@@ -491,6 +491,8 @@ interface LayoutProps {
 
 export function Dashboard({
   view,
+  showTechnical,
+  onToggleTechnical,
   onSelect,
   onDeleted,
   failing,
@@ -498,6 +500,8 @@ export function Dashboard({
   now,
 }: {
   view: FactoryView | null;
+  showTechnical: boolean;
+  onToggleTechnical: () => void;
   onSelect: (id: string) => void;
   onDeleted: (id: string) => void;
   failing: boolean;
@@ -505,7 +509,6 @@ export function Dashboard({
   now: number;
 }) {
   const [inspected, setInspected] = useState<number | null>(null);
-  const [showTechnical, setShowTechnical] = useState(false);
   const listHeading = useRef<HTMLHeadingElement>(null);
   const selectedRunId = view?.run?.id;
   useEffect(() => {
@@ -722,7 +725,7 @@ export function Dashboard({
       entries={visible}
       technicalCount={technicalCount}
       showTechnical={showTechnical}
-      onToggleTechnical={() => setShowTechnical(!showTechnical)}
+      onToggleTechnical={onToggleTechnical}
       onOriginalRecords={() => setDialog("records")}
       action={
         <button

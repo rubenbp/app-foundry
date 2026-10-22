@@ -129,9 +129,18 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     await page.screenshot({
       path: test.info().outputPath("consumption-desktop.png"),
     });
-    await page.getByRole("button", { name: /Registro técnico/ }).click();
+    const technicalRecords = page.getByRole("button", {
+      name: /Registro técnico/,
+    });
+    await expect(technicalRecords).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".dashboard-entries")).toContainText("busy");
     await expect(page.locator(".dashboard-entries")).toContainText("idle");
+    await technicalRecords.click();
+    await expect(technicalRecords).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".dashboard-entries")).not.toContainText("busy");
+    await page.reload();
+    await expect(technicalRecords).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".dashboard-entries")).not.toContainText("busy");
     emit({
       type: "part",
       id: "p1",
@@ -202,7 +211,13 @@ test("el dashboard observa el estado persistido de la API, el trabajo pendiente,
     await expect(page.locator(".dashboard-global-alert").first()).toContainText(
       "no se reenvió la tarea",
     );
-    await page.getByRole("button", { name: /Registro técnico/ }).click();
+    await expect(technicalRecords).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".dashboard-entries")).not.toContainText("busy");
+    await technicalRecords.click();
+    await expect(technicalRecords).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".dashboard-entries")).toContainText("busy");
+    await page.reload();
+    await expect(technicalRecords).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".dashboard-entries")).toContainText("busy");
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(consumption).toHaveCount(0);
@@ -359,7 +374,7 @@ test("el dashboard conserva la lectura al recibir actividad y permite volver al 
     await expect(
       page.getByRole("button", { name: /Volver al final/ }),
     ).toBeVisible();
-    const firstRow = page.locator('[data-entry-id="part-tool-0"]');
+    const firstRow = page.locator(".dashboard-entry").first();
     await expect
       .poll(() => stream.evaluate((element) => element.scrollTop))
       .toBe(0);

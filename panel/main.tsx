@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import type { FactoryView } from "../src/application/factoryView.ts";
 import { Dashboard } from "./dashboard/dashboard.tsx";
 import { poll } from "./polling.ts";
+import {
+  readTechnicalRecordsVisibility,
+  saveTechnicalRecordsVisibility,
+} from "./technicalRecordsPreference.ts";
 import "./style.css";
 import "./dashboard/dashboard.css";
 
@@ -12,6 +16,15 @@ function App() {
   const [lastLocal, setLastLocal] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [failing, setFailing] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(
+    readTechnicalRecordsVisibility,
+  );
+
+  function toggleTechnicalRecords() {
+    const visible = !showTechnical;
+    setShowTechnical(visible);
+    saveTechnicalRecordsVisibility(visible);
+  }
 
   useEffect(
     () =>
@@ -37,6 +50,8 @@ function App() {
     <Dashboard
       key={selected ?? "automatic"}
       view={view}
+      showTechnical={showTechnical}
+      onToggleTechnical={toggleTechnicalRecords}
       onSelect={setSelected}
       onDeleted={(id) => {
         setSelected("");
