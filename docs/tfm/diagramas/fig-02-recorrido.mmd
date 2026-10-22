@@ -1,0 +1,10 @@
+flowchart LR
+    I["1. Issue con<br/>factory:ready"] --> Q["2. Factory<br/>prepara el clon"]
+    Q --> A["3. Agente<br/>implementa"]
+    A -->|"Duda"| Y["Pregunta<br/>en el issue"]
+    Y -->|"Respuesta"| A
+    A --> T["4. Factory evalúa<br/>el Commit candidato"]
+    T --> R["5. PR y preview<br/>en Vercel"]
+    R --> E["6. Revisión<br/>de la preview"]
+    E -->|"Corrección"| A
+    E -->|"Merge"| M["7. Resumen<br/>y cierre"]

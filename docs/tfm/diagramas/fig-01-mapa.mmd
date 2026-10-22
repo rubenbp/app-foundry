@@ -1,0 +1,9 @@
+flowchart LR
+    P["Persona"] -->|"Pide, responde,<br/>corrige y hace merge"| G["GitHub<br/>issues y PR"]
+    F["Factory"] -->|"Lee el issue y<br/>publica avisos"| G
+    F -->|"Encarga y observa"| A["Agente<br/>OpenCode + LLM"]
+    A -->|"Edita y hace<br/>commits locales"| C["Clon del proyecto"]
+    F -->|"Verifica y publica la rama"| C
+    G -->|"Despliega cada rama"| V["Vercel<br/>preview"]
+    F -->|"Comprueba la versión servida"| V
+    F --> D["Dashboard local"]

@@ -1,0 +1,239 @@
+@font-face {
+  font-family: Poppins;
+  font-weight: 300;
+  src: url("fuentes/Poppins-Light.ttf");
+}
+@font-face {
+  font-family: Poppins;
+  font-weight: 400;
+  src: url("fuentes/Poppins-Regular.ttf");
+}
+@font-face {
+  font-family: Poppins;
+  font-weight: 600;
+  src: url("fuentes/Poppins-SemiBold.ttf");
+}
+@font-face {
+  font-family: Poppins;
+  font-weight: 700;
+  src: url("fuentes/Poppins-Bold.ttf");
+}
+
+:root {
+  --navy: #222e73;
+  --blue: #0063ff;
+  --red: #d20631;
+  --ink: #061330;
+  --muted: #656a8f;
+  --soft: #e8ebf8;
+}
+
+@page {
+  size: A4;
+  margin: 16mm 15mm 14mm;
+  @top-right {
+    content: "App Foundry · Memoria del TFM";
+    font:
+      300 7.5pt Poppins,
+      sans-serif;
+    color: #8286a9;
+  }
+  @bottom-right {
+    content: counter(page) " / " counter(pages);
+    font:
+      400 7.5pt Poppins,
+      sans-serif;
+    color: #8286a9;
+  }
+  @bottom-left {
+    content: "Rubén Bernárdez Patier · JAKALA · Octubre de 2026";
+    font:
+      300 7.5pt Poppins,
+      sans-serif;
+    color: #8286a9;
+  }
+}
+
+@page :first {
+  @top-right {
+    content: none;
+  }
+}
+
+html {
+  font:
+    300 9pt/1.48 Poppins,
+    sans-serif;
+  color: var(--ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  margin: 0;
+}
+
+.portada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--red);
+  padding-bottom: 5mm;
+  margin-bottom: 6mm;
+}
+
+.portada img {
+  height: 11mm;
+}
+
+.portada span {
+  font-weight: 400;
+  font-size: 8pt;
+  color: var(--muted);
+  text-align: right;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  color: var(--navy);
+  line-height: 1.25;
+  break-after: avoid;
+}
+
+h1 {
+  font-size: 19pt;
+  font-weight: 700;
+  margin: 0 0 4mm;
+}
+
+h1:not(:first-of-type) {
+  margin-top: 8mm;
+  font-size: 16pt;
+  padding-bottom: 2mm;
+  border-bottom: 2px solid var(--soft);
+}
+
+h2 {
+  font-size: 12pt;
+  margin: 6mm 0 2mm;
+}
+
+h3 {
+  font-size: 10.5pt;
+  color: var(--blue);
+  margin: 4mm 0 1.5mm;
+}
+
+p,
+ul,
+ol {
+  margin: 0 0 2.4mm;
+}
+
+li {
+  margin-bottom: 0.8mm;
+}
+
+strong {
+  font-weight: 600;
+}
+
+a {
+  color: var(--blue);
+  text-decoration: none;
+}
+
+code {
+  font:
+    8.4pt Menlo,
+    monospace;
+  background: var(--soft);
+  color: var(--navy);
+  padding: 0 1mm;
+  border-radius: 1mm;
+}
+
+blockquote {
+  margin: 0 0 3mm;
+  padding: 2mm 4mm;
+  border-left: 3px solid var(--blue);
+  background: #f4f6fc;
+  color: var(--navy);
+}
+
+blockquote p {
+  margin: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+  line-height: 1.4;
+  margin: 2mm 0 4mm;
+  break-inside: avoid;
+}
+
+th {
+  background: var(--navy);
+  color: white;
+  font-weight: 600;
+  text-align: left;
+  padding: 1.6mm 2mm;
+}
+
+td {
+  padding: 1.4mm 2mm;
+  border-bottom: 1px solid var(--soft);
+  vertical-align: top;
+}
+
+tr:nth-child(even) td {
+  background: #f7f8fd;
+}
+
+figure {
+  margin: 3mm 0 5mm;
+  break-inside: avoid;
+  text-align: center;
+}
+
+figure img {
+  max-width: 100%;
+  max-height: 64mm;
+  border: 1px solid var(--soft);
+  border-radius: 1.5mm;
+}
+
+figure.alta img {
+  max-height: 90mm;
+}
+
+figure.ancha img {
+  width: 99mm;
+  max-height: none;
+}
+
+figcaption {
+  margin-top: 1.5mm;
+  font-size: 7.8pt;
+  color: var(--muted);
+}
+
+figcaption::before {
+  content: "";
+  display: inline-block;
+  width: 2mm;
+  height: 2mm;
+  margin-right: 1.5mm;
+  background: var(--red);
+  transform: rotate(45deg);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--soft);
+  margin: 5mm 0;
+}

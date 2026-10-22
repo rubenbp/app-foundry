@@ -5,4 +5,3 @@ playwright-report/
 .env
 factory.local.json
 .DS_Store
-demo/

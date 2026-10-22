@@ -2,6 +2,8 @@
 
 Fábrica de software local que convierte un issue de GitHub en una versión revisable y lista para producción. Un agente de IA (OpenCode) analiza y construye la petición dentro de un arnés que acota su contexto, sus herramientas y sus permisos. Un flujo determinista evalúa su resultado y automatiza el resto: prepara el entorno, ejecuta las pruebas, publica la PR y comprueba la preview en Vercel. Una persona solo decide desde GitHub.
 
+La [memoria del TFM](docs/tfm/memoria.pdf) explica el problema, la solución, los resultados y la justificación de negocio.
+
 ## Cómo funciona
 
 1. Escribes un issue en lenguaje natural y le pones la etiqueta `factory:ready`.
