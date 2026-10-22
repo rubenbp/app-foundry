@@ -11,7 +11,7 @@ La Factory usa arquitectura hexagonal. Las reglas y los contratos de las Ejecuci
 | `src/infrastructure/` | OpenCode, GitHub, Git, Vercel, procesos, SQLite, archivos y transporte HTTP          | Dominio, aplicación e infraestructura           |
 | `src/composition/`    | Construcción de la Factory y del workflow, conexión de adaptadores y arranque/parada | Todas las capas del backend                     |
 | `src/cli.ts`          | Entrada ejecutable: argumentos y delegación                                          | Composición y adaptadores de entrada            |
-| `panel/`              | Presentación React y consultas HTTP de lectura                                       | Presentación y contratos compartidos de lectura |
+| `panel/`              | Presentación React, consultas HTTP de lectura y borrado de Ejecuciones terminadas    | Presentación y contratos compartidos de lectura |
 
 Dominio y aplicación no abren archivos, conexiones, bases de datos ni procesos. Pueden usar funciones de la biblioteca estándar sin efectos externos, como validación de rutas y hashes. Infraestructura no importa composición. Los imports de tipos respetan las mismas direcciones.
 
@@ -45,7 +45,7 @@ El MVP presupone operadores y repositorios de confianza. El agente puede mantene
 
 `domain/verificationControls.ts` identifica cambios en archivos relacionados con la verificación para el informe humano. Estas observaciones se conservan en `Verification.controls` y su artefacto; no son rechazos. `infrastructure/verification.ts` ejecuta después el contrato de la configuración externa de confianza. `application/publication/evidence.ts` comprueba que el commit y las comprobaciones tengan evidencia local completa y válida. Los detalles se consultan en el Dashboard. No declara que las pruebas modificadas mantengan su calidad semántica.
 
-La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: instrucciones` abre otro Intento. No se añaden iteraciones automáticas ni recuperación automática general tras reiniciar. El Dashboard continúa siendo de lectura y la aceptación y el merge continúan siendo humanos.
+La recuperación sigue siendo manual: `Reintentar` repite la fase y `Corregir: instrucciones` abre otro Intento. No se añaden iteraciones automáticas ni recuperación automática general tras reiniciar. El Dashboard no modifica el desarrollo: consulta el estado y solo permite eliminar los datos locales de Ejecuciones terminadas. La aceptación y el merge continúan siendo humanos.
 
 El encargo capturado conserva el contenido inicial del issue; editar ese issue no lo sustituye. Una orden explícita `Corregir:` entregada por la Factory sí puede modificar requisitos del producto, incluso si contradice un valor literal del encargo inicial. Prevalece la última corrección, conservando los demás requisitos y los límites de herramientas y efectos externos.
 
@@ -90,7 +90,7 @@ La entrega del agente añade un bloque `<factory-summary>…</factory-summary>` 
 
 `tests/architecture.test.ts` recorre los imports TypeScript, incluidos los imports de tipos. Impide dependencias inversas entre capas, adquisición directa de efectos en dominio/aplicación e imports de adaptadores del backend desde el navegador. Se ejecuta con `npm run test:unit`.
 
-Las pruebas de comportamiento siguen cubriendo persistencia fallida, reinicio sin reenvío, propiedad exclusiva, cancelación de procesos, candidatos alterados, evidencia incompleta, aceptación mediante merge de la versión preparada, merges concurrentes y cierre condicionado al merge autorizado y al resumen publicado. Los registros anteriores que esperaban producción se leen como cierre pendiente; el reinicio conserva la intervención y la evidencia histórica. El MVP no consulta producción después del merge.
+Las pruebas de comportamiento siguen cubriendo persistencia fallida, reinicio sin reenvío, propiedad exclusiva, cancelación de procesos, candidatos alterados, evidencia incompleta, aceptación mediante merge de la versión preparada, merges concurrentes y cierre condicionado al merge autorizado y al resumen publicado. El MVP no consulta producción después del merge.
 
 ## Continuación de la conversación del agente
 
@@ -106,11 +106,13 @@ La espera humana no caduca y ocupa el único puesto. El cierre ordenado de la Fa
 
 `domain/run.ts` define `canResumeReview`: una espera `awaiting_review` con informe del Commit candidato y control favorable confirmados, sin órdenes, operaciones o bloqueos pendientes, sobrevive al apagado y al reinicio. El cierre de la Factory deja terminar la observación en curso y conserva esa espera; `stop` sigue revocando el control. Al volver se reutiliza el polling de comentarios y merge. Las intervenciones ya persistidas mantienen su recuperación explícita.
 
+`canResumePreview` aplica la misma idea a `awaiting_preview`: verificación superada del head publicado con limpieza confirmada, proceso del agente terminado, push, PR y descripción confirmados y ninguna orden, revisión ni bloqueo pendientes. Al arrancar, `Factory` marca la publicación como solo observación y reanuda la búsqueda de preview del mismo Commit candidato, sin repetir el trabajo del agente, el push ni la PR.
+
 ## Recuperación explícita del MVP
 
 `domain/recovery.ts` reconoce las órdenes completas `Reintentar` y `Cancelar` tras eliminar espacios exteriores y sin distinguir mayúsculas. En `awaiting_review`, `issueRecoveryCommand()` convierte cualquier otro comentario nuevo con contenido en instrucciones literales, sin interpretar el prefijo `Corregir:`. El corte temporal usa la fecha del control favorable del informe, confirmada por GitHub; los IDs ya observados antes de la revisión también se excluyen. Así no se convierten retroactivamente en órdenes los comentarios del trabajo o la espera de preview. Fuera de revisión, se conserva `Corregir: instrucciones` como orden explícita.
 
-`application/issueRecovery.ts` publica el aviso de intervención, consume comentarios humanos del issue sin comprobar permisos y delega la operación en el workflow. Excluye bots, comentarios propios y respuestas ya entregadas al agente. Los IDs admitidos quedan persistidos y se excluyen de la revisión posterior de la PR. La publicación deja los mensajes nuevos de revisión para este consumidor y retira el control favorable si aparecen en cualquiera de sus lecturas finales, sin convertir esa espera de entrega en una intervención. La integración detecta también los mensajes anteriores al merge que requerían otro Intento. Los comentarios del PR conservan su política anterior. No hay cola de notificaciones ni protocolo adicional para recuperar comunicaciones con GitHub.
+`application/issueRecovery.ts` publica el aviso de intervención, consume comentarios humanos del issue sin comprobar permisos y delega la operación en el workflow. Excluye bots, comentarios propios y respuestas ya entregadas al agente. Los IDs admitidos quedan persistidos y se excluyen de la revisión posterior de la PR. La publicación deja los mensajes nuevos de revisión para este consumidor y retira el control favorable si aparecen en cualquiera de sus lecturas finales, sin convertir esa espera de entrega en una intervención. La integración detecta también los mensajes anteriores al merge que requerían otro Intento. Los comentarios de la PR los interpreta `publication/reviewPolicy.ts`: son informativos, salvo las correcciones, cancelaciones o revocaciones de personas con escritura, que retiran el control favorable. No hay cola de notificaciones ni protocolo adicional para recuperar comunicaciones con GitHub.
 
 El workflow conserva la Ejecución y su reserva. Reintentar preparación reutiliza el clon y repite las comprobaciones de base; reintentar verificación repite el contrato completo. Una corrección, o el reintento de un fallo del agente con sesión disponible, inicia otro Intento recuperando el mismo thread. Se conservan rama y PR; se invalidan evidencia y control favorable vigentes. Tras verificar el nuevo commit, el push usa como concesión el SHA publicado anterior, actualiza la misma rama y requiere otra preview y aceptación. El agente reescribe la descripción funcional del cambio acumulado desde la base.
 
@@ -125,5 +127,3 @@ Cancelar reutiliza la parada operativa y cierra el issue con `state_reason: not_
 El fin del agente despierta el mismo ciclo de observación tras persistir el resultado, sin esperar al siguiente intervalo de 15 segundos. `infrastructure/workflowPolling.ts` serializa los despertares con el polling existente y los detiene durante el cierre. La publicación reutiliza la observación actual para conciliar push y PR; refresca tras mutaciones remotas y conserva las lecturas finales de revisión y estado favorable. No se reutiliza una observación entre ciclos.
 
 Los fallos de lectura de publicación se distinguen de los fallos de efectos remotos. Se conservan en el historial y en el error de publicación del Dashboard; no generan comentarios de intervención en GitHub. El ciclo siguiente vuelve a observar y puede recuperarse. Se mantiene el intento de revocar un control favorable cuando ocurre un fallo, sin acreditar la revocación si no puede comprobarse. Los fallos de otras lecturas del workflow también quedan en el historial de la Ejecución activa. No se añaden reintentos HTTP, colas ni webhooks.
-
-Los cambios se destinan a ejecuciones nuevas. No se migra el contrato de aceptación de ejecuciones antiguas en marcha; la prueba local debe reiniciarse desde una ejecución nueva.

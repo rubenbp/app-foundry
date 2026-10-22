@@ -115,7 +115,8 @@ Ejecución. Completar la instalación no acredita ese recorrido de publicación.
 Vercel debe estar conectado al repositorio correcto. En el Dashboard, revisa
 **Settings → Git**, la rama de producción y **Build and Deployment**. Habilita
 el acceso a variables de sistema para recibir `VERCEL_GIT_COMMIT_SHA` en cada
-build. Consulta la [configuración GitHub–Vercel](vercel-setup.md).
+build. Consulta la [integración Git de Vercel](https://vercel.com/docs/git) y las
+[variables de sistema](https://vercel.com/docs/environment-variables/system-environment-variables).
 
 La aplicación debe servir un marcador JSON, normalmente en `/version.json`:
 

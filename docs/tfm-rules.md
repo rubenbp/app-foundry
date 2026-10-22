@@ -1,3 +1,5 @@
+# Reglas del TFM
+
 El TFM consiste en desarrollar un caso de uso que aplique de forma integrada los conocimientos del track. Elige una necesidad concreta, construye una solución y demuestra cómo funciona, qué valor aporta y qué límites tiene.
 
 Puedes partir de tu proyecto actual, de una necesidad transversal de JAKALA o de una iniciativa nueva. El buscador de hoteles utilizado en clase es un ejemplo didáctico: no tienes que utilizarlo como base.
@@ -17,7 +19,7 @@ Diseña un proceso que automatice o facilite parte del trabajo: investigación, 
 
 Estos ejemplos son orientativos. Puedes proponer otros casos alineados con el desarrollo de software y con las necesidades de tu equipo o de JAKALA. Una mejora pequeña, útil y bien evaluada puede constituir un buen TFM.
 
-2. ALCANCE, REUTILIZACIÓN Y LÍMITES
+1. ALCANCE, REUTILIZACIÓN Y LÍMITES
 
 Escoge un alcance que puedas desarrollar, explicar y comprobar en el tiempo disponible.
 
@@ -32,7 +34,7 @@ Puedes utilizar un entorno aislado, datos ficticios, un proyecto de demostració
 • Qué está simulado o pendiente de verificar.
 • Qué ha limitado las pruebas y qué haría falta para completarlas.
 
-3. QUÉ DEBES ENTREGAR
+1. QUÉ DEBES ENTREGAR
 
 La entrega incluye el documento técnico, el código y los archivos de la solución, y una forma adecuada de demostrar el trabajo realizado.
 
@@ -72,7 +74,7 @@ El vídeo es recomendable, pero no obligatorio si el funcionamiento puede compro
 
 No es obligatorio desplegar ni contratar servicios para el TFM. La demostración debe ser proporcionada al caso. El acceso a una aplicación o un vídeo complementa la entrega del código; no la sustituye.
 
-4. CÓMO JUSTIFICAR EL VALOR
+1. CÓMO JUSTIFICAR EL VALOR
 
 Compara las horas y el coste de resolver el caso con un perfil profesional sin IA frente al escenario con IA. Considera preparación, ejecución, revisión y corrección, además del coste de herramientas y modelos.
 
@@ -82,7 +84,7 @@ Separa los datos medidos de las estimaciones y explica los supuestos: tarea, per
 
 Si los resultados son parciales o no muestran el ahorro esperado, explícalo y analiza las causas. Las conclusiones deben corresponderse con la evidencia disponible.
 
-5. HERRAMIENTAS Y EVALUACIÓN
+1. HERRAMIENTAS Y EVALUACIÓN
 
 Puedes utilizar las herramientas del track u otras adecuadas al caso. Justifica la elección y respeta las restricciones de tu entorno. No es necesario contratar herramientas de pago ni utilizar un número determinado de modelos, agentes o skills.
 
@@ -98,7 +100,7 @@ Se tendrán en cuenta los límites justificados del proyecto. Disponer de más p
 
 El workshop final servirá como referencia para integrar lo aprendido y orientar el nivel de trabajo esperado.
 
-6. PLAZO Y PRESENTACIÓN DE LOS MEJORES TRABAJOS
+1. PLAZO Y PRESENTACIÓN DE LOS MEJORES TRABAJOS
 
 Dispones de 30 días desde la última sesión del track, sin posibilidad de ampliación. Consulta la fecha exacta configurada en el campus y asegúrate de que los enlaces y permisos de acceso funcionan al entregar.
 

@@ -30,9 +30,9 @@ También prepara los accesos de GitHub, Vercel y OpenCode y la protección de la
 
 La protección se configura mediante una operación administrativa explícita. Exige PR, rama actualizada, conversaciones resueltas y los controles `Factory / ready-to-merge` y `Vercel`, conservando las protecciones existentes. La consulta periódica de la Factory no configura esa protección.
 
-Los pasos técnicos están en el [README](../../README.md) y la [guía de Vercel](../guides/vercel-setup.md).
+Los pasos técnicos están en el [README](../../README.md) y la [guía del asistente](../guides/setup-wizard.md), que prepara GitHub, Vercel y la protección de la rama.
 
-El equipo también puede añadir procedimientos reutilizables al directorio `skills/` de la Factory. Este catálogo es común a los Managed projects y comienza vacío. La [guía de skills](../guides/factory-skills.md) explica cómo mantenerlo.
+El equipo también puede añadir procedimientos reutilizables al directorio `skills/` de la Factory. Este catálogo es común a los Managed projects e incluye la skill de ejemplo `chiste`. La [guía de skills](../guides/factory-skills.md) explica cómo mantenerlo.
 
 ## Preparar y autorizar la petición
 
@@ -55,7 +55,7 @@ La suficiencia del contenido corresponde al agente, fuera del proceso determinis
 
 ## Qué queda fijado
 
-El Issue autorizado conserva título, cuerpo, autor, momento de captura, configuración del Managed project y selección del agente. La captura sirve como encargo inicial y bitácora. La selección de proveedor/modelo/esfuerzo se fija con la configuración global al comenzar el trabajo; una petición que nunca empezó puede adoptar otra selección tras reiniciar. Una Ejecución iniciada pendiente bloquea el arranque con una selección distinta. Consulta la [guía de proveedores](../guides/llm-providers.md). Editar el título o el cuerpo después no actualiza el encargo ni bloquea la Ejecución, su aceptación o su cierre. Los registros históricos con datos antiguos de autorización siguen siendo legibles, pero esos datos ya no condicionan la admisión ni la cola.
+El Issue autorizado conserva título, cuerpo, autor, momento de captura, configuración del Managed project y selección del agente. La captura sirve como encargo inicial y bitácora. La selección de proveedor/modelo/esfuerzo se fija con la configuración global al comenzar el trabajo; una petición que nunca empezó puede adoptar otra selección tras reiniciar. Una Ejecución iniciada pendiente bloquea el arranque con una selección distinta. Consulta la [guía de proveedores](../guides/llm-providers.md). Editar el título o el cuerpo después no actualiza el encargo ni bloquea la Ejecución, su aceptación o su cierre.
 
 Cada issue se consume una sola vez dentro del historial persistido. Retirar y volver a aplicar la etiqueta después de admitirlo no crea otra Ejecución. Reabrirlo tampoco es un mecanismo de reintento. Retirar la etiqueta no cancela el trabajo ya admitido.
 

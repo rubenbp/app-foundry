@@ -1,6 +1,6 @@
 # 6. Guía práctica de un issue completo
 
-[Índice](README.md) · [Anterior](05-variantes-e-intervencion.md)
+[Índice](README.md) · [Anterior](05-variantes-e-intervencion.md) · [Siguiente: probar un issue real](07-prueba-local-github-vercel.md)
 
 ## Ejemplo: cambiar un pie y comprobar su enlace
 
@@ -21,7 +21,7 @@ También se pueden usar encabezados de objetivo y criterios, listas o contexto a
 3. **Seguir la Ejecución y responder dudas.** Consultar el Dashboard y los comentarios del issue. Cuando la Factory publique preguntas del agente, responder con un comentario nuevo; puede contener todas las respuestas. Cualquier persona puede hacerlo. El agente continúa en el mismo thread y puede volver a preguntar. Retirar la etiqueta no cancela un trabajo admitido.
 4. **Revisar la descripción de la PR.** Leer Resumen, Evidencia y Riesgo de fusión. Consultar el Dashboard local para el diff, los resultados completos y las limitaciones del Commit candidato vigente.
 5. **Probar la preview.** El creador del issue se responsabiliza de conseguir la revisión de cada criterio en la preview enlazada en el aviso del issue y en la integración de Vercel.
-6. **Aceptar o pedir corrección.** Para aceptar, haz merge de la PR cuando `Factory / ready-to-merge` y los demás controles sean favorables. No hace falta un comentario de aceptación. Para corregir, publica `Corregir: instrucciones` en el issue. La Factory conserva thread, rama y PR y abre otro Intento.
+6. **Aceptar o pedir corrección.** Para aceptar, haz merge de la PR cuando `Factory / ready-to-merge` y los demás controles sean favorables. No hace falta un comentario de aceptación. Para pedir cambios, escribe en el issue lo que necesitas, sin prefijos: durante la revisión, cualquier comentario humano nuevo en el issue llega al agente y abre otro Intento, incluidas preguntas y agradecimientos. La Factory conserva thread, rama y PR. Solo `Reintentar` y `Cancelar` completos son comandos.
 7. **Revisar cualquier versión nueva.** Si cambia el candidato, espera nuevas verificaciones, preview y descripción y vuelve a revisar antes del merge.
 8. **Confirmar el final.** Comprobar el resumen de integración, el issue cerrado y el estado `completed`. La Factory no espera ni comprueba producción.
 
@@ -37,8 +37,8 @@ flowchart TD
     W -->|"No"| C{"¿Hay evidencia técnica y preview vigentes?"}
     C -->|"No"| E["Consultar fase y causa en el dashboard"]
     C -->|"Sí"| B{"¿Cumple todos los criterios?"}
-    B -->|"Tengo dudas"| Q["Preguntar en GitHub<br/>La consulta no acepta"]
-    B -->|"No"| X["Comentar Corregir: instrucciones en el issue<br/>Otro Intento en el mismo thread"]
+    B -->|"Tengo dudas"| Q["Preguntar en la PR: informativo<br/>Preguntar en el issue: abre otro Intento"]
+    B -->|"No"| X["Escribir los cambios en el issue<br/>Otro Intento en el mismo thread"]
     B -->|"Sí"| H["Revisar la versión vigente"]
     H --> G{"¿Control favorable y demás requisitos de GitHub?"}
     G -->|"No"| V["Revisar cambios, permisos y observaciones"]

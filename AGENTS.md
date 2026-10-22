@@ -1,7 +1,3 @@
-@/Users/rubenbp/.codex/RTK.md
-
-Usa siempre Caveman lite: frases completas, sin relleno y en español. Escribe código, commits y documentación con estilo normal. Desactívalo cuando el usuario diga `stop caveman`.
-
 ## Agent skills
 
 ### Coding standards

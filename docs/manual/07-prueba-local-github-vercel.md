@@ -1,193 +1,79 @@
-# 7. Poner en marcha la Factory y probar un issue real
+# 7. Probar un issue real con GitHub y Vercel
 
-[Índice](README.md) · [Descripción del issue lista para copiar](ejemplo-issue-prueba-local.md)
+[Índice](README.md) · [Anterior](06-guia-de-un-issue.md) · [Descripción del issue lista para copiar](ejemplo-issue-prueba-local.md)
 
-Esta guía arranca la Factory en el Mac y trabaja contra el GitHub y Vercel reales de Rebobina. El ejemplo usa la cuenta OpenAI OAuth activa de OpenCode. Para Gemini, Claude o modelos locales, sigue la [guía de proveedores y modelos](../guides/llm-providers.md) y adapta `provider`/`model`. El merge que hagas al final actualizará producción.
+Esta guía recorre un issue real de principio a fin contra el GitHub y el Vercel de tu copia de Rebobina. Parte de una instalación hecha con el asistente; si todavía no la tienes, sigue los pasos 1 y 2 del [README](../../README.md) y la [guía del asistente](../guides/setup-wizard.md). El merge que hagas al final actualizará producción.
 
-## 1. Estado comprobado en este equipo
+En los comandos, sustituye `/ruta/absoluta/App Foundry` por la carpeta de instalación y `TU_USUARIO/rebobina-demo` por tu repositorio.
 
-Comprobación realizada el 18 de octubre de 2026:
+## 1. Antes de arrancar
 
-| Elemento                            | Resultado observado                                                                            |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Node / npm                          | `24.21.0` / `11.19.0`.                                                                         |
-| GitHub CLI                          | Cuenta `rubenbp` autenticada, con escritura y administración sobre el Managed project.         |
-| Managed project                     | `rubenbp/appfoundry-site-demo`, rama `main`.                                                   |
-| OpenCode global                     | `2.0.26`, con `auth export` y una cuenta OpenAI OAuth activa.                                  |
-| OpenCode propio de Factory          | Binario local `2.0.32`, instalado.                                                             |
-| Vercel CLI                          | `62.7.0`, disponible en una ruta de caché npm; no como `vercel` en el PATH observado.          |
-| Acceso Vercel                       | Cuenta `rubenbpv`, proyecto `rubenbpvs-projects/appfoundry-site-demo`.                         |
-| Conexión Git de Vercel              | Repositorio correcto, producción desde `main` y variables de sistema habilitadas.              |
-| Protección de `main`                | Exige `Vercel` y `Factory / ready-to-merge`, con rama actualizada y administradores incluidos. |
-| Issues abiertos con `factory:ready` | Ninguno en la consulta realizada.                                                              |
-| `sample/factory.local.json`         | Configuración del flujo de issues, junto con el resto del ejemplo en `sample`.                 |
-
-Los accesos remotos pueden cambiar. Estas observaciones no acreditan todavía una Ejecución nueva ni un Commit candidato desplegado.
-
-## 2. Preparar la terminal
-
-Abre una terminal normal de macOS y entra en la Factory:
+El asistente ya comprobó herramientas, cuentas, proyecto Vercel, protección de la rama y base del proyecto. Antes de cada prueba, confirma que siguen disponibles:
 
 ```sh
-cd /Users/rubenbp/dev/jakala-tfm/app-foundry
-node --version
-npm --version
-python3 --version
+gh auth status
+vercel whoami
 ```
 
-El puerto `4173` debe quedar libre para el servidor E2E de la Factory; no dejes otro preview usándolo.
+Si GitHub dejó de estar autenticado, ejecuta `gh auth login --hostname github.com`. Si Vercel pide autenticación, usa `vercel login` con la misma CLI que configuraste en el asistente. Para la cuenta del proveedor de modelos, sigue la [guía de proveedores y modelos](../guides/llm-providers.md). No pegues credenciales ni ejecutes `auth export` para mostrarlas en pantalla.
+
+El puerto del servidor E2E que configuraste en el asistente (en Rebobina, `4173`) y el del Dashboard (`4310` por defecto) deben estar libres:
 
 ```sh
 lsof -nP -iTCP:4173 -sTCP:LISTEN
 lsof -nP -iTCP:4310 -sTCP:LISTEN
 ```
 
-Sin salida significa que no se ha encontrado un proceso escuchando. Si hay uno, identifica y detén tu servidor antes de continuar.
+Sin salida significa que no hay un proceso escuchando. Si hay uno, identifícalo y detenlo antes de continuar.
 
-Prepara dependencias y dashboard:
+La identidad Git de la automatización pertenece a la preparación del Managed project. En un equipo Hobby de Vercel, el autor de los commits debe ser el propietario del equipo. Indica una sola vez en las instrucciones de la rama base el autor reconocido por Vercel, por ejemplo `git commit --author "App Foundry (TU_USUARIO) <ID+TU_USUARIO@users.noreply.github.com>" ...`. La Factory usa por defecto `factory@localhost`; cambiar tu `git config --global user.email` no sustituye ese valor del entorno.
 
-```sh
-npm ci
-node node_modules/@opencode/cli/postinstall.mjs
-node_modules/@opencode/cli/bin/opencode.exe --version
-npm run typecheck
-npm run build
-```
-
-El binario debe mostrar `2.0.32`. Se ejecuta directamente; no se pasa a `node`. El global puede tener otra versión porque solo se usa para leer en memoria la credencial activa existente del proveedor remoto elegido.
-
-Comprueba pnpm desde el Managed project, que declara `pnpm@12.14.0`:
+## 2. Arrancar y ver el Dashboard
 
 ```sh
-cd /Users/rubenbp/dev/jakala-tfm/appfoundry-site-demo
-pnpm --version
-cd /Users/rubenbp/dev/jakala-tfm/app-foundry
+"/ruta/absoluta/App Foundry/start-factory.sh"
 ```
 
-Debe resolver `12.14.0`. La primera selección puede descargar esa versión. Si no tienes pnpm, instálalo con `npm install --global pnpm@12.14.0` y revisa `command -v pnpm`. Consultarlo dentro de la Factory puede dar `ERR_PNPM_OTHER_PM_EXPECTED`, porque ese repositorio declara npm; no implica que el producto use npm.
-
-La Factory clonará `main` de GitHub por su cuenta. No consume los cambios sin publicar de tu checkout vecino, ni necesitas arrancar Astro aparte. Las guías antiguas del producto mencionan pnpm `12.4.1`; para este arranque se ha contrastado `package.json` actual de `main`, que declara `12.14.0`.
-
-## 3. Comprobar las sesiones
-
-```sh
-gh auth status
-opencode auth list
-/Users/rubenbp/.npm/_npx/43d8461e34b9b106/node_modules/.bin/vercel whoami
-```
-
-Las sesiones estaban disponibles en la comprobación. Si GitHub deja de estar autenticado, ejecuta `gh auth login --hostname github.com`. Si OpenCode no tiene la cuenta deseada, usa `opencode auth login openai` y selecciona OAuth; para elegir entre cuentas existentes usa `opencode auth switch --help`. No pegues credenciales ni ejecutes `auth export` para mostrarlas en pantalla.
-
-Si Vercel pide autenticación, usa la misma CLI con `login` y completa el acceso en el navegador. Es el [flujo oficial de Vercel CLI](https://vercel.com/docs/cli/login).
-
-La ruta de Vercel citada pertenece a una caché ya comprobada. Si desaparece, instala `npm install --global vercel@62.7.0`, obtén su ruta con `command -v vercel` y actualiza `vercelCli` en la configuración del paso siguiente.
-
-## 4. Usar la configuración de la prueba
-
-Se ha preparado este archivo local:
-
-```text
-/Users/rubenbp/dev/jakala-tfm/sample/factory.local.json
-```
-
-Apunta al Managed project de Rebobina y conserva los datos en:
-
-```text
-/Users/rubenbp/dev/jakala-tfm/sample/data
-```
-
-Esa carpeta es independiente del código. No borres sus datos entre reinicios para intentar recuperar una Ejecución. El archivo de configuración, `managed-project.json`, el encargo `issue.md`, el arranque `start.sh` y las instrucciones del ejemplo están juntos en `/Users/rubenbp/dev/jakala-tfm/sample`. El arranque no depende de una configuración en la raíz de la Factory.
-
-Este es el contenido de la configuración local del ejemplo:
-
-```json
-{
-  "dataDir": "/Users/rubenbp/dev/jakala-tfm/sample/data",
-  "provider": "openai",
-  "model": "gpt-6-luna",
-  "auth": "opencode",
-  "opencodeCli": "/opt/homebrew/bin/opencode",
-  "vercelCli": "/Users/rubenbp/.npm/_npx/43d8461e34b9b106/node_modules/.bin/vercel",
-  "managedProjectFile": "managed-project.json"
-}
-```
-
-Los IDs de Vercel y el dominio están en la configuración de confianza del Managed project. No hace falta hacer `vercel link` sobre el repositorio de la Factory ni ejecutar `vercel --prod`.
-
-## 5. Arrancar y ver el dashboard
-
-En la primera terminal:
-
-```sh
-npm start -- serve --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local.json --port 4310
-```
-
-Deja esa terminal abierta durante todo el recorrido. Abre [http://127.0.0.1:4310](http://127.0.0.1:4310).
-
-El dashboard debería mostrar la Factory sin Ejecución activa. El arranque consulta automáticamente los issues abiertos con `factory:ready` del Managed project; comprueba que no hayas autorizado otros trabajos que no quieras ejecutar todavía.
+Deja esa terminal abierta durante todo el recorrido y abre [http://127.0.0.1:4310](http://127.0.0.1:4310). El Dashboard debería mostrar la Factory sin Ejecución activa. El arranque consulta automáticamente los issues abiertos con `factory:ready`; comprueba que no hayas autorizado otros trabajos que no quieras ejecutar todavía.
 
 Si la carpeta de datos ya tenía una Ejecución iniciada, puede aparecer en intervención. No arranques otra instancia ni borres reservas para saltarla; inspecciona esa Ejecución.
 
-La protección de `main` ya estaba configurada al preparar esta guía. Solo si falta, la operación administrativa explícita es:
-
-```sh
-node --experimental-strip-types scripts/configureMergeProtection.ts config/managed-projects/rebobina.json
-```
-
-Ese comando cambia las reglas de GitHub. No es necesario repetirlo para cada prueba.
-
-## 6. Crear el issue sin autorizar todavía
+## 3. Crear el issue sin autorizar todavía
 
 En una segunda terminal:
 
 ```sh
-cd /Users/rubenbp/dev/jakala-tfm/app-foundry
-gh issue create --repo rubenbp/appfoundry-site-demo \
-  --title "Prueba local: actualizar el mensaje del pie de Rebobina" \
-  --body-file docs/manual/ejemplo-issue-prueba-local.md
+gh issue create --repo TU_USUARIO/rebobina-demo \
+  --title "Prueba: actualizar el mensaje del pie de Rebobina" \
+  --body-file "/ruta/absoluta/App Foundry/factory/docs/manual/ejemplo-issue-prueba-local.md"
 ```
 
-Apunta el número que devuelve GitHub. Lee el [cuerpo preparado](ejemplo-issue-prueba-local.md) antes de autorizarlo: cambia únicamente el mensaje del pie y conserva la vuelta al inicio. Incluye el objetivo y tres criterios observables, sin plan técnico de pruebas. No toca los casos de introducción editorial ni filtro de dificultad reservados a la evaluación.
+Apunta el número que devuelve GitHub. Lee el [cuerpo preparado](ejemplo-issue-prueba-local.md) antes de autorizarlo: cambia únicamente el mensaje del pie y conserva la vuelta al inicio. Incluye el objetivo y tres criterios observables, sin plan técnico de pruebas.
 
-La identidad Git de la automatización pertenece a la preparación del Managed project. Antes de esta prueba, indica una sola vez en las instrucciones de confianza de la rama base el autor reconocido por Vercel, por ejemplo `git commit --author "App Foundry (rubenbp) <570775+rubenbp@users.noreply.github.com>" ...`. El control Git permite ese argumento sin cambiar configuración, remotos ni hooks. La Factory usa por defecto `factory@localhost`; cambiar tu `git config --global user.email` no sustituye ese valor del entorno. Si Vercel rechaza el autor, revisa esa preparación y los commits de la PR. Estas instrucciones operativas no forman parte del issue de producto.
+## 4. Autorizar y observar
 
-## 7. Autorizar y observar
-
-Sustituye `NUMERO_DEL_ISSUE` por el número real:
+El asistente creó las etiquetas de la Factory. Aplica `factory:ready`, sustituyendo `NUMERO_DEL_ISSUE` por el número real:
 
 ```sh
-gh label list --repo rubenbp/appfoundry-site-demo --search factory:ready
-```
-
-Si la etiqueta no existe, créala una sola vez:
-
-```sh
-gh label create factory:ready --repo rubenbp/appfoundry-site-demo \
-  --description "Issue revisado y autorizado para la Factory" --color 0E8A16
-```
-
-Aplica la etiqueta para admitir el issue:
-
-```sh
-gh issue edit NUMERO_DEL_ISSUE --repo rubenbp/appfoundry-site-demo \
+gh issue edit NUMERO_DEL_ISSUE --repo TU_USUARIO/rebobina-demo \
   --add-label factory:ready
 ```
 
-El dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. En GitHub, `factory:ready` se sustituye por `factory:queued` y después `factory:in-progress`. La Factory crea las etiquetas operativas que falten; la cuenta necesita permiso para crearlas y aplicarlas. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
+El Dashboard debería pasar por cola, preparación, trabajo del agente, verificación y espera de preview. En GitHub, `factory:ready` se sustituye por `factory:queued` y después por `factory:in-progress`. La Factory consulta de nuevo unos 15 segundos después de terminar la consulta anterior; la preparación y las pruebas pueden tardar varios minutos.
 
-La Factory captura el título y cuerpo que observe al admitir. No comprueba permisos del etiquetador ni estabilidad del contenido. Las ediciones posteriores no actualizan el encargo ni bloquean la Ejecución; volver a etiquetar no reejecuta el issue. Si el agente pide una aclaración, la Factory publica sus dudas en el issue. El primer comentario humano nuevo posterior a esa pregunta vuelve al mismo thread. Puede responder cualquiera, sin comandos ni comprobación de permisos para la aclaración. Los comentarios publicados mientras trabaja quedan sin procesar.
+La Factory captura el título y el cuerpo que observa al admitir. Las ediciones posteriores no actualizan el encargo; volver a etiquetar no reejecuta el issue. Los comentarios publicados mientras el agente trabaja quedan sin procesar.
 
-La Factory creará una rama y una PR. Vercel producirá la preview por la integración Git. Si aparece intervención, lee el comentario de la Factory en el issue y consulta las salidas del Dashboard. Publica una orden nueva de las ofrecidas: `Reintentar`, `Corregir: instrucciones` o `Cancelar`. No aceptes para intentar desbloquear una verificación fallida.
+La Factory creará una rama y una PR, y Vercel producirá la preview mediante su integración Git. Si aparece intervención, lee el comentario de la Factory en el issue y consulta las salidas del Dashboard. Publica una de las órdenes ofrecidas: `Reintentar`, `Corregir: instrucciones` o `Cancelar`.
 
 ### Si el agente pide una aclaración
 
-Abre el issue y responde al comentario «La Factory necesita tu respuesta» con un comentario nuevo. Puedes contestar todas las dudas juntas y usar texto libre. Espera a que la Factory recoja la respuesta y el Dashboard vuelva a mostrar trabajo del agente. Si la información no basta, el agente puede publicar otra solicitud; responde de nuevo después de esa nueva pregunta.
+Abre el issue y responde al comentario «La Factory necesita tu respuesta» con un comentario nuevo. Puedes contestar todas las dudas juntas y en texto libre; puede responder cualquiera, sin comandos ni comprobación de permisos. Espera a que el Dashboard vuelva a mostrar trabajo del agente. Si la información no basta, el agente publicará otra solicitud.
 
-La espera no caduca y conserva el puesto. Para comprobar la recuperación, puedes cerrar la Factory mientras muestra esa espera y arrancarla de nuevo con la misma configuración y carpeta de datos. La pregunta queda pendiente y la siguiente respuesta recupera el mismo thread. El comando `stop` cancela la Ejecución; se utiliza para una parada operativa, no para conservar esta espera. Responder una aclaración no acepta la PR ni sustituye el paso siguiente.
+La espera no caduca y conserva el puesto. Para comprobar la recuperación, puedes cerrar la Factory con Ctrl-C mientras muestra esa espera y arrancarla de nuevo: la pregunta queda pendiente y la siguiente respuesta continúa el mismo thread. Responder una aclaración no acepta la PR.
 
-## 8. Revisar y aceptar
+## 5. Revisar y aceptar
 
-Espera el aviso de revisión en el issue y la etiqueta `factory:pending-review`. El aviso incluye la preview y la PR, sin SHA ni fórmulas de aceptación. Abre la PR y lee su descripción funcional en castellano: Resumen, Evidencia y Riesgo de fusión. Consulta el Dashboard para las salidas técnicas completas; la PR no debe tener un comentario de informe técnico. Abre su preview con tu sesión Vercel y comprueba:
+Espera el aviso de revisión en el issue y la etiqueta `factory:pending-review`. El aviso incluye la preview y la PR. Abre la PR y lee su descripción funcional: Resumen, Evidencia y Riesgo de fusión. Consulta el Dashboard para las salidas técnicas completas. Abre la preview con tu sesión de Vercel y comprueba:
 
 1. El nuevo texto del pie en `/`.
 2. El mismo texto en `/sobre-rebobina/`.
@@ -195,47 +81,34 @@ Espera el aviso de revisión en el issue y la etiqueta `factory:pending-review`.
 
 Puedes corregir una frase de la descripción de la PR y esperar una consulta: la Ejecución debe seguir en `awaiting_review` y conservar el control favorable. Una nueva entrega del agente sustituirá ese texto por la descripción completa actualizada.
 
-No publiques un comentario de aceptación. Espera `awaiting_review` y `Factory / ready-to-merge: success`: el control acredita las comprobaciones técnicas; la aceptación humana se expresa al hacer merge. Si cambia el candidato, revisa la nueva preview, la descripción y la evidencia vigente del Dashboard.
+Si quieres cambios, escríbelos en el issue sin prefijos: durante la revisión, cualquier comentario nuevo en el issue abre otro Intento. No publiques un comentario de aceptación: la aceptación es el merge.
 
-## 9. Hacer merge y comprobar el cierre
+## 6. Hacer merge y comprobar el cierre
 
-Para aceptar los cambios, haz el merge manualmente en GitHub cuando estén favorables los controles de Factory y Vercel. Mantén encendida la Factory.
+Cuando estén favorables `Factory / ready-to-merge` y `Vercel`, haz el merge manualmente en GitHub. Mantén encendida la Factory.
 
-La Factory debe publicar el resumen de integración en el issue, confirmar su cierre y pasar a `completed`. Puede mostrar brevemente `closing_issue` mientras confirma esos efectos. El resumen conserva el Commit candidato aceptado y el commit integrado, que pueden diferir si usaste squash.
+La Factory debe publicar el resumen de integración en el issue, cerrarlo y pasar a `completed`. Puede mostrar brevemente `closing_issue` mientras confirma esos efectos. El resumen conserva el Commit candidato aceptado y el commit integrado, que pueden diferir si usaste squash. La Factory no espera ni comprueba el despliegue de producción después del merge.
 
-El visto bueno al preview es la revisión funcional del resultado. La Factory no espera ni comprueba el despliegue de producción después del merge.
+## 7. Detener y repetir con otra petición
 
-## 10. Detener y repetir con otra petición
+Al completar, puedes cerrar la Factory con Ctrl-C. Para cancelar desde GitHub, publica exactamente `Cancelar` en el issue: antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`).
 
-Al completar, puedes cerrar la Factory con `Ctrl-C`. Para detener una Ejecución activa desde otra terminal:
+Para una parada operativa local, abre en el Dashboard **Configuración, procesos y evidencia** y, en el bloque **Para emergencias**, copia el comando **Parar**. Ya incluye el ID de la Ejecución y las rutas de Node y de la CLI de tu instalación; ejecútalo desde la carpeta de instalación con la Factory funcionando. La parada local no cierra el issue ni revierte cambios integrados.
 
-```sh
-cd /Users/rubenbp/dev/jakala-tfm/app-foundry
-npm start -- stop --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local.json --id ID_DE_EJECUCION
-```
+Al reiniciar, una espera de respuesta humana, de preview con la PR ya publicada o de revisión confirmada continúa sin aviso de intervención. Los demás trabajos iniciados quedan en intervención y no se reanudan automáticamente.
 
-Usa el ID del dashboard para una parada operativa local. Para cancelar desde GitHub, publica exactamente `Cancelar` en el issue: antes del merge, confirma la parada y cierra el issue como no implementado (`not_planned`), sin comprobar permisos del autor. La CLI `stop` no cierra el issue. Una parada confirmada no revierte cambios ya integrados ni elimina ramas o PR. Reiniciar mientras espera una respuesta humana conserva el mismo thread y permite continuar al recibirla. Una revisión confirmada también conserva la espera y el control de merge, sin avisos; al volver procesa comentarios o merge con las reglas habituales. Un reinicio en otros trabajos iniciados deja intervención; no reanuda esos trabajos automáticamente.
+Si una Ejecución bloquea las pruebas y la parada normal no permite liberarla, copia en el mismo bloque el comando **Descartar**, para la Factory y ejecútalo desde la carpeta de instalación. El comando rechaza una Factory activa o procesos registrados que sigan vivos; no los mata. Tras el éxito, arranca de nuevo. Para repetir el mismo issue, consulta el [procedimiento de descarte y borrado del historial](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp).
 
-Para probar otro cambio crea otro issue con un resultado diferente, una vez completado o detenido el anterior. El mismo issue no se consume dos veces dentro de ese historial.
-
-Si una Ejecución bloquea las pruebas y la parada normal no permite liberarla, copia su ID completo en **Configuración, procesos y evidencia → Evidencia y detalles de la ejecución → Código de la Ejecución → ID de la ejecución**. Para la Factory y ejecuta:
-
-```sh
-npm start -- discard --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local.json --id ID_DE_EJECUCION
-```
-
-El comando rechaza una Factory activa o PID/grupos registrados que sigan vivos; no los mata ni comprueba un reinicio. Tras el éxito, arranca de nuevo para probar otro issue. Conserva el historial y los recursos remotos, sin reanudar los efectos pendientes de la Ejecución descartada. Para repetir el mismo issue, consulta el [procedimiento de descarte y borrado del historial](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp).
-
-Para operar desde la carpeta creada por el wizard, que contiene `factory.local.json` y `start-factory.sh`, abre **Para emergencias** en la misma modal. Copia con el icono el comando de **Parar** o **Descartar**: ya incluye el ID seleccionado y las rutas reales de Node y de la CLI. **Parar** se ejecuta con la Factory funcionando; para **Descartar**, copia antes el comando y para la Factory. Si no se concede acceso al portapapeles, selecciona y copia el texto manualmente.
+Para probar otro cambio, crea otro issue con un resultado diferente. El mismo issue no se consume dos veces dentro del historial.
 
 ## Si no avanza
 
-| Lo que ves                      | Qué revisar                                                                                                                                                                                                                                                                                          |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                                                                                                                                                   |
-| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto `4173` ocupado. La Factory usa `main` remoto.                                                                                                                                                                                     |
-| `waiting`                       | Si hay dudas publicadas por la Factory, responder con un comentario nuevo en el issue. La primera respuesta humana continúa el mismo thread. Los permisos técnicos mantienen sus restricciones.                                                                                                      |
-| Preview ausente o rechazada     | Estado de Vercel, autor Git reconocido y SHA del deployment.                                                                                                                                                                                                                                         |
-| Preview protegida sin acreditar | Sesión de la CLI indicada por `vercelCli`, proyecto y acceso; conservar Deployment Protection.                                                                                                                                                                                                       |
-| Cierre en intervención          | Resumen de integración vigente y permiso de comentar/cerrar. Comentar `Reintentar` permite continuar el resumen y el cierre pendientes; después del merge no se admite corregir ni cancelar.                                                                                                         |
-| Intervención tras reiniciar     | Una revisión confirmada sigue esperando en silencio. Si ya quedó en intervención con una versión anterior, o había otro trabajo interrumpido, leer el aviso y solicitar `Reintentar` tras resolver la causa. Una espera de aclaración continúa al responder en el issue. No borrar datos o reservas. |
+| Lo que ves                      | Qué revisar                                                                                                                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No aparece ningún issue         | Repositorio configurado, issue abierto con `factory:ready` y sin Ejecución previa en el historial.                                                                                    |
+| Fallo de preparación            | Salida concreta: instalación, pnpm, Node, base defectuosa o puerto E2E ocupado. La Factory clona la rama base remota.                                                                 |
+| `waiting`                       | Si hay dudas publicadas por la Factory, responder con un comentario nuevo en el issue.                                                                                                |
+| Preview ausente o rechazada     | Bloque **Búsqueda de preview** del Dashboard, estado del deployment en Vercel, autor Git reconocido y SHA del deployment.                                                             |
+| Preview protegida sin acreditar | Sesión de la CLI de Vercel configurada, proyecto y acceso; conservar Deployment Protection.                                                                                           |
+| Cierre en intervención          | Resumen de integración vigente y permiso de comentar y cerrar. Comentar `Reintentar` completa el resumen y el cierre pendientes; después del merge no se admite corregir ni cancelar. |
+| Intervención tras reiniciar     | Leer el aviso y solicitar `Reintentar` tras resolver la causa. Las esperas de aclaración, de preview publicada y de revisión confirmada continúan solas. No borrar datos ni reservas. |

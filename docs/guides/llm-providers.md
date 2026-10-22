@@ -1,6 +1,8 @@
 # Configurar proveedor y modelo
 
-La Factory usa **un proveedor, un modelo y un esfuerzo globales**, leídos al arrancar. Todas las Ejecuciones usan esa selección. Para cambiarla, edita la configuración y reinicia. El esfuerzo es opcional. El MVP se opera en macOS.
+La Factory usa **un proveedor, un modelo y un esfuerzo globales**, leídos al arrancar. Todas las Ejecuciones usan esa selección. El esfuerzo es opcional. El MVP se opera en macOS.
+
+El [asistente de puesta en marcha](setup-wizard.md) pregunta proveedor, modelo, esfuerzo y tarifas y los escribe en `factory.local.json`, en la carpeta de instalación. Esta guía explica cómo preparar la cuenta antes del asistente y cómo revisar o cambiar después esa selección a mano. Los comandos se ejecutan desde `factory/`, dentro de la carpeta de instalación.
 
 ## 1. Preparar el acceso
 
@@ -15,10 +17,10 @@ opencode auth list
 | -------------------------- | ----------- | ---------------------------------------------------------- |
 | OpenAI                     | `openai`    | `opencode auth login openai`; elige OAuth.                 |
 | Gemini                     | `google`    | `opencode auth login google --method key`                  |
-| Claude                     | `anthropic` | `opencode auth login anthropic --method key`               |
+| Anthropic (Claude)         | `anthropic` | `opencode auth login anthropic --method key`               |
 | Ollama local, experimental | `ollama`    | Sin cuenta ni `opencodeCli`; sigue el paso local de abajo. |
 
-Introduce la clave cuando OpenCode la solicite. Para Gemini, créala en [Google AI Studio](https://aistudio.google.com/api-keys); para Claude, usa una API key de Anthropic. Una suscripción Claude Pro/Max no sustituye esa clave. La API tiene su propia cuota y facturación. Consulta [las condiciones de autenticación de Anthropic](https://code.claude.com/docs/en/legal-and-compliance#authentication-and-credential-use).
+Introduce la clave cuando OpenCode la solicite. Para Gemini, créala en [Google AI Studio](https://aistudio.google.com/api-keys); para Anthropic, usa una API key de su consola. Una suscripción Claude Pro/Max no sustituye esa clave. La API tiene su propia cuota y facturación. Consulta [las condiciones de autenticación de Anthropic](https://code.claude.com/docs/en/legal-and-compliance#authentication-and-credential-use).
 
 Si tienes varias cuentas del mismo proveedor, activa la deseada con `opencode auth switch` y comprueba `opencode auth list`. La Factory importa solo la credencial activa del proveedor a su servidor privado y sanea los secretos de las evidencias. No cambia la cuenta global.
 
@@ -39,7 +41,7 @@ También puedes usar `/models` en OpenCode. Divide el ID `proveedor/modelo`: `pr
   "model": "gpt-6-luna",
   "auth": "opencode",
   "opencodeCli": "/absolute/path/to/opencode",
-  "managedProjectFile": "config/managed-projects/rebobina.json"
+  "managedProjectFile": "managed-project.json"
 }
 ```
 
@@ -47,7 +49,7 @@ Cambia `provider` a `google` o `anthropic` y `model` al ID que muestre tu OpenCo
 
 **No hay lista manual de modelos permitidos en la Factory.** El modelo debe estar habilitado en el catálogo efectivo de OpenCode y admitir herramientas. La Factory lo comprueba al preparar el agente; una clave inválida, una cuota agotada o un modelo inaccesible pueden fallar después, al pedir la primera respuesta. No se cambia automáticamente de modelo ni proveedor.
 
-Usa el ID sin sufijo `#variante`. Para elegir el esfuerzo, añade el campo opcional `reasoningEffort` con el ID exacto de una variante del modelo. No hay una escala común a todos los proveedores: consulta las opciones mediante `npm run test:opencode -- --config factory.local.json`. El comando muestra líneas listas para copiar al JSON, por ejemplo, si el modelo anuncia esa variante:
+Usa el ID sin sufijo `#variante`. Para elegir el esfuerzo, añade el campo opcional `reasoningEffort` con el ID exacto de una variante del modelo. No hay una escala común a todos los proveedores: consulta las opciones mediante `npm run test:opencode -- --config ../factory.local.json`. El comando muestra líneas listas para copiar al JSON, por ejemplo, si el modelo anuncia esa variante:
 
 ```json
 "reasoningEffort": "low"
@@ -79,8 +81,8 @@ Antes de arrancar la Factory, comprueba que OpenCode puede obtener una respuesta
 con el proveedor y modelo del JSON:
 
 ```sh
-npm run test:opencode -- --config factory.local.json
-npm run test:opencode -- --config factory.local.json --prompt "Responde OK sin usar herramientas"
+npm run test:opencode -- --config ../factory.local.json
+npm run test:opencode -- --config ../factory.local.json --prompt "Responde OK sin usar herramientas"
 ```
 
 `--config` es obligatorio. Se reutiliza la validación de la Factory, incluidas
@@ -113,7 +115,7 @@ ejecución de herramientas ni el workflow completo de la Factory.
 Para arrancar la Factory:
 
 ```sh
-npm start -- serve --config factory.local.json --port 4310
+"/ruta/absoluta/App Foundry/start-factory.sh"
 ```
 
 Si hay una Ejecución iniciada y pendiente con otro proveedor, modelo **o esfuerzo**, la Factory muestra un error por consola y no arranca. Incluye esperas humanas, revisión, intervención, recuperación y reintentos en cola. Pasar de un esfuerzo explícito al predeterminado, o al revés, también cambia la selección. Para cambiar:
@@ -135,7 +137,7 @@ Los issues en cola que **nunca empezaron** adoptan la selección nueva al comenz
 | Error de autenticación o cuota al trabajar      | Acceso y cuota en el proveedor; resuelve la causa y solicita `Reintentar` en el issue.    |
 | Arranque bloqueado por otra selección           | Recupera la selección anterior y termina o cancela el trabajo pendiente.                  |
 
-Hay [evidencia histórica](../evidence/opencode-panel/README.md) con OpenAI `gpt-6-luna` mediante OAuth y variante `low`; ahora se puede elegir mediante `reasoningEffort` o dejar el predeterminado de OpenCode. Las pruebas usan OpenCode real, claves ficticias y Ollama simulado, **sin llamar a modelos reales**. El diagnóstico comprueba también petición, respuesta y limpieza contra el simulador local. No acreditan flujos completos nuevos con Gemini, Claude o local.
+Las pruebas usan OpenCode real, claves ficticias y Ollama simulado, **sin llamar a modelos reales**. El diagnóstico comprueba también petición, respuesta y limpieza contra el simulador local. No acreditan flujos completos nuevos con Gemini, Anthropic u Ollama.
 
 Para declarar una combinación comprobada, completa un issue hasta merge humano y cierre, y anota proveedor/modelo. En local, registra también memoria y contexto. Las demás combinaciones siguen siendo seleccionables y experimentales.
 

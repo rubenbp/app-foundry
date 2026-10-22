@@ -32,7 +32,7 @@ Las pruebas de navegador usan un servidor propio para el build del Commit candid
 
 La Factory publica la rama y abre una PR con el título y la descripción funcional redactados por el agente, que referencia el issue sin cerrarlo automáticamente. La descripción está disponible desde la apertura, antes de acreditar la preview. La integración Git de Vercel genera la preview. La Factory comprueba repositorio, proyecto, entorno, SHA desplegado y marcador de versión servido. Abrir un enlace no basta: debe corresponder al Commit candidato verificado.
 
-El acceso protegido se comprueba con las credenciales configuradas, conservando Deployment Protection. Un 401, 403 o redirección deja el acceso sin acreditar. `pending` e `inactive` significan espera; `failure` y `error` requieren intervención. Un error de consulta no demuestra que haya fallado la build.
+El acceso protegido se comprueba con las credenciales configuradas, conservando Deployment Protection. Un 401, 403 o redirección deja el acceso sin acreditar. La Factory busca el deployment directamente en Vercel por equipo, proyecto y SHA. `QUEUED`, `INITIALIZING` y `BUILDING` significan espera; `ERROR`, `CANCELED` y `BLOCKED` requieren intervención. Un error de consulta no demuestra que haya fallado la build.
 
 ```mermaid
 sequenceDiagram
@@ -84,7 +84,7 @@ Las aclaraciones ya entregadas al agente no se reinterpretan como instrucciones 
 
 Para pedir cambios durante la revisión, escribe directamente lo que necesitas en el issue. Se abre otro Intento en la misma conversación y rama y se exigen nuevas verificaciones, preview y revisión antes de otro merge. `Corregir: ...` también llega como texto al agente; la Factory no interpreta ese prefijo durante la revisión. El agente reescribe el título y la descripción para el cambio acumulado desde la base, no solo para el último commit. Estos mensajes no comprueban permisos del autor. Los comentarios enviados antes de entrar en revisión, durante el trabajo o durante la espera de preview no se ejecutan después como nuevas instrucciones.
 
-Solo `Cancelar` y `Reintentar` completos son comandos: se eliminan los espacios exteriores y no se distinguen mayúsculas. `Cancelar` detiene el trabajo antes de integrar; `Reintentar` recupera una fase fallida según el aviso de intervención. «Cancelar el botón rojo» y «Reintenta» llegan al agente como texto. Fuera de revisión, las correcciones siguen requiriendo `Corregir: instrucciones`. En los comentarios del **PR** se conserva la política anterior: las consultas son informativas y fórmulas como «Corrige el pie», «Cancela» o «Revoco» retiran el control favorable si proceden de una persona con escritura. Cada ID se consume una vez. Editar un comentario procesado no lo convierte en una nueva orden.
+Solo `Cancelar` y `Reintentar` completos son comandos: se eliminan los espacios exteriores y no se distinguen mayúsculas. `Cancelar` detiene el trabajo antes de integrar; `Reintentar` recupera una fase fallida según el aviso de intervención. «Cancelar el botón rojo» y «Reintenta» llegan al agente como texto. Fuera de revisión, las correcciones siguen requiriendo `Corregir: instrucciones`. Los comentarios de la **PR** siguen otra regla: las consultas son informativas y fórmulas como «Corrige el pie», «Cancela» o «Revoco» retiran el control favorable si proceden de una persona con escritura. Cada ID se consume una vez. Editar un comentario procesado no lo convierte en una nueva orden.
 
 ## Si algo cambia antes de integrar
 

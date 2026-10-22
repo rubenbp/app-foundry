@@ -10,24 +10,23 @@ Si aparece un fallo, la Factory publica en el issue la causa y las órdenes disp
 
 ## Índice y orden de lectura
 
-Para desbloquear pruebas del MVP, existe un [descarte administrativo offline](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp). Requiere la Factory parada y ausencia de los procesos registrados. Libera el puesto conservando el historial y los recursos remotos; no exige reiniciar el ordenador ni reanuda el trabajo descartado.
+| Capítulo                                                                        | Qué permite entender                                                                                                |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| [1. Mapa de la fábrica](01-mapa.md)                                             | Responsabilidades, vocabulario y recorrido completo.                                                                |
+| [2. Del issue al trabajo del agente](02-issue-y-trabajo.md)                     | Admisión, ejecución y aclaraciones por comentarios en el mismo thread.                                              |
+| [3. Del Commit candidato a la aceptación](03-verificacion-y-aceptacion.md)      | Verificación, PR, preview, revisión humana y decisiones alternativas.                                               |
+| [4. Del merge al cierre](04-integracion-y-cierre.md)                            | Integración humana, resumen y cierre del issue.                                                                     |
+| [5. Variantes e intervención](05-variantes-e-intervencion.md)                   | Errores, cambios, cancelación, reinicio y límites actuales.                                                         |
+| [6. Guía práctica de un issue completo](06-guia-de-un-issue.md)                 | Ejemplo de petición y pasos de la persona responsable.                                                              |
+| [7. Probar un issue real con GitHub y Vercel](07-prueba-local-github-vercel.md) | Recorrido completo tras instalar con el asistente, con [un issue listo para copiar](ejemplo-issue-prueba-local.md). |
 
-| Capítulo                                                                   | Qué permite entender                                                   |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [1. Mapa de la fábrica](01-mapa.md)                                        | Responsabilidades, vocabulario y recorrido completo.                   |
-| [2. Del issue al trabajo del agente](02-issue-y-trabajo.md)                | Admisión, ejecución y aclaraciones por comentarios en el mismo thread. |
-| [3. Del Commit candidato a la aceptación](03-verificacion-y-aceptacion.md) | Verificación, PR, preview, revisión humana y decisiones alternativas.  |
-| [4. Del merge al cierre](04-integracion-y-cierre.md)                       | Integración humana, resumen y cierre del issue.                        |
-| [5. Variantes e intervención](05-variantes-e-intervencion.md)              | Errores, cambios, cancelación, reinicio y límites actuales.            |
-| [6. Guía práctica de un issue completo](06-guia-de-un-issue.md)            | Ejemplo de petición y pasos de la persona responsable.                 |
+Si una Ejecución bloquea las pruebas del MVP, existe un [descarte administrativo offline](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp). Requiere la Factory parada y ausencia de los procesos registrados. Libera el puesto conservando el historial y los recursos remotos; no reanuda el trabajo descartado.
 
 ## Proveedor y modelo
 
-Cada instalación selecciona un proveedor/modelo global y, opcionalmente, un esfuerzo mediante `reasoningEffort` al arrancar. El diagnóstico `test:opencode` lista los esfuerzos disponibles con los valores exactos para configurar el JSON; omitir el campo mantiene el predeterminado de OpenCode. Admite OpenAI con OAuth, Gemini y Claude con API key, y Ollama local experimental, sin catálogo manual de modelos. La [guía de configuración](../guides/llm-providers.md) explica el acceso y sus límites. Cambiar la selección exige terminar o cancelar las Ejecuciones iniciadas pendientes; los issues que nunca empezaron pueden usar la selección nueva.
+Cada instalación selecciona un proveedor/modelo global y, opcionalmente, un esfuerzo mediante `reasoningEffort` al arrancar. El diagnóstico `test:opencode` lista los esfuerzos disponibles con los valores exactos para configurar el JSON; omitir el campo mantiene el predeterminado de OpenCode. Admite OpenAI con OAuth, Gemini y Anthropic con API key, y Ollama local experimental, sin catálogo manual de modelos. La [guía de configuración](../guides/llm-providers.md) explica el acceso y sus límites. Cambiar la selección exige terminar o cancelar las Ejecuciones iniciadas pendientes; los issues que nunca empezaron pueden usar la selección nueva.
 
 ## La regla principal
-
-Para ponerla en marcha, sigue [la prueba local contra GitHub y Vercel](07-prueba-local-github-vercel.md). Incluye comandos adaptados al equipo y [una descripción de issue lista para copiar](ejemplo-issue-prueba-local.md).
 
 ```mermaid
 flowchart LR
@@ -43,17 +42,17 @@ Cada paso responde a una pregunta diferente: «¿queremos este cambio?», «¿fu
 
 ## Alcance y fuentes
 
-| Fuente del repositorio                                                                                                                   | Qué respalda                                                                   |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [GLOSSARY.md](../../GLOSSARY.md)                                                                                                         | Significado de conceptos de negocio.                                           |
-| [README operativo](../../README.md)                                                                                                      | Instalación, puesta en marcha, límites y evidencias.                           |
-| [Workflow](../../src/application/workflow.ts) y [Factory](../../src/application/factory.ts)                                              | Admisión, cola, preparación, coordinación, parada y reinicio.                  |
-| [Admisión GitHub](../../src/infrastructure/github.ts) y [Issue](../../src/domain/request.ts)                                             | Admisión mediante `factory:ready` y captura del contenido.                     |
-| [Intervenciones](../../src/application/issueInterventions.ts) y [conversación GitHub](../../src/infrastructure/issueConversation.ts)     | Publicación de dudas y entrega de la primera respuesta humana al mismo thread. |
-| [Recuperación por issue](../../src/application/issueRecovery.ts)                                                                         | Avisos de fallos y órdenes explícitas sin comprobación de permisos.            |
-| [Verificación](../../src/infrastructure/verification.ts)                                                                                 | Comprobaciones independientes y comparación informativa de controles.          |
-| [Publicación](../../src/application/candidatePublication.ts) y [política de revisión](../../src/application/publication/reviewPolicy.ts) | Preview, descripción funcional, evidencia local, aceptación y revocación.      |
-| [Integración](../../src/application/publication/integration.ts)                                                                          | Merge autorizado, resumen de integración y cierre.                             |
-| [Configuración de Rebobina](../../config/managed-projects/rebobina.json)                                                                 | Ejemplo real de producto, comandos e identidad de preview.                     |
-| [Pruebas](../../tests/)                                                                                                                  | Variantes de admisión, verificación, publicación, integración y reinicio.      |
-| [Validación de intervenciones](../evidence/issue-interventions/README.md)                                                                | Rondas de aclaraciones, recuperación del thread y alcance de las pruebas.      |
+| Fuente del repositorio                                                                                                                   | Qué respalda                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [GLOSSARY.md](../../GLOSSARY.md)                                                                                                         | Significado de conceptos de negocio.                                             |
+| [README](../../README.md)                                                                                                                | Punto de entrada: qué es, repositorio de ejemplo e instalación con el asistente. |
+| [Workflow](../../src/application/workflow.ts) y [Factory](../../src/application/factory.ts)                                              | Admisión, cola, preparación, coordinación, parada y reinicio.                    |
+| [Admisión GitHub](../../src/infrastructure/github.ts) y [Issue](../../src/domain/request.ts)                                             | Admisión mediante `factory:ready` y captura del contenido.                       |
+| [Intervenciones](../../src/application/issueInterventions.ts) y [conversación GitHub](../../src/infrastructure/issueConversation.ts)     | Publicación de dudas y entrega de la primera respuesta humana al mismo thread.   |
+| [Recuperación por issue](../../src/application/issueRecovery.ts)                                                                         | Avisos de fallos y órdenes explícitas sin comprobación de permisos.              |
+| [Verificación](../../src/infrastructure/verification.ts)                                                                                 | Comprobaciones independientes y comparación informativa de controles.            |
+| [Publicación](../../src/application/candidatePublication.ts) y [política de revisión](../../src/application/publication/reviewPolicy.ts) | Preview, descripción funcional, evidencia local, aceptación y revocación.        |
+| [Integración](../../src/application/publication/integration.ts)                                                                          | Merge autorizado, resumen de integración y cierre.                               |
+| [Configuración de Rebobina](../../config/managed-projects/rebobina.json)                                                                 | Ejemplo real de producto, comandos e identidad de preview.                       |
+| [Pruebas](../../tests/)                                                                                                                  | Variantes de admisión, verificación, publicación, integración y reinicio.        |
+| [Pruebas de intervenciones](../../tests/interventions.test.ts) y [su integración con GitHub](../../tests/githubInterventions.test.ts)    | Rondas de aclaraciones, recuperación del thread y alcance de las pruebas.        |

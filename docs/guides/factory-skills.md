@@ -1,6 +1,6 @@
 # Skills de la Factory
 
-La Factory mantiene un catálogo común en el directorio `skills/` de su propio repositorio. Las personas responsables añaden y versionan sus skills allí. El catálogo inicial está vacío; no hace falta configurar cada Managed project.
+La Factory mantiene un catálogo común en el directorio `skills/` de su propio repositorio. Las personas responsables añaden y versionan sus skills allí. El catálogo incluye la skill de ejemplo `chiste`, que cierra con un chiste los textos del agente publicados en el issue; elimínala si no la quieres. No hace falta configurar cada Managed project.
 
 ## Añadir una skill
 
