@@ -71,6 +71,8 @@ export interface Run {
   publication?: Publication;
   phase?: "preparation" | "implementation" | "verification" | "publication";
   status: RunStatus;
+  /** Administrative local discard; pending remote effects must never resume. */
+  stopReason?: "discarded";
   issueLabel?: { name: IssueLabel; state: "intent" | "confirmed" };
   startedAt: number;
   endedAt: number | null;
@@ -115,6 +117,30 @@ export interface Run {
 
 export function isFinished(run: Pick<Run, "status">): boolean {
   return run.status === "completed" || run.status === "stopped";
+}
+
+/** End unfinished work administratively, preserving evidence and remote resources. */
+export function discardRun(run: Run, at: number): Run {
+  if (run.status === "stopped" && run.stopReason === "discarded") {
+    return run;
+  }
+  if (isFinished(run)) {
+    throw new Error("La Ejecución ya está finalizada; no necesita descarte.");
+  }
+  return {
+    ...run,
+    status: "stopped",
+    stopReason: "discarded",
+    endedAt: at,
+    history: [
+      ...run.history,
+      {
+        at,
+        kind: "discarded",
+        text: "Ejecución descartada localmente con la Factory parada y sin procesos registrados activos. Puesto liberado. Se conservan las evidencias y los recursos remotos; no se reanudarán sus efectos pendientes.",
+      },
+    ],
+  };
 }
 
 /** A failed observation does not invalidate a confirmed review wait; uncertain effects do. */

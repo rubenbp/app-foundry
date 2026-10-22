@@ -255,7 +255,7 @@ export class Workflow {
   private async updateIssueLabels() {
     for (const snapshot of this.list()) {
       const run = this.view(snapshot.id)!;
-      if (!run.request || this.halted) {
+      if (!run.request || run.stopReason === "discarded" || this.halted) {
         continue;
       }
       const name = issueLabel(run.status);

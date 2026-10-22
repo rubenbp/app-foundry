@@ -56,9 +56,12 @@ export class IssueRecovery {
 
   async poll() {
     const run =
-      this.factory.list().find((item) => item.recovery?.response) ??
-      this.factory.view(this.factory.active ?? "");
-    if (!run?.request) {
+      this.factory
+        .list()
+        .find(
+          (item) => item.stopReason !== "discarded" && item.recovery?.response,
+        ) ?? this.factory.view(this.factory.active ?? "");
+    if (!run?.request || run.stopReason === "discarded") {
       return;
     }
     const comments = await this.conversation.comments(
