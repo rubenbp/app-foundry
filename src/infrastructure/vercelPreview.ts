@@ -4,9 +4,17 @@ import { join } from "node:path";
 import type { PublicationContext } from "../application/publication/ports.ts";
 import type { Preview } from "../domain/publication.ts";
 import { remoteCommand, type RemoteCommand } from "./remoteCommand.ts";
-import { record, text, sha, previewOrigin } from "./remoteValues.ts";
+import {
+  record,
+  text,
+  sha,
+  previewOrigin,
+  list,
+  number,
+} from "./remoteValues.ts";
 
 export interface PreviewAccess {
+  discover(context: PublicationContext): Promise<Preview | null>;
   inspect(
     origin: string,
     context: PublicationContext,
@@ -32,6 +40,111 @@ export class VercelPreviewAccess implements PreviewAccess {
     this.command = command;
     this.executable = executable;
     this.directory = directory;
+  }
+
+  /** Discover deployments at their source; GitHub deployment notifications are optional. */
+  async discover(context: PublicationContext): Promise<Preview | null> {
+    const { projectId, teamId } = context.project.publication;
+    if (typeof teamId !== "string" || !teamId) {
+      throw new Error("Trusted Vercel teamId required for preview discovery");
+    }
+    const environment =
+      context.project.publication.previewEnvironment ?? "Preview";
+    if (environment !== "Preview") {
+      throw new Error("Configured Vercel environment must be Preview");
+    }
+    const query = new URLSearchParams({
+      teamId,
+      projectId,
+      sha: context.head,
+      limit: "100",
+    });
+    for (let page = 0; page < 10; page++) {
+      const response = record(
+        JSON.parse(
+          await this.command(this.executable, [
+            "api",
+            `/v7/deployments?${query}`,
+            "--cwd",
+            this.directory,
+          ]),
+        ),
+      );
+      const matching = list(response.deployments)
+        .map(record)
+        .filter((entry) => {
+          const meta = record(entry.meta ?? {});
+          if (meta.githubCommitSha !== context.head) {
+            return false;
+          }
+
+          return (
+            entry.projectId === projectId &&
+            `${text(meta.githubCommitOrg)}/${text(meta.githubCommitRepo)}` ===
+              context.repository &&
+            meta.githubCommitSha === context.head &&
+            (entry.target === null || entry.target === "preview") &&
+            !entry.customEnvironment
+          );
+        })
+        .toSorted((a, b) => number(b.created) - number(a.created));
+      const deployment = matching[0];
+      if (deployment) {
+        const states: Record<string, Preview["state"]> = {
+          READY: "success",
+          ERROR: "failure",
+          CANCELED: "failure",
+          BUILDING: "pending",
+          INITIALIZING: "pending",
+          QUEUED: "pending",
+          BLOCKED: "error",
+        };
+        const state = states[text(deployment.readyState)];
+        if (!state) {
+          throw new Error("Unknown Vercel deployment state");
+        }
+        const preview: Preview = {
+          id: text(deployment.uid),
+          head: context.head,
+          repository: context.repository,
+          projectId,
+          environment,
+          state,
+          url: deployment.url
+            ? previewOrigin(`https://${text(deployment.url)}`)
+            : null,
+          access: "pending",
+          servedHead: null,
+        };
+        if (state !== "success" || !preview.url) {
+          return preview;
+        }
+        const identity = await this.inspect(preview.url, context);
+        if (
+          identity.head !== context.head ||
+          identity.repository !== context.repository ||
+          identity.projectId !== projectId
+        ) {
+          throw new Error(
+            "Vercel preview identity does not match repository, project and candidate",
+          );
+        }
+        const served = await this.servedHead(preview.url, context);
+        preview.access = served.access;
+        preview.servedHead = served.head;
+        return preview;
+      }
+      const next = record(response.pagination).next;
+      if (next === null) {
+        return null;
+      }
+      const until = number(next);
+      if (query.has("until") && until >= Number(query.get("until"))) {
+        throw new Error("Vercel deployment pagination did not advance");
+      }
+      query.set("until", String(until));
+    }
+    throw new Error("Vercel deployment discovery exceeded pagination limit");
   }
 
   async inspect(origin: string, context: PublicationContext) {

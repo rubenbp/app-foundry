@@ -79,7 +79,7 @@ Si después se ejecutan pruebas automáticas sobre previews protegidas, resolver
 7. Esperar el despliegue de Production y comprobar que el commit resultante del merge y el cambio visible corresponden a la versión publicada.
 8. Guardar la URL de producción y las evidencias. Un merge completado y un despliegue fallido son resultados diferentes: registrar ambos.
 
-**Criterio de finalización de esta preparación:** existe evidencia del recorrido rama → preview → aceptación mediante merge humano → producción sobre el repositorio y proyecto seleccionados. En el runtime actual, la Factory consulta los deployments de GitHub y contrasta proyecto, SHA y marcador servido de la preview mediante la CLI de Vercel. No espera ni comprueba producción después del merge.
+**Criterio de finalización de esta preparación:** existe evidencia del recorrido rama → preview → aceptación mediante merge humano → producción sobre el repositorio y proyecto seleccionados. En el runtime actual, la Factory consulta directamente los deployments de Vercel por equipo, proyecto y SHA y contrasta la identidad y el marcador servido mediante su CLI autenticada. No requiere habilitar las notificaciones `deployment_status` de GitHub. No espera ni comprueba producción después del merge.
 
 ## Skills, MCP y ejecución de la Factory
 

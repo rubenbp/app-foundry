@@ -23,7 +23,6 @@ import {
   sha,
   timestamp,
   githubUrl,
-  previewOrigin,
 } from "./remoteValues.ts";
 import { VercelPreviewAccess, type PreviewAccess } from "./vercelPreview.ts";
 
@@ -131,84 +130,6 @@ export class GitHubPublication implements PublicationPort {
     };
   }
 
-  private async deployment(
-    context: PublicationContext,
-  ): Promise<Preview | null> {
-    const environment =
-      context.project.publication.previewEnvironment ?? "Preview";
-    if (typeof environment !== "string" || !environment) {
-      throw new Error("Configured deployment environment required");
-    }
-    const deployments = await this.pages(
-      `repos/${context.repository}/deployments?sha=${context.head}&environment=${encodeURIComponent(environment)}&per_page=100`,
-    );
-    const matching = deployments
-      .map(record)
-      .filter(
-        (deployment) =>
-          deployment.sha === context.head &&
-          deployment.environment === environment &&
-          deployment.repository_url ===
-            `https://api.github.com/repos/${context.repository}` &&
-          record(deployment.creator).login === "vercel[bot]",
-      );
-    const deployment = matching.sort((a, b) => number(b.id) - number(a.id))[0];
-    if (!deployment) {
-      return null;
-    }
-    const id = number(deployment.id);
-    const statuses = await this.pages(
-      `repos/${context.repository}/deployments/${id}/statuses?per_page=100`,
-    );
-    const latest = statuses
-      .map(record)
-      .sort((a, b) => number(b.id) - number(a.id))[0];
-    const raw = latest?.state ?? "pending";
-    const state =
-      raw === "success" ||
-      raw === "failure" ||
-      raw === "error" ||
-      raw === "inactive"
-        ? raw
-        : ["pending", "queued", "in_progress"].includes(text(raw))
-          ? "pending"
-          : null;
-    if (!state) {
-      throw new Error("Unknown deployment state");
-    }
-    const preview: Preview = {
-      id: String(id),
-      head: context.head,
-      repository: context.repository,
-      projectId: "unconfirmed",
-      environment,
-      state,
-      url: latest?.environment_url
-        ? previewOrigin(latest.environment_url)
-        : null,
-      access: "pending",
-      servedHead: null,
-    };
-    if (state !== "success" || !preview.url) {
-      return preview;
-    }
-    const identity = await this.access.inspect(preview.url, context);
-    preview.projectId = identity.projectId;
-    if (
-      identity.head !== context.head ||
-      identity.repository !== context.repository ||
-      identity.projectId !== context.project.publication.projectId
-    ) {
-      throw new Error(
-        "Vercel preview identity does not match repository, project and candidate",
-      );
-    }
-    const served = await this.access.servedHead(preview.url, context);
-    preview.access = served.access;
-    preview.servedHead = served.head;
-    return preview;
-  }
-
   async inspect(
     context: PublicationContext,
     options = { preview: true },
@@ -240,7 +161,7 @@ export class GitHubPublication implements PublicationPort {
     let previewError: unknown;
     if (options.preview && !pull?.merged) {
       try {
-        preview = await this.deployment(context);
+        preview = await this.access.discover(context);
       } catch (error) {
         previewError = error;
       }

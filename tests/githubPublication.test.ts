@@ -39,6 +39,51 @@ for (const gate of [
       const path = args[1];
       const context = s.workflow.list()[0];
       if (executable === "vercel") {
+        if (path.startsWith("/v7/deployments?")) {
+          const query = new URL(path, "https://api.vercel.com");
+          assert.equal(query.searchParams.get("teamId"), "team-test");
+          assert.equal(query.searchParams.get("projectId"), "catalogue");
+          assert.equal(query.searchParams.get("sha"), remoteHead);
+          if (
+            gate === "merge during preview" &&
+            !integrated &&
+            statuses[0]?.state === "success"
+          ) {
+            integrated = true;
+            Object.assign(pull!, {
+              state: "closed",
+              merged: true,
+              merged_at: new Date(time + 1000).toISOString(),
+              merged_by: { login: "maintainer", type: "User" },
+              merge_commit_sha: integrationSha,
+            });
+            return JSON.stringify({
+              deployments: [],
+              pagination: { next: null },
+            });
+          }
+          assert.equal(integrated, false);
+          return JSON.stringify({
+            deployments: deployment
+              ? [
+                  {
+                    uid: "dpl-preview",
+                    created: time,
+                    projectId: "catalogue",
+                    url: new URL(origin).hostname,
+                    target: null,
+                    readyState: "READY",
+                    meta: {
+                      githubCommitOrg: s.project.repository.split("/")[0],
+                      githubCommitRepo: s.project.repository.split("/")[1],
+                      githubCommitSha: remoteHead,
+                    },
+                  },
+                ]
+              : [],
+            pagination: { next: null },
+          });
+        }
         assert.equal(
           integrated,
           false,
@@ -177,45 +222,9 @@ for (const gate of [
         assert.ok(remoteHead, "unpublished commit must not be queried");
         return paged(statuses);
       }
-      if (
-        path.includes("/deployments?") &&
-        gate === "merge during preview" &&
-        !integrated &&
-        statuses[0]?.state === "success"
-      ) {
-        integrated = true;
-        Object.assign(pull!, {
-          state: "closed",
-          merged: true,
-          merged_at: new Date(time + 1000).toISOString(),
-          merged_by: { login: "maintainer", type: "User" },
-          merge_commit_sha: integrationSha,
-        });
-        return paged([]);
-      }
+      // Vercel crea el preview con createDeployments desactivado en GitHub.
       if (path.includes("/deployments?")) {
-        assert.equal(
-          integrated,
-          false,
-          "Deployments must not be queried after merge",
-        );
-        return paged(
-          deployment
-            ? [
-                {
-                  id: 9,
-                  sha: integrated ? integrationSha : remoteHead,
-                  environment: integrated ? "Production" : "Preview",
-                  production_environment: false,
-                  repository_url: `https://api.github.com/repos/${s.project.repository}`,
-                  creator: { login: "vercel[bot]" },
-                },
-              ]
-            : [],
-        );
-      }
-      if (path.includes("/deployments/9/statuses?")) {
-        return paged([{ id: 10, state: "success", environment_url: origin }]);
+        return paged([]);
       }
       if (path.includes("/permission")) {
         return JSON.stringify({ permission: "write" });
