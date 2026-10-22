@@ -22,7 +22,7 @@ import {
 } from "./publication/reviewPolicy.ts";
 import { ReviewReport } from "./publication/reviewReport.ts";
 import { IntegratedPublication } from "./publication/integration.ts";
-import { canResumeReview } from "../domain/run.ts";
+import { canResumePreview, canResumeReview } from "../domain/run.ts";
 
 export class CandidatePublication {
   private runtime: PublicationRuntime;
@@ -151,6 +151,17 @@ export class CandidatePublication {
       if (facts.pull?.merged) {
         await this.integration.advance(run, facts);
         return;
+      }
+      if (
+        publication.observationOnly &&
+        (facts.remoteHead !== publication.head ||
+          facts.pull?.head !== publication.head ||
+          !facts.pull.open)
+      ) {
+        publication.recoveryRequired = true;
+        throw new Error(
+          "La rama o la PR ya no corresponde a la publicación confirmada. Se requiere Reintentar; no se repite la publicación automáticamente.",
+        );
       }
       if (facts.pull && !facts.pull.open) {
         publication.blocked =
@@ -427,6 +438,7 @@ export class CandidatePublication {
     delete run.publication.preview;
     delete run.publication.blocked;
     delete run.publication.recoveryRequired;
+    delete run.publication.observationOnly;
     this.runtime.save(run);
     await this.runtime.setStatus(run, "pending");
   }
@@ -452,6 +464,12 @@ export class CandidatePublication {
     run.status = run.publication!.mergeSha
       ? "closing_issue"
       : "awaiting_preview";
+    const wait = run.publication!.previewWait;
+    if (wait?.state === "failed" && wait.head === run.publication!.head &&
+      wait.attempt === run.attempt) {
+      wait.state = "waiting";
+      this.runtime.factory.record(run, "preview-resumed", "Búsqueda de preview reanudada tras Reintentar; se conserva el inicio de la espera.");
+    }
     run.error = null;
     this.runtime.save(run);
   }
@@ -459,7 +477,7 @@ export class CandidatePublication {
   /** Closing the Factory preserves a review wait; stopping the Ejecución revokes it. */
   async shutdown(id: string) {
     const run = this.runtime.factory.view(id);
-    if (run && canResumeReview(run)) {
+    if (run && (canResumeReview(run) || canResumePreview(run))) {
       // Let the current observation settle without manufacturing a publication failure.
       await this.busy;
       return;

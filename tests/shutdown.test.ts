@@ -370,19 +370,18 @@ test("apagar interrumpe el comando de verificación antes de conservar la Ejecuc
   }
 });
 
-test("un fallo remoto al apagar una publicación pendiente conserva la intervención", async () => {
+test("apagar una espera de preview confirmada no requiere nuevas consultas remotas", async () => {
   const s = publicationFixture();
   try {
     const run = await s.candidate();
     s.observationFails(true);
+    const inspections = s.inspections;
     await s.workflow.shutdown();
-    assert.equal(s.workflow.view(run.id)?.status, "intervention");
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
     assert.equal(s.workflow.view(run.id)?.process?.exited, true);
     assert.equal(s.workflow.factory.active, run.id);
-    assert.match(
-      s.workflow.view(run.id)?.error ?? "",
-      /No se confirmó la revocación/,
-    );
+    assert.equal(s.workflow.view(run.id)?.error, null);
+    assert.equal(s.inspections, inspections);
   } finally {
     s.close();
   }
@@ -490,4 +489,165 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
       }
     },
   );
+}
+
+for (const shutdown of [true, false]) {
+  test(`${shutdown ? "apagar y arrancar" : "reiniciar"} esperando preview retoma solo la observación del mismo Commit candidato`, async () => {
+    const conversation = recoveryConversation();
+    const s = publicationFixture({ issueConversation: conversation.port });
+    try {
+      const run = await s.candidate();
+      const before = s.workflow.view(run.id)!;
+      const ready = structuredClone(s.facts.preview);
+      s.facts.preview = null;
+      if (shutdown) {
+        await s.workflow.shutdown();
+      }
+      s.reopen();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
+      assert.equal(
+        s.workflow.view(run.id)?.publication?.recoveryRequired,
+        undefined,
+      );
+      await s.workflow.poll();
+      const current = s.workflow.view(run.id)!;
+      assert.equal(current.status, "awaiting_preview");
+      assert.equal(current.publication?.head, before.publication?.head);
+      assert.deepEqual(current.publication?.pull, before.publication?.pull);
+      assert.equal(
+        current.publication?.previewWait?.startedAt,
+        before.publication?.previewWait?.startedAt,
+      );
+      assert.equal(current.attempt, before.attempt);
+      assert.equal(s.workflow.factory.active, run.id);
+      assert.equal(s.tasks.length, 1);
+      assert.equal(s.sessions, 1);
+      assert.deepEqual(s.resumed, []);
+      assert.equal(conversation.comments.length, 0);
+      assert.equal(s.writes.filter((w) => w.kind === "push").length, 1);
+      assert.equal(s.writes.filter((w) => w.kind === "pull").length, 1);
+      s.facts.preview = ready;
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+      assert.equal(
+        s.writes.filter((w) => w.kind === "issue-comment").length,
+        1,
+      );
+    } finally {
+      s.close();
+    }
+  });
+}
+
+for (const unsafe of [
+  "uncertain effect",
+  "active agent",
+  "uncertain checks",
+  "different head",
+  "pending order",
+  "blocked",
+  "recovery required",
+] as const) {
+  test(`reiniciar esperando preview conserva intervención con ${unsafe}`, async () => {
+    const s = publicationFixture();
+    try {
+      const run = await s.candidate();
+      const current = s.workflow.view(run.id)!;
+      const publication = current.publication!;
+      if (unsafe === "uncertain effect") {
+        publication.operations.pull.state = "intent";
+      }
+      if (unsafe === "active agent") {
+        current.process!.exited = false;
+      }
+      if (unsafe === "uncertain checks") {
+        current.verification!.effectsUncertain = true;
+      }
+      if (unsafe === "different head") {
+        publication.head = "b".repeat(40);
+      }
+      if (unsafe === "pending order") {
+        current.recovery = {
+          consumed: [],
+          pending: {
+            command: { kind: "retry" },
+            commentId: "pending",
+            delivery: "uncertain",
+          },
+        };
+      }
+      if (unsafe === "blocked") {
+        publication.blocked = "Human cancellation";
+      }
+      if (unsafe === "recovery required") {
+        publication.recoveryRequired = true;
+      }
+      s.workflow.factory.persist(current);
+      s.reopen();
+      assert.equal(s.workflow.view(run.id)?.status, "intervention");
+      assert.equal(
+        s.workflow.view(run.id)?.publication?.recoveryRequired,
+        true,
+      );
+      assert.equal(s.tasks.length, 1);
+    } finally {
+      s.close();
+    }
+  });
+}
+
+test("reiniciar tras un fallo de lectura de preview conserva el error hasta observar de nuevo y retoma sin trabajo nuevo", async () => {
+  const conversation = recoveryConversation();
+  const s = publicationFixture({ issueConversation: conversation.port });
+  try {
+    const run = await s.candidate();
+    s.observationFails(true);
+    await s.workflow.poll();
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.failureKind,
+      "observation",
+    );
+    s.reopen();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_preview");
+    assert.equal(
+      s.workflow.view(run.id)?.publication?.previewWait?.state,
+      "waiting",
+    );
+    assert.match(
+      s.workflow.view(run.id)?.publication?.observationError ?? "",
+      /GitHub unavailable/,
+    );
+    s.observationFails(false);
+    await s.workflow.poll();
+    assert.equal(s.workflow.view(run.id)?.status, "awaiting_review");
+    assert.equal(conversation.comments.length, 0);
+    assert.equal(s.tasks.length, 1);
+  } finally {
+    s.close();
+  }
+});
+
+for (const missing of ["branch", "pull"] as const) {
+  test(`tras reiniciar, la ausencia de ${missing} exige recuperación y no repite push ni PR`, async () => {
+    const s = publicationFixture();
+    try {
+      const run = await s.candidate();
+      s.reopen();
+      if (missing === "branch") {
+        s.facts.remoteHead = null;
+      } else {
+        s.facts.pull = null;
+      }
+      await s.workflow.poll();
+      assert.equal(s.workflow.view(run.id)?.status, "intervention");
+      assert.equal(
+        s.workflow.view(run.id)?.publication?.recoveryRequired,
+        true,
+      );
+      assert.equal(s.writes.filter((w) => w.kind === "push").length, 1);
+      assert.equal(s.writes.filter((w) => w.kind === "pull").length, 1);
+    } finally {
+      s.close();
+    }
+  });
 }

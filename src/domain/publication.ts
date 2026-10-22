@@ -38,6 +38,8 @@ export interface Publication {
     head: string;
     startedAt: number;
     state: "waiting" | "ready" | "failed";
+    /** Completion time of the latest preview lookup, including failed reads. */
+    lastCheckedAt?: number;
   };
   previousHead?: string;
   pull?: PullCandidate;
@@ -68,6 +70,8 @@ export interface Publication {
   integrationReport?: Pick<ConversationComment, "id" | "url">;
   closedAt?: number;
   recoveryRequired?: boolean;
+  /** A resumed preview wait may observe its confirmed publication, never recreate it. */
+  observationOnly?: boolean;
   limitations: string[];
 }
 

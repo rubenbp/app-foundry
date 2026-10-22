@@ -158,14 +158,22 @@ export class PublicationRuntime {
 
   async facts(run: Run, preview = true) {
     let facts: PublicationFacts;
+    const wait = preview ? run.publication!.previewWait : undefined;
     try {
       facts = await this.port.inspect(this.context(run), { preview });
     } catch (error) {
       this.factory.assertRunning(run.id);
+      if (wait) {
+        wait.lastCheckedAt = this.factory.now();
+      }
       if (preview) {
         this.finishPreviewWait(run, "failed", String(error));
       }
       throw new PublicationObservationError(error);
+    }
+    if (wait) {
+      wait.lastCheckedAt = this.factory.now();
+      this.save(run);
     }
     // Cada lectura previa a la integración puede coincidir con la integración humana. Cambia de estado antes de
     // considerar que la PR cerrada o la vista previa retirada invalidan el candidato.

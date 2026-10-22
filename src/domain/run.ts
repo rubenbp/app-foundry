@@ -165,6 +165,52 @@ export function canResumeReview(run: Run): boolean {
   );
 }
 
+/** Only confirmed publication effects and a stopped agent permit resuming observation. */
+export function canResumePreview(run: Run): boolean {
+  const publication = run.publication;
+  const verification = run.verification;
+
+  return Boolean(
+    (run.status === "awaiting_preview" ||
+      (run.status === "intervention" &&
+        publication?.failureKind === "observation")) &&
+    run.phase === "publication" &&
+    run.request &&
+    run.workspace &&
+    run.process?.exited === true &&
+    !run.pending.length &&
+    verification?.status === "passed" &&
+    verification.headSha === publication?.head &&
+    !verification.effectsUncertain &&
+    verification.checks.length &&
+    verification.checks.every(
+      (check) =>
+        check.status === "passed" &&
+        check.code === 0 &&
+        check.cleanup === "confirmed",
+    ) &&
+    publication?.pull?.open &&
+    !publication.pull.merged &&
+    publication.pull.head === publication.head &&
+    publication.previewWait?.head === publication.head &&
+    publication.previewWait.attempt === run.attempt &&
+    !publication.report &&
+    !publication.acceptance &&
+    !publication.previousHead &&
+    !publication.blocked &&
+    !publication.recoveryRequired &&
+    !run.recovery?.pending &&
+    !run.recovery?.response &&
+    publication.operations[`push:${publication.head}`]?.state === "confirmed" &&
+    publication.operations.pull?.state === "confirmed" &&
+    publication.operations[`description:${publication.head}`]?.state ===
+      "confirmed" &&
+    Object.values(publication.operations).every(
+      (effect) => effect.state === "confirmed",
+    ),
+  );
+}
+
 export function consumption(usage: Usage[], prices?: TokenPrices) {
   const withTokens = usage.filter((u) => u.tokens !== null);
   const tokens = withTokens.length

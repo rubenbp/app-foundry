@@ -9,7 +9,11 @@ import { sanitizer, sanitizedRecord } from "./sanitize.ts";
 import type { AgentPort, Fact } from "./agent.ts";
 import type { FactoryConfig } from "./configuration.ts";
 import type { Run } from "../domain/run.ts";
-import { canResumeReview, isFinished } from "../domain/run.ts";
+import {
+  canResumePreview,
+  canResumeReview,
+  isFinished,
+} from "../domain/run.ts";
 import { RunDeletionRejected, type RunFiles } from "./runDeletion.ts";
 import { agentDelivery } from "./agentDelivery.ts";
 import {
@@ -74,6 +78,19 @@ export class Factory {
       }
     }
     for (const run of this.store.list()) {
+      if (canResumePreview(run)) {
+        run.status = "awaiting_preview";
+        run.publication!.observationOnly = true;
+        run.publication!.previewWait!.state = "waiting";
+        this.record(
+          run,
+          "preview-resumed",
+          "Búsqueda de preview reanudada tras reinicio para el mismo Commit candidato; no se repite el trabajo ni la publicación.",
+        );
+        this.store.save(run);
+        this.active = run.id;
+        continue;
+      }
       if (canResumeReview(run)) {
         if (run.status !== "awaiting_review") {
           run.status = "awaiting_review";
@@ -673,6 +690,7 @@ export class Factory {
     }
     const preservesWait =
       canResumeReview(current) ||
+      canResumePreview(current) ||
       (current.status === "waiting" &&
         pendingIntervention(current.interventions));
     if (!stopped.exited || !preservesWait) {
