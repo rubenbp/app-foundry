@@ -117,9 +117,9 @@ Una parada confirmada no borra commits, elimina PR, revierte un merge ni retira 
 
 Si una Ejecución problemática impide continuar las pruebas, puedes descartarla administrativamente mediante un comando local. Sirve en cualquier fase pendiente, incluso después del merge cuando se atascan el resumen o el cierre. Conserva el historial y libera el único puesto sin intentar completar ni reanudar ese trabajo.
 
-1. En el Dashboard, abre **Configuración, procesos y evidencia**. En la modal **Evidencia y detalles de la ejecución**, el primer apartado **Código de la Ejecución** muestra la fila **ID de la ejecución**. Selecciona y copia el ID completo.
+1. En el Dashboard, abre **Configuración, procesos y evidencia**. En la modal **Evidencia y detalles de la ejecución**, el primer apartado **Código de la Ejecución** muestra la fila **ID de la ejecución**. El bloque **Para emergencias** ofrece los comandos **Parar** y **Descartar** con ese ID, una descripción y ejemplos. Copia **Descartar** mediante el icono junto al comando antes de parar la Factory. El botón confirma la copia; si el portapapeles falla, permite seleccionar y copiar el texto manualmente.
 2. Para la Factory y espera a que termine su proceso. El comando adquiere los mismos locks de la carpeta de datos y del Managed project; rechaza una instancia activa o una reserva que pertenece a otra Ejecución o carpeta de datos.
-3. Ejecuta desde el repositorio de la Factory:
+3. Abre una terminal en la carpeta que contiene `factory.local.json` y `start-factory.sh`, creada por el wizard, y pega el comando copiado. Incluye las rutas absolutas del Node y de la CLI que está usando esa instalación, con `--config ./factory.local.json`; funciona desde esa carpeta aunque no contenga `package.json`. Si trabajas directamente desde el repositorio de la Factory, también puedes usar la forma manual:
 
    ```sh
    npm start -- discard --config factory.local.json --id ID_DE_EJECUCION

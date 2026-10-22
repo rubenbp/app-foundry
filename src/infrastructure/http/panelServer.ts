@@ -4,6 +4,7 @@ import { resolve, extname, sep } from "node:path";
 import { factoryView } from "../../application/factoryView.ts";
 import type { Factory } from "../../application/factory.ts";
 import { RunDeletionRejected } from "../../application/runDeletion.ts";
+import { runCommands } from "../cli/runCommands.ts";
 
 export function panelServer(
   factory: Factory,
@@ -70,10 +71,19 @@ export function panelServer(
         return;
       }
       if (url.pathname === "/api/view") {
-        json(
-          200,
-          factoryView(factory, url.searchParams.get("run"), Date.now()),
+        const view = factoryView(
+          factory,
+          url.searchParams.get("run"),
+          Date.now(),
         );
+        if (view.run) {
+          view.emergencyCommands = runCommands(view.run.id, {
+            nodePath: process.execPath,
+            cliPath: resolve(import.meta.dirname, "../../cli.ts"),
+            canDiscard: Boolean(factory.config.managedProject),
+          });
+        }
+        json(200, view);
         return;
       }
       const output = url.pathname.match(

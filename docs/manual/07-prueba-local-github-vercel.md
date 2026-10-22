@@ -226,6 +226,8 @@ npm start -- discard --config /Users/rubenbp/dev/jakala-tfm/sample/factory.local
 
 El comando rechaza una Factory activa o PID/grupos registrados que sigan vivos; no los mata ni comprueba un reinicio. Tras el éxito, arranca de nuevo para probar otro issue. Conserva el historial y los recursos remotos, sin reanudar los efectos pendientes de la Ejecución descartada. Para repetir el mismo issue, consulta el [procedimiento de descarte y borrado del historial](05-variantes-e-intervencion.md#descartar-una-ejecución-bloqueante-durante-las-pruebas-del-mvp).
 
+Para operar desde la carpeta creada por el wizard, que contiene `factory.local.json` y `start-factory.sh`, abre **Para emergencias** en la misma modal. Copia con el icono el comando de **Parar** o **Descartar**: ya incluye el ID seleccionado y las rutas reales de Node y de la CLI. **Parar** se ejecuta con la Factory funcionando; para **Descartar**, copia antes el comando y para la Factory. Si no se concede acceso al portapapeles, selecciona y copia el texto manualmente.
+
 ## Si no avanza
 
 | Lo que ves                      | Qué revisar                                                                                                                                                                                                                                                                                          |

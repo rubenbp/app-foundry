@@ -10,6 +10,7 @@ import { Output } from "../components/output.tsx";
 import { labels, time, age } from "../format.ts";
 import { Timeline, timelineEntries } from "./timeline.tsx";
 import { RunDetails, VerificationDetails } from "./evidence.tsx";
+import { EmergencyDetails } from "./emergency.tsx";
 
 function startDate(value: number) {
   return new Date(value).toLocaleString("es-ES", {
@@ -1004,6 +1005,12 @@ export function Dashboard({
           ) : (
             <>
               <RunDetails run={run} />
+              {view.emergencyCommands ? (
+                <EmergencyDetails
+                  key={run.id}
+                  commands={view.emergencyCommands}
+                />
+              ) : null}
               <VerificationDetails run={run} />
               <PublicationDetails run={run} />
               <IntegrationDetails run={run} />

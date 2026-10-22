@@ -13,6 +13,8 @@ export interface FactoryView {
   runs: Pick<Run, "id" | "task" | "status" | "startedAt">[];
   run: Run | null;
   consumption: ReturnType<typeof consumption> | null;
+  /** Prepared by the local HTTP adapter using the trusted installed runtime. */
+  emergencyCommands?: { stop: string; discard: string | null };
 }
 
 export function factoryView(

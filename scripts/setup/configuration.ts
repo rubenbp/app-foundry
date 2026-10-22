@@ -10,6 +10,7 @@ import { isAbsolute, join, resolve, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { validateProject } from "../../src/domain/configuration.ts";
 import { createTokenPrices } from "../../src/domain/tokenPricing.ts";
+import { shellQuote } from "../../src/infrastructure/cli/shellQuote.ts";
 
 export type SetupValues = Record<string, string>;
 
@@ -187,8 +188,6 @@ export function writeSetupFile(path: string, content: string, mode = 0o600) {
     rmSync(temporary, { force: true });
   }
 }
-
-const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
 export function launcher(
   root: string,
