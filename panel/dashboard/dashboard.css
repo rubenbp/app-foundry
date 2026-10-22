@@ -1143,6 +1143,24 @@ body:has(.factory-dashboard) {
   display: grid;
   gap: 20px;
 }
+.dashboard-attribution {
+  display: grid;
+  gap: 4px;
+  color: #58675a;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.dashboard-loading-attribution {
+  padding-top: 16px;
+  border-top: 1px solid #e4e7df;
+}
+.dashboard-mobile-attribution {
+  flex: 0 0 auto;
+  padding: 10px 18px;
+  border-top: 1px solid var(--dashboard-line);
+}
 @media (min-width: 1700px) {
   .cabin-layout {
     grid-template-columns: minmax(0, 1fr) 350px;
@@ -1677,6 +1695,9 @@ body:has(.factory-dashboard) {
   .cabin-dashboard > .dashboard-appbar {
     display: none;
   }
+  .cabin-dashboard > .dashboard-mobile-attribution {
+    display: none;
+  }
   .cabin-dashboard > .dashboard-alerts {
     grid-area: alert;
   }
@@ -1799,6 +1820,10 @@ body:has(.factory-dashboard) {
     border-top: 1px solid #3b5141;
     font-size: 8px;
     color: #99ad89;
+  }
+  .dashboard-executions-sidebar .dashboard-attribution {
+    margin-bottom: 14px;
+    color: #cedac4;
   }
   .dashboard-executions-sidebar > footer > span {
     display: block;

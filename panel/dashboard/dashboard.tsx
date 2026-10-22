@@ -492,6 +492,15 @@ interface LayoutProps {
   footer: ReactNode;
 }
 
+function AcademicAttribution() {
+  return (
+    <div className="dashboard-attribution">
+      <span>TFM · Desarrollo con IA</span>
+      <span>Rubén Bernárdez Patier</span>
+    </div>
+  );
+}
+
 export function Dashboard({
   view,
   showTechnical,
@@ -561,6 +570,9 @@ export function Dashboard({
             {item.task}
           </button>
         ))}
+        <footer className="dashboard-loading-attribution">
+          <AcademicAttribution />
+        </footer>
       </div>
     );
   }
@@ -830,6 +842,7 @@ export function Dashboard({
           </section>
         </div>
         <footer>
+          <AcademicAttribution />
           <span>{run.request?.repository ?? "Ejecución manual"}</span>
         </footer>
       </aside>
@@ -904,6 +917,9 @@ export function Dashboard({
       <main id="content" tabIndex={-1} className="dashboard-main">
         <CabinLayout {...layout} />
       </main>
+      <footer className="dashboard-mobile-attribution">
+        <AcademicAttribution />
+      </footer>
       {dialog ? (
         <DashboardDialog
           initialSection={
