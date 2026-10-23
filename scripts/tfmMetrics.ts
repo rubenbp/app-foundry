@@ -261,8 +261,8 @@ function report(sources: Source[]): string {
       "",
       "Incidencias registradas por Ejecución:",
       "",
-      "| # | Issue | Preguntas del agente | Intentos adicionales (corrección o reintento) | Errores de agente/publicación | Reinicios de la Factory | Recuperaciones |",
-      "| - | ----- | -------------------- | --------------------------------------------- | ----------------------------- | ----------------------- | -------------- |",
+      "| # | Issue | Preguntas del agente | Intentos adicionales (corrección o reintento) | Errores de agente/publicación | Conversaciones suspendidas | Recuperaciones tras reinicio |",
+      "| - | ----- | -------------------- | --------------------------------------------- | ----------------------------- | -------------------------- | ---------------------------- |",
     );
     runs.forEach((run, index) => {
       const history = run.history;

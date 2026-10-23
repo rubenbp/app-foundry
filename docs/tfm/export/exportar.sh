@@ -19,6 +19,7 @@ perl -0pi -e '
   s#<p><img src="([^"]+)" alt="([^"]*)"\s*/?></p>#<figure><img src="$1" alt=""><figcaption>$2</figcaption></figure>#g;
   s#<figure>(<img src="img/fig-(?:07|09|10)-)#<figure class="alta">$1#g;
   s#<figure>(<img src="img/fig-12-gemini)#<figure class="ancha">$1#g;
+  s#<figure>(<img src="img/fig-13-consumo)#<figure class="reducida">$1#g;
 ' "$WORK/cuerpo.html"
 
 {

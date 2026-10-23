@@ -62,7 +62,7 @@
 
 html {
   font:
-    300 9pt/1.48 Poppins,
+    300 9pt/1.5 Poppins,
     sans-serif;
   color: var(--ink);
   -webkit-print-color-adjust: exact;
@@ -117,7 +117,7 @@ h1:not(:first-of-type) {
 
 h2 {
   font-size: 12pt;
-  margin: 6mm 0 2mm;
+  margin: 6mm 0 2.5mm;
 }
 
 h3 {
@@ -129,11 +129,11 @@ h3 {
 p,
 ul,
 ol {
-  margin: 0 0 2.4mm;
+  margin: 0 0 2.8mm;
 }
 
 li {
-  margin-bottom: 0.8mm;
+  margin-bottom: 1mm;
 }
 
 strong {
@@ -195,7 +195,7 @@ tr:nth-child(even) td {
 }
 
 figure {
-  margin: 3mm 0 5mm;
+  margin: 3mm 0 4mm;
   break-inside: avoid;
   text-align: center;
 }
@@ -209,6 +209,10 @@ figure img {
 
 figure.alta img {
   max-height: 90mm;
+}
+
+figure.reducida img {
+  width: 130mm;
 }
 
 figure.ancha img {

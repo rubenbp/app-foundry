@@ -1,6 +1,6 @@
 # Datos medidos de las Ejecuciones
 
-Generado el 2026-10-22 con `scripts/tfmMetrics.ts` a partir de las bases SQLite de la Factory. No editar a mano: volver a generar.
+Generado el 2026-10-23 con `scripts/tfmMetrics.ts` a partir de las bases SQLite de la Factory. No editar a mano: volver a generar.
 
 ## Cómo leer las cifras
 
@@ -27,18 +27,18 @@ Generado el 2026-10-22 con `scripts/tfmMetrics.ts` a partir de las bases SQLite 
 
 Incidencias registradas por Ejecución:
 
-| #   | Issue                                                  | Preguntas del agente | Intentos adicionales (corrección o reintento) | Errores de agente/publicación | Reinicios de la Factory | Recuperaciones |
-| --- | ------------------------------------------------------ | -------------------- | --------------------------------------------- | ----------------------------- | ----------------------- | -------------- |
-| 1   | Cambiar el título del pie de las páginas               | 0                    | 0                                             | 0                             | 0                       | 0              |
-| 2   | Añade nuevo juego: Suikoden                            | 0                    | 2                                             | 2                             | 0                       | 1              |
-| 3   | Añade el juego Super Mario Bros                        | 0                    | 1                                             | 0                             | 0                       | 0              |
-| 4   | hola                                                   | 2                    | 1                                             | 57                            | 0                       | 3              |
-| 5   | Wipeout                                                | 0                    | 1                                             | 13                            | 0                       | 2              |
-| 6   | Modo comparador de juegos                              | 0                    | 0                                             | 4                             | 3                       | 3              |
-| 7   | comparador con juegos como parametros del query string | 0                    | 0                                             | 0                             | 0                       | 0              |
-| 8   | Juego diferente en portada cada X segundos             | 0                    | 1                                             | 1                             | 0                       | 0              |
-| 9   | Filtro por compañía en el catálogo                     | 0                    | 1                                             | 1                             | 2                       | 2              |
-| 10  | Mejora del hero                                        | 0                    | 1                                             | 0                             | 1                       | 0              |
+| #   | Issue                                                  | Preguntas del agente | Intentos adicionales (corrección o reintento) | Errores de agente/publicación | Conversaciones suspendidas | Recuperaciones tras reinicio |
+| --- | ------------------------------------------------------ | -------------------- | --------------------------------------------- | ----------------------------- | -------------------------- | ---------------------------- |
+| 1   | Cambiar el título del pie de las páginas               | 0                    | 0                                             | 0                             | 0                          | 0                            |
+| 2   | Añade nuevo juego: Suikoden                            | 0                    | 2                                             | 2                             | 0                          | 1                            |
+| 3   | Añade el juego Super Mario Bros                        | 0                    | 1                                             | 0                             | 0                          | 0                            |
+| 4   | hola                                                   | 2                    | 1                                             | 57                            | 0                          | 3                            |
+| 5   | Wipeout                                                | 0                    | 1                                             | 13                            | 0                          | 2                            |
+| 6   | Modo comparador de juegos                              | 0                    | 0                                             | 4                             | 3                          | 3                            |
+| 7   | comparador con juegos como parametros del query string | 0                    | 0                                             | 0                             | 0                          | 0                            |
+| 8   | Juego diferente en portada cada X segundos             | 0                    | 1                                             | 1                             | 0                          | 0                            |
+| 9   | Filtro por compañía en el catálogo                     | 0                    | 1                                             | 1                             | 2                          | 2                            |
+| 10  | Mejora del hero                                        | 0                    | 1                                             | 0                             | 1                          | 0                            |
 
 ## Tanda `sample2` (4 Ejecuciones)
 
@@ -51,12 +51,12 @@ Incidencias registradas por Ejecución:
 
 Incidencias registradas por Ejecución:
 
-| #   | Issue                           | Preguntas del agente | Intentos adicionales (corrección o reintento) | Errores de agente/publicación | Reinicios de la Factory | Recuperaciones |
-| --- | ------------------------------- | -------------------- | --------------------------------------------- | ----------------------------- | ----------------------- | -------------- |
-| 1   | Añade el juego Super Mario Bros | 0                    | 1                                             | 72                            | 5                       | 4              |
-| 2   | Añade el juego Super Mario Bros | 0                    | 1                                             | 2                             | 2                       | 2              |
-| 3   | Modo comparador de juegos       | 0                    | 1                                             | 0                             | 0                       | 0              |
-| 4   | Algo nuevo                      | 2                    | 0                                             | 0                             | 0                       | 0              |
+| #   | Issue                           | Preguntas del agente | Intentos adicionales (corrección o reintento) | Errores de agente/publicación | Conversaciones suspendidas | Recuperaciones tras reinicio |
+| --- | ------------------------------- | -------------------- | --------------------------------------------- | ----------------------------- | -------------------------- | ---------------------------- |
+| 1   | Añade el juego Super Mario Bros | 0                    | 1                                             | 72                            | 5                          | 4                            |
+| 2   | Añade el juego Super Mario Bros | 0                    | 1                                             | 2                             | 2                          | 2                            |
+| 3   | Modo comparador de juegos       | 0                    | 1                                             | 0                             | 0                          | 0                            |
+| 4   | Algo nuevo                      | 2                    | 0                                             | 0                             | 0                          | 0                            |
 
 ## Totales
 

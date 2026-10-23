@@ -1,10 +1,10 @@
 # 2. Objetivo y alcance
 
-**En una frase:** mi objetivo es construir una fábrica de software que lleve un issue de GitHub hasta producción, con un agente de IA que construye, un arnés que lo acota, un flujo determinista que evalúa y automatiza el resto, y una persona que decide en momentos fijos del flujo (_human in the loop_).
+**En una frase:** mi objetivo es construir una fábrica de software que lleve un issue de GitHub hasta el merge, tras el que Vercel publica producción, con un agente de IA que construye, un arnés que lo acota, un flujo determinista que evalúa y automatiza el resto, y una persona que decide en momentos fijos del flujo (_human in the loop_).
 
 ## Hipótesis
 
-Si el agente trabaja dentro de un arnés que fija su contexto, sus herramientas y sus límites, y un flujo determinista evalúa su resultado y automatiza la preparación, las pruebas, la publicación y el despliegue, entonces puede llevar una petición razonablemente clara hasta una PR con preview y comprobaciones superadas **sin edición humana de código**. La persona solo interviene en los momentos de _human in the loop_ que fija el flujo: autorizar, aclarar, revisar y aceptar.
+Si el agente trabaja dentro de un arnés que fija su contexto, sus herramientas y sus límites, y un flujo determinista evalúa su resultado y automatiza la preparación, las pruebas, la publicación y la comprobación de la preview, entonces puede llevar una petición razonablemente clara hasta una PR con preview y comprobaciones superadas **sin edición humana de código**. La persona solo interviene en los momentos de _human in the loop_ que fija el flujo: autorizar, aclarar, revisar y aceptar, y resolver fallos.
 
 ## Qué busco
 
